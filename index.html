@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Watchop — Магазин смарт-часов</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#F4F5F7;color:#141619}
+.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+</style>
+</head>
+<body class="pb-20">
+<header class="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3">
+<div class="max-w-md mx-auto">
+<div class="flex items-center justify-between mb-2.5">
+<div class="flex items-center gap-2.5 cursor-pointer" onclick="switchTab('catalog')">
+<div class="w-8 h-8 rounded-lg bg-[#141619] text-white font-bold flex items-center justify-center">W</div>
+<span class="font-bold text-lg tracking-tight">Watchop</span>
+</div>
+<button onclick="switchTab('favorites')" class="relative p-2 text-gray-700">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+<span id="fav-badge" class="hidden absolute top-1 right-1 bg-[#10B981] text-white text-[10px] font-bold w-4 h-4 rounded-full items-center justify-center">0</span>
+</button>
+</div>
+<div class="relative">
+<input id="search-input" type="text" oninput="renderCatalog()" placeholder="Поиск: Fenix, Apple Watch, Suunto, эхолот..." class="w-full bg-[#F4F5F7] text-sm rounded-xl pl-9 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-[#10B981]" />
+<svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M16.65 10.825a5.825 5.825 0 11-11.65 0 5.825 5.825 0 0111.65 0z"/></svg>
+</div>
+<div class="flex gap-1.5 mt-3 overflow-x-auto no-scrollbar">
+<button onclick="switchTab('catalog')" id="tab-btn-catalog" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141619] text-white whitespace-nowrap">Каталог</button>
+<button onclick="switchTab('about')" id="tab-btn-about" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">О магазине</button>
+<button onclick="switchTab('delivery')" id="tab-btn-delivery" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Оплата и доставка</button>
+<button onclick="switchTab('contacts')" id="tab-btn-contacts" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Контакты</button>
+</div>
+</div>
+</header>
+<main class="max-w-md mx-auto px-3 pt-3">
+<section id="view-catalog" class="space-y-4">
+<div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-emerald-950 text-white p-5">
+<h1 id="ui-hero-title" class="text-lg font-bold leading-snug mb-3">Магазин оригинальной продукции Garmin и смарт-часов — поможем выбрать под ваши задачи</h1>
+<div class="flex flex-wrap gap-2">
+<a id="ui-consult-btn" href="https://t.me/watchop_manager" target="_blank" class="bg-[#2AABEE] text-white font-semibold text-xs px-4 py-2.5 rounded-xl">Получить консультацию</a>
+</div>
+</div>
+<div id="category-pills" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+<div>
+<div class="text-[11px] font-bold uppercase text-gray-400 tracking-wider mb-2">Бренды и серии смарт-часов</div>
+<div id="series-pills" class="flex flex-wrap gap-1.5"></div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span id="found-count" class="text-xs text-gray-500 font-medium">Найдено: 0</span>
+<select id="sort-select" onchange="renderCatalog()" class="text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium outline-none">
+<option value="popular">Сначала популярные</option>
+<option value="asc">Сначала дешевле</option>
+<option value="desc">Сначала дороже</option>
+</select>
+</div>
+<div id="products-grid" class="grid grid-cols-2 gap-2.5"></div>
+<div id="grid-sentinel" class="h-2"></div>
+<div id="grid-status" class="text-center text-[11px] text-gray-400 pb-4"></div>
+</section>
+<section id="view-product" class="hidden">
+<button onclick="switchTab('catalog')" class="mb-3 text-xs font-semibold text-gray-600 bg-white px-3 py-2 rounded-xl border border-gray-200">← Назад в каталог</button>
+<div id="product-detail-box" class="bg-white rounded-2xl p-4 border border-gray-100"></div>
+</section>
+<section id="view-order-success" class="hidden">
+<div class="bg-white rounded-2xl p-6 text-center border border-gray-100 mt-2">
+<div class="w-12 h-12 rounded-full bg-emerald-50 text-[#10B981] flex items-center justify-center mx-auto mb-3 text-2xl font-bold">✓</div>
+<h2 class="text-xl font-bold mb-1">Заказ принят</h2>
+<p class="text-xs text-gray-500 mb-2">Номер вашего заказа:</p>
+<div id="order-code-badge" class="inline-block bg-gray-100 font-mono font-bold text-base px-4 py-1.5 rounded-xl mb-3">TG-1176</div>
+<p id="order-item-summary" class="text-xs font-semibold text-gray-800 mb-3"></p>
+<div id="order-payment-box" class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 text-left text-xs text-gray-800 mb-4 whitespace-pre-line"></div>
+<p class="text-xs text-gray-500 mb-4">Чтобы мы начали сборку — напишите менеджеру в Telegram или MAX и сообщите номер заказа.</p>
+<div class="space-y-2">
+<a id="order-tg-btn" href="#" target="_blank" class="block w-full bg-[#141619] text-white font-semibold text-sm py-3 rounded-xl">Написать в Telegram</a>
+<a id="order-max-btn" href="#" target="_blank" class="block w-full bg-white border border-gray-300 text-gray-900 font-semibold text-sm py-3 rounded-xl">Написать в MAX</a>
+<button onclick="switchTab('catalog')" class="block w-full text-xs text-emerald-600 font-semibold py-2.5">Вернуться в каталог</button>
+</div>
+</div>
+</section>
+<section id="view-favorites" class="hidden space-y-3">
+<h2 class="text-lg font-bold">Избранное</h2>
+<div id="favorites-grid" class="grid grid-cols-2 gap-2.5"></div>
+</section>
+<section id="view-about" class="hidden space-y-3">
+<div class="bg-white rounded-2xl p-4 space-y-3 text-sm leading-relaxed text-gray-700 border border-gray-100">
+<h2 class="text-lg font-bold text-gray-900">О магазине Watchop</h2>
+<p>Watchop — специализированный магазин оригинальной продукции Garmin и электронных смарт-часов. Работаем с 2018 года, помогаем подобрать часы под бег, триатлон, дайвинг, туризм и повседневное использование.</p>
+<p>Официальная гарантия, полный модельный ряд, доступные цены.</p>
+</div>
+</section>
+<section id="view-delivery" class="hidden space-y-3">
+<div class="bg-white rounded-2xl p-4 space-y-3 text-sm leading-relaxed text-gray-700 border border-gray-100">
+<h2 class="text-lg font-bold text-gray-900">Оплата и доставка</h2>
+<p>Нажмите «Заказать» — получите номер заявки формата <b>TG-XXXX</b>, заявка сразу уходит в Telegram и MAX администратора.</p>
+<ul class="list-disc pl-5 space-y-1 text-xs"><li>Менеджер проверит наличие</li><li>Подтвердит цену и реквизиты</li><li>Рассчитает доставку СДЭК / Почтой или согласует самовывоз</li></ul>
+</div>
+</section>
+<section id="view-contacts" class="hidden space-y-3">
+<div class="bg-white rounded-2xl p-4 space-y-3 text-sm border border-gray-100">
+<h2 class="text-lg font-bold text-gray-900">Контакты и реквизиты</h2>
+<div class="p-3 bg-gray-50 rounded-xl"><div class="text-xs text-gray-400">Адрес</div><div id="ui-address" class="font-semibold text-xs mt-0.5">г. Воронеж, ул. Пушкинская, 8 (ТЦ «Аксиома home»)</div></div>
+<div class="p-3 bg-gray-50 rounded-xl"><div class="text-xs text-gray-400">Телефон</div><a id="ui-phone" href="tel:+74733004095" class="font-semibold text-xs text-emerald-600 mt-0.5 block">+7 (473) 300-40-95</a></div>
+<div class="p-3 bg-gray-50 rounded-xl"><div class="text-xs text-gray-400">Email</div><div id="ui-email" class="font-semibold text-xs mt-0.5">watchopp@gmail.com</div></div>
+<div class="p-3 bg-gray-50 rounded-xl text-xs text-gray-600"><div class="font-bold text-gray-900 mb-1">Реквизиты</div><div id="ui-legal-name">ИП Жукова Татьяна Юрьевна</div><div>ИНН <span id="ui-legal-inn">362703988401</span></div><div>ОГРНИП <span id="ui-legal-ogrnip">304362725400110</span></div></div>
+</div>
+</section>
+</main>
+<script>
+const FALLBACK_PRODUCTS=[
+{id:1,brand:'GARMIN',series:'fēnix',category:'Спортивные часы',name:'Garmin Fenix 8 — 51 мм Solar Sapphire Carbon Grey DLC',price:62320,image:'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80',specs:'Сапфир + solar, фонарик LED, дайвинг 40 м.'},
+{id:2,brand:'GARMIN',series:'fēnix',category:'Спортивные часы',name:'Garmin Fenix 8 — 51 мм AMOLED Sapphire Titanium Orange',price:62320,image:'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80',specs:'AMOLED 1.4, титан, топокарты.'},
+{id:3,brand:'GARMIN',series:'Forerunner',category:'Спортивные часы',name:'Garmin Forerunner 970 Carbon Grey DLC Titanium',price:41200,image:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80',specs:'AMOLED, титан, двухчастотный GPS.'},
+{id:4,brand:'GARMIN',series:'Forerunner',category:'Спортивные часы',name:'Garmin Forerunner 570 — 47 мм Slate Grey / Black',price:31210,image:'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80',specs:'Бег, Garmin Pay, музыка.'},
+{id:5,brand:'GARMIN',series:'Descent',category:'Дайвинг компьютеры',name:'Дайвинг компьютер Garmin Descent Mk3i 51 мм Carbon Grey',price:125350,image:'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&q=80',specs:'SubWave, 200 м, AMOLED.'},
+{id:6,brand:'GARMIN',series:'Instinct',category:'Спортивные часы',name:'Garmin Instinct 3 — 50 мм AMOLED Tactical Black',price:38900,image:'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80',specs:'MIL-STD-810, мульти-GNSS.'},
+{id:7,brand:'GARMIN',series:'Venu',category:'Спортивные часы',name:'Garmin Venu 3 — 45 мм Slate / Black',price:36400,image:'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80',specs:'Сон, звонки, 30+ профилей.'},
+{id:8,brand:'GARMIN',series:'MARQ',category:'Спортивные часы',name:'Garmin MARQ Athlete (Gen 2) — Carbon Edition',price:215000,image:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80',specs:'Кованый карбон, сапфир.'},
+{id:9,brand:'APPLE',series:'Apple Watch',category:'Спортивные часы',name:'Apple Watch Ultra 2 49 мм Black Titanium Trail Loop',price:74990,image:'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80',specs:'Титан 49 мм, 3000 нит.'},
+{id:10,brand:'APPLE',series:'Apple Watch',category:'Спортивные часы',name:'Apple Watch Series 10 46 мм Jet Black',price:42990,image:'https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=600&q=80',specs:'OLED, глубиномер.'},
+{id:11,brand:'SAMSUNG',series:'Galaxy Watch',category:'Спортивные часы',name:'Samsung Galaxy Watch Ultra 47 мм LTE Titanium Gray',price:49990,image:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80',specs:'Титан, сапфир, Galaxy AI.'},
+{id:12,brand:'SAMSUNG',series:'Galaxy Watch',category:'Спортивные часы',name:'Samsung Galaxy Watch 7 44 мм Green',price:26990,image:'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80',specs:'BioActive, двухчастотный GPS.'},
+{id:13,brand:'SUUNTO',series:'Suunto',category:'Спортивные часы',name:'Suunto Vertical Titanium Solar Canyon GPS',price:64900,image:'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80',specs:'Офлайн-карты, 60 дней.'},
+{id:14,brand:'POLAR',series:'Polar',category:'Спортивные часы',name:'Polar Grit X2 Pro Titan Sapphire AMOLED',price:68400,image:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80',specs:'ЭКГ, SpO2, титан.'},
+{id:15,brand:'COROS',series:'COROS',category:'Спортивные часы',name:'COROS VERTIX 2S Adventure — Space',price:63500,image:'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80',specs:'40 дней, офлайн-карты.'},
+{id:16,brand:'HUAWEI',series:'Huawei Watch',category:'Спортивные часы',name:'Huawei Watch Ultimate Green Edition Zirconium',price:59990,image:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80',specs:'Жидкий металл, 100 м.'},
+{id:17,brand:'AMAZFIT',series:'Amazfit',category:'Спортивные часы',name:'Amazfit T-Rex 3 48 мм Onyx Military AMOLED',price:25900,image:'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80',specs:'2000 нит, -30C, 27 дней.'},
+{id:18,brand:'CASIO',series:'G-Shock',category:'Спортивные часы',name:'Casio G-Shock GBD-H2000 Solar GPS',price:37900,image:'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80',specs:'GPS, solar, Polar алгоритмы.'}
+];
+let state={products:[...FALLBACK_PRODUCTS],settings:{hero_title:'Магазин оригинальной продукции Garmin и смарт-часов — поможем выбрать под ваши задачи',phone:'+7 (473) 300-40-95',email:'watchopp@gmail.com',address:'г. Воронеж, ул. Пушкинская, 8 (ТЦ «Аксиома home»)',tg_link:'https://t.me/watchop_manager',max_link:'https://max.ru/watchop',legal_name:'ИП Жукова Татьяна Юрьевна',legal_inn:'362703988401',legal_ogrnip:'304362725400110',payment_details:'СБП / Т-Банк / Сбер: +7 (900) 000-00-00 (Татьяна Ю.)\nВ комментарии к переводу укажите номер заказа.',show_payment:'1'},activeCategory:'Все товары',activeSeries:'Все модели',favorites:JSON.parse(localStorage.getItem('watchop_favs')||'[]'),lastOrderAt:0};
+const CATEGORIES=['Все товары','Спортивные часы','Дайвинг компьютеры','Фитнес-трекеры'];
+const SERIES=['Все модели','fēnix','Forerunner','Descent','Instinct','Venu','MARQ','Apple Watch','Galaxy Watch','Suunto','Polar','COROS','Huawei Watch','Amazfit','G-Shock'];
+async function initApp(){try{const r=await fetch('/api/state');if(r.ok){const d=await r.json();if(d.products?.length)state.products=d.products;if(d.settings)state.settings={...state.settings,...d.settings};}}catch(e){}applySettingsToUI();renderFilters();renderCatalog();updateFavBadge();}
+function applySettingsToUI(){const s=state.settings;document.getElementById('ui-hero-title').textContent=s.hero_title;document.getElementById('ui-address').textContent=s.address;document.getElementById('ui-phone').textContent=s.phone;document.getElementById('ui-phone').href='tel:'+s.phone.replace(/[^\d+]/g,'');document.getElementById('ui-email').textContent=s.email;document.getElementById('ui-legal-name').textContent=s.legal_name;document.getElementById('ui-legal-inn').textContent=s.legal_inn;document.getElementById('ui-legal-ogrnip').textContent=s.legal_ogrnip;document.getElementById('ui-consult-btn').href=s.tg_link;}
+function switchTab(tab){['catalog','product','order-success','favorites','about','delivery','contacts'].forEach(v=>document.getElementById('view-'+v).classList.add('hidden'));document.getElementById('view-'+tab).classList.remove('hidden');['catalog','about','delivery','contacts'].forEach(t=>{const b=document.getElementById('tab-btn-'+t);if(!b)return;b.className=t===tab?'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141619] text-white whitespace-nowrap':'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap';});if(tab==='favorites')renderFavorites();if(tab==='catalog')requestAnimationFrame(pumpGrid);window.scrollTo({top:0,behavior:'smooth'});}
+function renderFilters(){document.getElementById('category-pills').innerHTML=CATEGORIES.map(c=>`<button onclick="setCategory('${c}')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${state.activeCategory===c?'bg-[#141619] text-white':'bg-white text-gray-700 border border-gray-200'}">${c}</button>`).join('');document.getElementById('series-pills').innerHTML=SERIES.map(s=>`<button onclick="setSeries('${s}')" class="px-3 py-1.5 rounded-full text-xs font-semibold ${state.activeSeries===s?'bg-[#10B981] text-white':'bg-white text-gray-700 border border-gray-200'}">${s}</button>`).join('');}
+function setCategory(c){state.activeCategory=c;renderFilters();renderCatalog();}
+function setSeries(s){state.activeSeries=s;renderFilters();renderCatalog();}
+const PAGE_SIZE=20;let gridObserver=null;state.filtered=[];state.shownCount=0;
+function getFiltered(){const q=document.getElementById('search-input').value.trim().toLowerCase();const sort=document.getElementById('sort-select').value;let list=state.products.filter(p=>{if(state.activeCategory!=='Все товары'&&p.category!==state.activeCategory)return false;if(state.activeSeries!=='Все модели'&&p.series!==state.activeSeries)return false;if(q&&!(p.name.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q)||p.series.toLowerCase().includes(q)))return false;return true;});if(sort==='asc')list.sort((a,b)=>a.price-b.price);if(sort==='desc')list.sort((a,b)=>b.price-a.price);return list;}
+function renderCatalog(){if(gridObserver){gridObserver.disconnect();gridObserver=null;}state.filtered=getFiltered();state.shownCount=0;document.getElementById('products-grid').innerHTML='';appendChunk();observeSentinel();pumpGrid();}
+function appendChunk(){const grid=document.getElementById('products-grid');const next=state.filtered.slice(state.shownCount,state.shownCount+PAGE_SIZE);if(!next.length)return false;grid.insertAdjacentHTML('beforeend',next.map(p=>productCardHTML(p)).join(''));state.shownCount+=next.length;updateGridStatus();return state.shownCount<state.filtered.length;}
+function updateGridStatus(){const total=state.filtered.length;document.getElementById('found-count').textContent=`Найдено: ${total}`;const st=document.getElementById('grid-status');if(!total){st.textContent='Ничего не найдено. Попробуйте изменить запрос.';}else if(state.shownCount<total){st.textContent=`Показано ${state.shownCount} из ${total} — листайте вниз`; }else{st.textContent=total>PAGE_SIZE?`Показаны все ${total}`:'';}}
+function observeSentinel(){const s=document.getElementById('grid-sentinel');if(!('IntersectionObserver' in window))return;gridObserver=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){if(!appendChunk()&&gridObserver){gridObserver.disconnect();gridObserver=null;}}} ,{rootMargin:'600px'});gridObserver.observe(s);}
+function pumpGrid(){const s=document.getElementById('grid-sentinel');if(!s||!state.filtered.length||state.shownCount>=state.filtered.length)return;const r=s.getBoundingClientRect();if(r.top<window.innerHeight+600){if(appendChunk())pumpGrid();else if(gridObserver){gridObserver.disconnect();gridObserver=null;}}}
+function productCardHTML(p){const isFav=state.favorites.includes(p.id);return `<div class="bg-white rounded-2xl p-3 flex flex-col justify-between border border-gray-100 relative"><button onclick="toggleFav(event,${p.id})" class="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-white/90 border border-gray-200 flex items-center justify-center"><span data-fav-heart="${p.id}" class="${isFav?'text-red-500':'text-gray-400'} text-sm">♥</span></button><div onclick="openProduct(${p.id})" class="cursor-pointer"><img src="${p.image}" alt="" loading="lazy" class="w-full h-36 object-cover rounded-xl mb-2 bg-gray-50" /><div class="text-[10px] font-bold uppercase text-[#10B981]">${p.brand}</div><h3 class="text-xs text-gray-900 line-clamp-2 mt-0.5 min-h-[32px]">${p.name}</h3><div class="text-sm font-bold mt-1.5 mb-2.5">${Number(p.price).toLocaleString('ru-RU')} ₽</div></div><button onclick="quickOrder(${p.id})" class="w-full bg-[#141619] text-white text-xs font-semibold py-2.5 rounded-xl">Заказать</button></div>`;}
+function openProduct(id){const p=state.products.find(x=>x.id===id);if(!p)return;document.getElementById('product-detail-box').innerHTML=`<img src="${p.image}" class="w-full h-64 object-cover rounded-xl mb-3 bg-gray-50" /><div class="text-xs font-bold uppercase text-[#10B981]">${p.brand} • ${p.series}</div><h1 class="text-lg font-bold mt-1">${p.name}</h1><div class="text-2xl font-extrabold my-3">${Number(p.price).toLocaleString('ru-RU')} ₽</div><p class="text-xs text-gray-600 leading-relaxed mb-4">${p.specs||'Оригинальные смарт-часы с гарантией Watchop.'}</p><div class="space-y-2"><button onclick="quickOrder(${p.id})" class="w-full bg-[#10B981] text-white font-bold text-sm py-3.5 rounded-xl">Оформить заявку в 1 клик</button><a href="${state.settings.tg_link}" target="_blank" class="block text-center w-full bg-[#2AABEE] text-white font-semibold text-xs py-3 rounded-xl">Задать вопрос в Telegram</a></div>`;switchTab('product');}
+async function quickOrder(id){const p=state.products.find(x=>x.id===id);if(!p)return;const now=Date.now();if(now-state.lastOrderAt<5000){alert('Слишком быстро. Попробуйте ещё раз.');return;}state.lastOrderAt=now;let orderCode='TG-'+Math.floor(1176+Math.random()*8000);let paymentDetails=state.settings.show_payment==='1'?state.settings.payment_details:'';try{const res=await fetch('/api/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:[{id:p.id,name:p.name,price:p.price,qty:1}],total:p.price})});if(res.ok){const d=await res.json();if(d.orderCode)orderCode=d.orderCode;if(d.paymentDetails!==undefined)paymentDetails=d.paymentDetails;}else if(res.status===429){alert('Слишком быстро. Попробуйте ещё раз.');return;}}catch(e){}document.getElementById('order-code-badge').textContent=orderCode;document.getElementById('order-item-summary').textContent=`${p.name} — ${Number(p.price).toLocaleString('ru-RU')} ₽`;const payBox=document.getElementById('order-payment-box');if(paymentDetails){payBox.classList.remove('hidden');payBox.textContent='Реквизиты для оплаты:\n'+paymentDetails;}else{payBox.classList.add('hidden');}const tgText=encodeURIComponent(`Здравствуйте! Мой заказ ${orderCode}: ${p.name} (${Number(p.price).toLocaleString('ru-RU')} ₽)`);const base=state.settings.tg_link.replace(/\/$/,'');document.getElementById('order-tg-btn').href=`${base}?text=${tgText}`;document.getElementById('order-max-btn').href=state.settings.max_link;switchTab('order-success');}
+function toggleFav(e,id){e.stopPropagation();const i=state.favorites.indexOf(id);if(i===-1)state.favorites.push(id);else state.favorites.splice(i,1);localStorage.setItem('watchop_favs',JSON.stringify(state.favorites));updateFavBadge();const on=state.favorites.includes(id);document.querySelectorAll(`[data-fav-heart="${id}"]`).forEach(el=>{el.classList.toggle('text-red-500',on);el.classList.toggle('text-gray-400',!on);});if(!document.getElementById('view-favorites').classList.contains('hidden'))renderFavorites();}
+function updateFavBadge(){const b=document.getElementById('fav-badge');if(state.favorites.length>0){b.textContent=state.favorites.length;b.classList.remove('hidden');b.classList.add('flex');}else{b.classList.add('hidden');b.classList.remove('flex');}}
+function renderFavorites(){const list=state.products.filter(p=>state.favorites.includes(p.id));document.getElementById('favorites-grid').innerHTML=list.length?list.map(p=>productCardHTML(p)).join(''):`<div class="col-span-2 bg-white rounded-2xl p-6 text-center text-xs text-gray-500">В избранном пока пусто.</div>`;}
+initApp();
+</script>
+</body>
+</html>

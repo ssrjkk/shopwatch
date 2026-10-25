@@ -323,19 +323,41 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     }
   }
 
-  tgBot.launch().then(() => console.log('Telegram bot started')).catch((e) => console.error('TG launch failed:', e.message));
+  tgBot.telegram.getMe()
+    .then((me) => console.log(`Telegram bot @${me.username} polling started`))
+    .catch((e) => console.error('TG getMe failed:', e.description || e.message));
+  tgBot.launch().catch((e) => console.error('TG polling error:', e.description || e.message));
+  process.once('SIGINT', () => tgBot.stop('SIGINT'));
+  process.once('SIGTERM', () => tgBot.stop('SIGTERM'));
 }
 
-// ---------- MAX bot ----------
-const MAX_API = 'https://platform-api.max.ru';
-async function sendMaxMessage(userId, text) {
+// ---------- MAX bot (полный паритет с Telegram-ботом) ----------
+// Документация: https://dev.max.ru/docs-api (домен platform-api2, авторизация через заголовок Authorization)
+const MAX_API = 'https://platform-api2.max.ru';
+const maxSessions = new Map(); // userId -> { step, draft, prodId, key }
+
+function maxKb(rows) {
+  // Кнопки типа message присылают боту заранее заданный текст — меню работает без answers API
+  return [{
+    type: 'inline_keyboard',
+    payload: { buttons: rows.map((r) => r.map((t) => ({ type: 'message', text: t, payload: t }))) }
+  }];
+}
+
+const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы']];
+const MAX_CANCEL = [['Отмена']];
+
+async function sendMaxMessage(userId, text, kbRows) {
   if (!isValidEnv(process.env.MAX_BOT_TOKEN)) return;
+  const body = { text: String(text).slice(0, 4000) };
+  if (kbRows) body.attachments = maxKb(kbRows);
   await fetch(`${MAX_API}/messages?user_id=${userId}`, {
     method: 'POST',
     headers: { Authorization: process.env.MAX_BOT_TOKEN, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text })
+    body: JSON.stringify(body)
   });
 }
+
 async function startMaxBotPolling() {
   if (!isValidEnv(process.env.MAX_BOT_TOKEN)) return;
   console.log('MAX bot polling started');
@@ -358,14 +380,91 @@ async function startMaxBotPolling() {
     }
   }
 }
+
+function maxOrderStatusKb(orderCode) {
+  return [[`В сборку ${orderCode}`, `Оплачен ${orderCode}`], [`Отменить ${orderCode}`]];
+}
+
+async function maxNotifyAdmin(text, orderCode) {
+  if (!isValidEnv(process.env.MAX_ADMIN_ID)) return;
+  await sendMaxMessage(process.env.MAX_ADMIN_ID, text, orderCode ? maxOrderStatusKb(orderCode) : undefined);
+}
+
+async function maxAdminMenu(userId, title) {
+  await sendMaxMessage(userId, title || 'Админ-панель Watchop (MAX). Выберите действие:', [...MAX_MENU, ...MAX_CANCEL]);
+}
+
+const MAX_CFG_BUTTONS = {
+  'Баннер': 'hero_title', 'Телефон': 'phone', 'Email': 'email', 'Адрес': 'address',
+  'Ссылка ТГ': 'tg_link', 'Ссылка MAX': 'max_link', 'ИП': 'legal_name', 'ИНН': 'legal_inn'
+};
 async function handleMaxUpdate(upd) {
+  if (upd.update_type === 'message_callback' && upd.callback) {
+    const cbText = upd.callback.payload || upd.callback.text || '';
+    const cbUser = upd.callback.user || upd.user || {};
+    if (cbText) {
+      return handleMaxMessage(String(cbUser.user_id || ''), cbUser.name || 'Клиент', String(cbText), upd);
+    }
+    return;
+  }
+  if (upd.update_type === 'bot_started') {
+    const u = upd.user || {};
+    return handleMaxMessage(String(u.user_id || ''), u.name || 'Клиент', '/start', upd);
+  }
   const msg = upd.message;
-  if (!msg?.body?.text) return;
+  if (upd.update_type !== 'message_created' || !msg) return;
   const senderId = String(msg.sender?.user_id || '');
+  if (!senderId) return;
   const senderName = msg.sender?.name || 'Клиент';
-  const text = msg.body.text.trim();
+  const text = (msg.body?.text || '').trim();
+
+  const photoUrl = findMaxPhotoUrl(msg.body?.attachments);
+  const sess = maxSessions.get(senderId);
+  if (photoUrl && sess?.step === 'add_img' && String(senderId) === String(process.env.MAX_ADMIN_ID)) {
+    try {
+      const resp = await fetch(photoUrl);
+      const buf = Buffer.from(await resp.arrayBuffer());
+      const fileName = `watch_${Date.now()}.jpg`;
+      fs.writeFileSync(path.join(uploadsDir, fileName), buf);
+      maxSessions.delete(senderId);
+      return sendMaxMessage(senderId, `Часы "${sess.draft.name}" (${Number(sess.draft.price).toLocaleString('ru-RU')} ₽) добавлены! ID: ${finishAddingProductMax(sess.draft, `/uploads/${fileName}`)}`, MAX_MENU);
+    } catch (e) {
+      return sendMaxMessage(senderId, 'Не удалось сохранить фото. Отправьте ссылку на картинку.');
+    }
+  }
+  return handleMaxMessage(senderId, senderName, text, upd);
+}
+
+function findMaxPhotoUrl(attachments) {
+  if (!Array.isArray(attachments)) return null;
+  for (const a of attachments) {
+    const p = a?.payload || {};
+    const url = p.url || p.preview_url || a.url || null;
+    if (url && typeof url === 'string' && url.startsWith('http')) return url;
+  }
+  return null;
+}
+
+function finishAddingProductMax(d, imageUrl) {
+  return db.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(d.brand, d.series, d.category, d.name, d.price, imageUrl, d.specs || '').lastInsertRowid;
+}
+
+async function handleMaxMessage(senderId, senderName, text, upd) {
   const isMaxAdmin = String(senderId) === String(process.env.MAX_ADMIN_ID);
+
   if (text === '/id') return sendMaxMessage(senderId, `Ваш MAX ID: ${senderId}`);
+
+  const stMatch = text.match(/^(В сборку|Оплачен|Отменить)\s+(TG-\d+)$/i);
+    if (stMatch) {
+      const map = { 'в сборку': 'В сборке', 'оплачен': 'Оплачен', 'отменить': 'Отменен' };
+      const status = map[stMatch[1].toLowerCase()];
+      db.prepare('UPDATE orders SET status = ? WHERE order_code = ?').run(status, stMatch[2].toUpperCase());
+      return sendMaxMessage(senderId, `Статус ${stMatch[2].toUpperCase()}: ${status}`, MAX_MENU);
+    }
+
+  
+
   const orderMatch = text.match(/TG-\d+/i);
   if (orderMatch && !text.startsWith('/')) {
     const code = orderMatch[0].toUpperCase();
@@ -375,44 +474,129 @@ async function handleMaxUpdate(upd) {
       const list = items.map((i) => `• ${i.name} (${Number(i.price).toLocaleString('ru-RU')} ₽)`).join('\n');
       await sendMaxMessage(senderId, `Заказ ${code} принят!\n\n${list}\nК оплате: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\nРеквизиты:\n${getSetting('payment_details')}`);
       if (isValidEnv(process.env.MAX_ADMIN_ID) && !isMaxAdmin) {
-        await sendMaxMessage(process.env.MAX_ADMIN_ID, `Клиент ${senderName} (${senderId}) в MAX по заказу ${code}:\n"${text}"`);
+        await maxNotifyAdmin(`Клиент ${senderName} (${senderId}) в MAX по заказу ${code}:\n"${text}"`);
       }
       return;
     }
   }
-  if (isMaxAdmin) {
-    if (text === '/start' || text === '/help') {
-      return sendMaxMessage(senderId, `Админ Watchop MAX:\n/orders — последние 10\n/pay ТЕКСТ — реквизиты\n/add БРЕНД | СЕРИЯ | НАЗВАНИЕ | ЦЕНА — добавить\n/del ID — удалить`);
-    }
-    if (text === '/orders') {
-      const orders = db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 10').all();
-      return sendMaxMessage(senderId, orders.length ? orders.map((o) => `• ${o.order_code} — ${Number(o.total).toLocaleString('ru-RU')} ₽ [${o.status}]`).join('\n') : 'Заявок нет.');
-    }
-    if (text.startsWith('/pay ')) {
-      const v = text.replace('/pay ', '').trim();
-      setSetting('payment_details', v);
-      return sendMaxMessage(senderId, `Реквизиты обновлены:\n${v}`);
-    }
-    if (text.startsWith('/add ')) {
-      const parts = text.replace('/add ', '').split('|').map((s) => s.trim());
-      if (parts.length < 4) return sendMaxMessage(senderId, 'Формат: /add GARMIN | fenix | Название | 62320');
-      const [brand, series, name, priceStr] = parts;
-      const price = parseInt(priceStr.replace(/\D/g, ''), 10) || 0;
-      const info = db.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?, ?, ?, ?, ?, ?, ?)')
-        .run(brand.toUpperCase(), series, 'Спортивные часы', name, price, 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', '');
-      return sendMaxMessage(senderId, `Добавлено! ID: ${info.lastInsertRowid}`);
-    }
-    if (text.startsWith('/del ')) {
-      const id = parseInt(text.replace('/del ', '').trim(), 10);
-      db.prepare('DELETE FROM products WHERE id = ?').run(id);
-      return sendMaxMessage(senderId, `Товар #${id} удален.`);
-    }
-  } else {
+
+  if (!isMaxAdmin) {
     if (isValidEnv(process.env.MAX_ADMIN_ID)) {
-      await sendMaxMessage(process.env.MAX_ADMIN_ID, `MAX от ${senderName} (${senderId}):\n${text}`);
+      await maxNotifyAdmin(`Сообщение в MAX от ${senderName} (${senderId}):\n${text || '(без текста)'}`);
     }
-    await sendMaxMessage(senderId, 'Здравствуйте! Напишите номер заказа (TG-XXXX) или дождитесь менеджера.');
+    return sendMaxMessage(senderId, 'Здравствуйте! Напишите номер заказа (например, TG-1176) или дождитесь менеджера.');
   }
+
+  const sess = maxSessions.get(senderId) || {};
+
+  if (text === 'Отмена') {
+    maxSessions.delete(senderId);
+    return maxAdminMenu(senderId, 'Отменено. Выберите действие:');
+  }
+
+  if (text === '/start' || text === '/help' || text === 'Меню') {
+    maxSessions.delete(senderId);
+    return maxAdminMenu(senderId);
+  }
+
+  if (sess.step) {
+    if (sess.step === 'wait_pay') {
+      setSetting('payment_details', text);
+      maxSessions.delete(senderId);
+      return sendMaxMessage(senderId, 'Реквизиты оплаты обновлены на сайте!', MAX_MENU);
+    }
+    if (sess.step === 'wait_cfg') {
+      setSetting(sess.key, text);
+      maxSessions.delete(senderId);
+      return sendMaxMessage(senderId, 'Настройка сайта сохранена!', MAX_MENU);
+    }
+    if (sess.step === 'wait_price') {
+      const p = parseInt(text.replace(/\D/g, ''), 10) || 0;
+      db.prepare('UPDATE products SET price = ? WHERE id = ?').run(p, sess.prodId);
+      maxSessions.delete(senderId);
+      return sendMaxMessage(senderId, `Цена #${sess.prodId}: ${p.toLocaleString('ru-RU')} ₽`, MAX_MENU);
+    }
+    if (sess.step === 'add_brand') { sess.draft.brand = text.toUpperCase(); sess.step = 'add_series'; maxSessions.set(senderId, sess); return sendMaxMessage(senderId, 'Шаг 2/6. Серия для фильтра (fēnix, Forerunner, Apple Watch, Galaxy Watch, Suunto...):'); }
+    if (sess.step === 'add_series') { sess.draft.series = text; sess.step = 'add_cat'; maxSessions.set(senderId, sess); return sendMaxMessage(senderId, 'Шаг 3/6. Категория (Спортивные часы / Дайвинг компьютеры / Фитнес-трекеры):'); }
+    if (sess.step === 'add_cat') { sess.draft.category = text; sess.step = 'add_name'; maxSessions.set(senderId, sess); return sendMaxMessage(senderId, 'Шаг 4/6. Полное название часов:'); }
+    if (sess.step === 'add_name') { sess.draft.name = text; sess.step = 'add_price'; maxSessions.set(senderId, sess); return sendMaxMessage(senderId, 'Шаг 5/6. Цена в рублях (только число):'); }
+    if (sess.step === 'add_price') { sess.draft.price = parseInt(text.replace(/\D/g, ''), 10) || 0; sess.step = 'add_specs'; maxSessions.set(senderId, sess); return sendMaxMessage(senderId, 'Шаг 5.5/6. Краткое описание/характеристики:'); }
+    if (sess.step === 'add_specs') { sess.draft.specs = text; sess.step = 'add_img'; maxSessions.set(senderId, sess); return sendMaxMessage(senderId, 'Шаг 6/6. Отправьте ФОТО часов или ссылку на картинку (или - для стандартного фото):'); }
+    if (sess.step === 'add_img') {
+      const img = text.startsWith('http') ? text : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80';
+      const id = finishAddingProductMax(sess.draft, img);
+      maxSessions.delete(senderId);
+      return sendMaxMessage(senderId, `Часы "${sess.draft.name}" (${Number(sess.draft.price).toLocaleString('ru-RU')} ₽) добавлены! ID: ${id}`, MAX_MENU);
+    }
+  }
+
+  if (text === 'Добавить часы') {
+    maxSessions.set(senderId, { step: 'add_brand', draft: {} });
+    return sendMaxMessage(senderId, 'Шаг 1/6. Бренд (GARMIN, APPLE, SAMSUNG, SUUNTO, POLAR, COROS, HUAWEI, AMAZFIT, CASIO):', MAX_CANCEL);
+  }
+  if (text === 'Товары и цены' || text === '/products') {
+    const prods = db.prepare('SELECT id, name, price FROM products ORDER BY id DESC LIMIT 15').all();
+    if (!prods.length) return sendMaxMessage(senderId, 'Товаров пока нет.', MAX_MENU);
+    const rows = prods.flatMap((p) => [[`Цена #${p.id}`, `Удалить #${p.id}`]]);
+    const list = prods.map((p) => `#${p.id} ${p.name.slice(0, 30)} — ${Number(p.price).toLocaleString('ru-RU')} ₽`).join('\n');
+    return sendMaxMessage(senderId, `Последние 15 товаров:\n${list}\n\nНажмите кнопку под сообщением:`, [...rows, ...MAX_CANCEL]);
+  }
+  const priceMatch = text.match(/^Цена #(\d+)$/i);
+  if (priceMatch) {
+    maxSessions.set(senderId, { step: 'wait_price', prodId: Number(priceMatch[1]) });
+    return sendMaxMessage(senderId, `Новая цена для #${priceMatch[1]} (только число):`, MAX_CANCEL);
+  }
+  const delMatch = text.match(/^(?:Удалить #|\/del )(\d+)$/i);
+  if (delMatch) {
+    db.prepare('DELETE FROM products WHERE id = ?').run(Number(delMatch[1]));
+    return sendMaxMessage(senderId, `Товар #${delMatch[1]} удален.`, MAX_MENU);
+  }
+  if (text === 'Реквизиты оплаты' || text === '/pay') {
+    const shown = getSetting('show_payment') === '1';
+    return sendMaxMessage(senderId,
+      `Текущие реквизиты:\n${getSetting('payment_details')}\n\nПоказ на сайте: ${shown ? 'Включен' : 'Скрыт'}`,
+      [['Изменить реквизиты'], [shown ? 'Скрыть на сайте' : 'Показать на сайте'], ['Отмена']]);
+  }
+  if (text === 'Изменить реквизиты') {
+    maxSessions.set(senderId, { step: 'wait_pay' });
+    return sendMaxMessage(senderId, 'Отправьте новые реквизиты (СБП / карта / ФИО):', MAX_CANCEL);
+  }
+  if (text === 'Скрыть на сайте' || text === 'Показать на сайте') {
+    const next = getSetting('show_payment') === '1' ? '0' : '1';
+    setSetting('show_payment', next);
+    return sendMaxMessage(senderId, `Показ реквизитов: ${next === '1' ? 'Включен' : 'Выключен'}`, MAX_MENU);
+  }
+  if (text === 'Тексты и контакты') {
+    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН'], ['Отмена']]);
+  }
+  if (MAX_CFG_BUTTONS[text]) {
+    const key = MAX_CFG_BUTTONS[text];
+    maxSessions.set(senderId, { step: 'wait_cfg', key });
+    return sendMaxMessage(senderId, `Текущее:\n${getSetting(key)}\n\nОтправьте новое значение:`, MAX_CANCEL);
+  }
+  if (text === 'Последние заказы' || text === '/orders') {
+    const orders = db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 10').all();
+    if (!orders.length) return sendMaxMessage(senderId, 'Заявок пока нет.', MAX_MENU);
+    const list = orders.map((o) => `• ${o.order_code} — ${Number(o.total).toLocaleString('ru-RU')} ₽ [${o.status}]`).join('\n');
+    const last = orders[0];
+    return sendMaxMessage(senderId, `Последние заказы:\n${list}`, [...maxOrderStatusKb(last.order_code), ...MAX_CANCEL]);
+  }
+
+  if (text.startsWith('/pay ')) {
+    const v = text.replace('/pay ', '').trim();
+    setSetting('payment_details', v);
+    return sendMaxMessage(senderId, `Реквизиты обновлены:\n${v}`, MAX_MENU);
+  }
+  if (text.startsWith('/add ')) {
+    const parts = text.replace('/add ', '').split('|').map((s) => s.trim());
+    if (parts.length < 4) return sendMaxMessage(senderId, 'Формат: /add GARMIN | fēnix | Название | 62320', MAX_MENU);
+    const [brand, series, name, priceStr] = parts;
+    const price = parseInt(priceStr.replace(/\D/g, ''), 10) || 0;
+    const id = finishAddingProductMax({ brand: brand.toUpperCase(), series, category: 'Спортивные часы', name, price, specs: '' }, 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80');
+    return sendMaxMessage(senderId, `Добавлено! ID: ${id}`, MAX_MENU);
+  }
+
+  return maxAdminMenu(senderId, 'Не понял команду. Выберите действие кнопкой:');
 }
 startMaxBotPolling();
 
