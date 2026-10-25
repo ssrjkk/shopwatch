@@ -15,7 +15,7 @@ describe('HTTP API (real server, temp DB)', () => {
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watchop-test-'));
     child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
       cwd: tmp, // watchop.db тестового запуска создастся здесь, боевая БД не затрагивается
-      env: { ...process.env, PORT: String(PORT), TG_BOT_TOKEN: '', TG_ADMIN_ID: '', MAX_BOT_TOKEN: '', MAX_ADMIN_ID: '' },
+      env: { ...process.env, PORT: String(PORT), TG_BOT_TOKEN: '', TG_ADMIN_ID: '', MAX_BOT_TOKEN: '', MAX_ADMIN_ID: '', ORDER_COOLDOWN_MS: '300' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     await new Promise((resolve, reject) => {
@@ -54,6 +54,7 @@ describe('HTTP API (real server, temp DB)', () => {
     const d = await r.json();
     assert.match(d.orderCode, /^TG-\d+$/);
     assert.ok(typeof d.paymentDetails === 'string');
+    assert.ok(typeof d.total === 'number');
   });
 
   it('immediate second order is rate-limited (429)', async () => {
@@ -64,17 +65,37 @@ describe('HTTP API (real server, temp DB)', () => {
   });
 
   it('empty cart is rejected (400), bad initData is rejected (403)', async () => {
-    await new Promise((r) => setTimeout(r, 5200)); // ждем конца антиспам-кулдауна от прошлых заявок
+    await new Promise((r) => setTimeout(r, 600)); // ждем конца антиспам-кулдауна от прошлых заявок
     const r1 = await fetch(`${BASE}/api/order`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [], total: 0 }),
     });
     assert.equal(r1.status, 400);
-    await new Promise((r) => setTimeout(r, 5200)); // пустая заявка тоже ставит кулдаун
+    await new Promise((r) => setTimeout(r, 600)); // пустая заявка тоже ставит кулдаун
     const r2 = await fetch(`${BASE}/api/order`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items: [{ id: 1, name: 'T', price: 1, qty: 1 }], total: 1, initData: 'x=1&hash=y' }),
     });
     assert.equal(r2.status, 403);
+  });
+
+  it('server reprices from DB and rejects bad items', async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    const post = (body) => fetch(`${BASE}/api/order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    // подмененная клиентом цена игнорируется: id 1 в сиде = 62320, qty 2
+    const r1 = await post({ items: [{ id: 1, name: 'HACK', price: 1, qty: 2 }], total: 5 });
+    assert.equal(r1.status, 200);
+    assert.equal((await r1.json()).total, 62320 * 2);
+    await new Promise((r) => setTimeout(r, 600));
+    // несуществующий товар
+    const r2 = await post({ items: [{ id: 999999, price: 1, qty: 1 }], total: 1 });
+    assert.equal(r2.status, 400);
+    await new Promise((r) => setTimeout(r, 600));
+    // больше 50 позиций
+    const r3 = await post({ items: Array.from({ length: 51 }, () => ({ id: 1, price: 1, qty: 1 })), total: 51 });
+    assert.equal(r3.status, 400);
+    // тело больше лимита 100kb
+    const r4 = await post({ items: [{ id: 1, price: 1, qty: 1 }], total: 1, pad: 'x'.repeat(150000) });
+    assert.equal(r4.status, 413);
   });
 
   it('serves the storefront and 404s missing uploads', async () => {

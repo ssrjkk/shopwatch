@@ -7,8 +7,17 @@ const DatabaseSync = require('node:sqlite').DatabaseSync;
 const { Telegraf, Markup, session } = require('telegraf');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+// --- Защита: лимит тела, security-заголовки, закрытый CORS по умолчанию ---
+app.use(express.json({ limit: '100kb' }));
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map((s) => s.trim()).filter(Boolean);
+app.use(cors(corsOrigins.length ? { origin: corsOrigins } : { origin: false }));
 
 const publicDir = path.join(__dirname, 'public');
 const uploadsDir = path.join(publicDir, 'uploads');
@@ -32,6 +41,8 @@ function verifyTelegramInitData(initData) {
     const params = new URLSearchParams(initData);
     const hash = params.get('hash');
     if (!hash) return null;
+    const authDate = Number(params.get('auth_date') || 0);
+    if (!(authDate > 0) || Date.now() / 1000 - authDate > 86400) return null; // подпись старше суток — недействительна
     params.delete('hash');
     const dataCheckString = [...params.entries()]
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
@@ -133,17 +144,31 @@ app.get('/api/state', (req, res) => {
 });
 
 const orderRateLimit = new Map();
+const ORDER_COOLDOWN_MS = Math.max(Number(process.env.ORDER_COOLDOWN_MS || 5000), 0);
 
 app.post('/api/order', async (req, res) => {
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
-  if (orderRateLimit.has(ip) && now - orderRateLimit.get(ip) < 5000) {
+  if (orderRateLimit.has(ip) && now - orderRateLimit.get(ip) < ORDER_COOLDOWN_MS) {
     return res.status(429).json({ error: 'Слишком быстро. Попробуйте ещё раз.' });
   }
   orderRateLimit.set(ip, now);
 
-  const { items, total, initData } = req.body;
-  if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'Пустой заказ' });
+  const { items, initData } = req.body;
+  if (!Array.isArray(items) || !items.length || items.length > 50) return res.status(400).json({ error: 'Пустой заказ' });
+
+  // Цены и названия берем только из своей БД — значениям от клиента не доверяем.
+  const cleanItems = [];
+  for (const it of items) {
+    const id = Number(it?.id);
+    const qty = Math.min(Math.max(parseInt(it?.qty, 10) || 1, 1), 99);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: 'Bad item id' });
+    const prod = db.prepare('SELECT id, name, price FROM products WHERE id = ?').get(id);
+    if (!prod) return res.status(400).json({ error: 'Товар не найден' });
+    cleanItems.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty });
+  }
+  if (!cleanItems.length) return res.status(400).json({ error: 'Пустой заказ' });
+  const serverTotal = cleanItems.reduce((s, i) => s + i.price * i.qty, 0);
 
   // Мини-апп может приложить initData для проверки подписи; без него — обычный веб-заказ.
   let tgUser = null;
@@ -156,11 +181,11 @@ app.post('/api/order', async (req, res) => {
   setSetting('last_order_num', nextNum);
   const orderCode = `TG-${nextNum}`;
 
-  db.prepare('INSERT INTO orders (order_code, items_json, total) VALUES (?, ?, ?)').run(orderCode, JSON.stringify(items), total);
+  db.prepare('INSERT INTO orders (order_code, items_json, total) VALUES (?, ?, ?)').run(orderCode, JSON.stringify(cleanItems), serverTotal);
 
-  const itemsText = items.map((i, idx) => `${idx + 1}. ${i.name} — ${i.qty} шт. x ${Number(i.price).toLocaleString('ru-RU')} ₽`).join('\n');
+  const itemsText = cleanItems.map((i, idx) => `${idx + 1}. ${i.name} — ${i.qty} шт. x ${Number(i.price).toLocaleString('ru-RU')} ₽`).join('\n');
   const clientTag = tgUser ? `\nКлиент TG: @${tgUser.username || tgUser.first_name} (id ${tgUser.id})` : '';
-  const notifyMsg = `НОВАЯ ЗАЯВКА ${orderCode}\n\nСостав:\n${itemsText}\n\nИтого: ${Number(total).toLocaleString('ru-RU')} ₽${clientTag}\nРеквизиты:\n${getSetting('payment_details')}`;
+  const notifyMsg = `НОВАЯ ЗАЯВКА ${orderCode}\n\nСостав:\n${itemsText}\n\nИтого: ${Number(serverTotal).toLocaleString('ru-RU')} ₽${clientTag}\nРеквизиты:\n${getSetting('payment_details')}`;
 
   if (tgBot && isValidEnv(process.env.TG_ADMIN_ID)) {
     tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID, notifyMsg, {
@@ -177,6 +202,7 @@ app.post('/api/order', async (req, res) => {
 
   res.json({
     orderCode,
+    total: serverTotal,
     paymentDetails: getSetting('show_payment') === '1' ? getSetting('payment_details') : ''
   });
 });
@@ -639,4 +665,5 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
 startMaxBotPolling();
 
 const PORT = process.env.PORT || 3000;
+if (!isValidEnv(process.env.TG_ADMIN_ID)) console.log('NOTE: TG_ADMIN_ID пуст — напишите боту /id и впишите свой ID в .env, иначе админка недоступна.');
 app.listen(PORT, () => console.log(`Watchop running on http://localhost:${PORT}`));

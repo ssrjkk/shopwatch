@@ -46,7 +46,7 @@ global.IntersectionObserver = global.window.IntersectionObserver;
 global.localStorage = { getItem: () => '[]', setItem: () => {} };
 global.fetch = async () => ({ ok: false });
 `;
-    g = eval(`(function(){ ${prelude}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, toggleFav, get document() { return document; }, hearts }; })()`);
+    g = eval(`(function(){ ${prelude}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, toggleFav, openProduct, get document() { return document; }, hearts, esc }; })()`);
     await new Promise((r) => setTimeout(r, 50));
   });
 
@@ -82,6 +82,17 @@ global.fetch = async () => ({ ok: false });
     assert.equal(g.state.filtered.length, 175);
     assert.equal(g.state.shownCount, 20);
     g.document.getElementById('search-input').value = '';
+  });
+
+  it('escapes HTML in product fields (stored XSS protection)', () => {
+    g.state.products = [{ id: 7, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: '<img src=x onerror=alert(1)>', price: 100, image: '" onerror=alert(2)', specs: '<script>alert(3)</script>' }];
+    g.document.getElementById('search-input').value = '';
+    g.renderCatalog();
+    const html = g.document.getElementById('products-grid').innerHTML;
+    assert.ok(!html.includes('<img src=x'), 'сырой тег не попал в разметку');
+    assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt;'), 'имя экранировано');
+    assert.ok(html.includes('src="&quot; onerror=alert(2)"') || !html.includes('" onerror=alert(2)"'), 'атрибут src экранирован');
+    assert.equal(g.esc('<a href="x">&\'"'), '&lt;a href=&quot;x&quot;&gt;&amp;&#39;&quot;');
   });
 
   it('favorite toggle does not re-render the grid', () => {
