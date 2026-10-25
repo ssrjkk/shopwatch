@@ -1,6 +1,9 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
 const { extractFrontendScript } = require('./helpers/load');
+const PD_SRC = fs.readFileSync(path.join(__dirname, '..', 'public', 'products-data.js'), 'utf8');
 
 describe('catalog virtualization', () => {
   let g;
@@ -46,7 +49,7 @@ global.IntersectionObserver = global.window.IntersectionObserver;
 global.localStorage = { getItem: () => '[]', setItem: () => {} };
 global.fetch = async () => ({ ok: false });
 `;
-    g = eval(`(function(){ ${prelude}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, toggleFav, openProduct, get document() { return document; }, hearts, esc }; })()`);
+    g = eval(`(function(){ ${prelude}\n${PD_SRC}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, renderHits, toggleFav, openProduct, tgOrderLink, get document() { return document; }, hearts, esc }; })()`);
     await new Promise((r) => setTimeout(r, 50));
   });
 
@@ -104,5 +107,18 @@ global.fetch = async () => ({ ok: false });
     assert.ok(g.hearts.get(1000).every((h) => h.classList.contains('text-red-500')));
     g.toggleFav({ stopPropagation() {} }, 1000);
     assert.ok(!g.state.favorites.includes(1000));
+  });
+
+  it('deep link points to the bot with order payload', () => {
+    const p = { id: 15, price: 25900 };
+    assert.equal(g.tgOrderLink('TG-1176', p), 'https://t.me/wwwatchshop_bot?start=TG-1176_15_25900');
+    assert.equal(g.tgOrderLink('consult', p), 'https://t.me/wwwatchshop_bot');
+  });
+
+  it('hits section renders flagged products', () => {
+    seed350();
+    g.state.products.forEach((p, i) => { p.hit = i < 3 ? 1 : 0; });
+    g.renderHits();
+    assert.ok(g.document.getElementById('hits-grid').innerHTML.includes('Watch 0'));
   });
 });

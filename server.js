@@ -94,7 +94,7 @@ const defaultSettings = {
   phone: '+7 (473) 300-40-95',
   email: 'watchopp@gmail.com',
   address: 'г. Воронеж, ул. Пушкинская, 8 (ТЦ «Аксиома home»)',
-  tg_link: 'https://t.me/watchop_manager',
+  tg_link: 'https://t.me/wwwatchshop_bot',
   max_link: 'https://max.ru/watchop',
   legal_name: 'ИП Жукова Татьяна Юрьевна',
   legal_inn: '362703988401',
@@ -110,45 +110,27 @@ for (const [k, v] of Object.entries(defaultSettings)) initSettingStmt.run(k, v);
 const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?').get(k)?.value ?? '';
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
 
-if (db.prepare('SELECT COUNT(*) as c FROM products').get().c === 0) {
-  const seed = [
-    { brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Garmin Fenix 8 — 51 мм Solar Sapphire Carbon Grey DLC', price: 62320, image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80', specs: 'Сапфир + солнечная зарядка, фонарик LED, дайвинг 40 м, топокарты.' },
-    { brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Garmin Fenix 8 — 51 мм AMOLED Sapphire Titanium Orange', price: 62320, image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80', specs: 'AMOLED 1.4", титан, дайвинг 40 м, мульти-GNSS.' },
-    { brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Garmin Fenix 7X Pro Sapphire Solar Titanium', price: 58990, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', specs: 'Фонарик, solar, 37 дней в смарт-режиме.' },
-    { brand: 'GARMIN', series: 'Forerunner', category: 'Спортивные часы', name: 'Garmin Forerunner 970 Carbon Grey DLC Titanium', price: 41200, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', specs: 'AMOLED, титан, двухчастотный GPS, карты.' },
-    { brand: 'GARMIN', series: 'Forerunner', category: 'Спортивные часы', name: 'Garmin Forerunner 570 — 47 мм Slate Grey / Black', price: 31210, image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80', specs: 'Беговые метрики, Garmin Pay, музыка.' },
-    { brand: 'GARMIN', series: 'Forerunner', category: 'Спортивные часы', name: 'Garmin Forerunner 265 Black AMOLED', price: 34990, image: 'https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=600&q=80', specs: 'AMOLED, Training Readiness, 20 дней.' },
-    { brand: 'GARMIN', series: 'Forerunner', category: 'Спортивные часы', name: 'Garmin Forerunner 965 Titanium Yellow', price: 45990, image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80', specs: 'Титан, AMOLED, полные карты.' },
-    { brand: 'GARMIN', series: 'Descent', category: 'Дайвинг компьютеры', name: 'Дайвинг компьютер Garmin Descent Mk3i 51 мм Carbon Grey', price: 125350, image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&q=80', specs: 'SubWave сонар, 200 м, AMOLED.' },
-    { brand: 'GARMIN', series: 'Descent', category: 'Дайвинг компьютеры', name: 'Дайвинг компьютер Garmin Descent Mk3 43 мм Stainless', price: 95890, image: 'https://images.unsplash.com/photo-1544117519-31a4b719223d?w=600&q=80', specs: 'Погружение 200 м, мульти-GNSS.' },
-    { brand: 'GARMIN', series: 'Descent', category: 'Дайвинг компьютеры', name: 'Garmin Descent X50i Large Format', price: 91770, image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80', specs: 'Большой формат для технодайвинга.' },
-    { brand: 'GARMIN', series: 'Instinct', category: 'Спортивные часы', name: 'Garmin Instinct 3 — 50 мм AMOLED Tactical Black', price: 38900, image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80', specs: 'MIL-STD-810, тактический режим.' },
-    { brand: 'GARMIN', series: 'Instinct', category: 'Спортивные часы', name: 'Garmin Instinct 2X Solar Tactical Tan', price: 32990, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', specs: 'Solar, бесконечная работа в эконом-режиме.' },
-    { brand: 'GARMIN', series: 'Venu', category: 'Спортивные часы', name: 'Garmin Venu 3 — 45 мм Slate / Black', price: 36400, image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80', specs: 'Сон, звонки с запястья, 30+ профилей.' },
-    { brand: 'GARMIN', series: 'MARQ', category: 'Спортивные часы', name: 'Garmin MARQ Athlete (Gen 2) — Carbon Edition', price: 215000, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', specs: 'Кованый карбон 130 слоев, сапфир.' },
-    { brand: 'GARMIN', series: 'vívoactive', category: 'Фитнес-трекеры', name: 'Garmin vivoactive 5 Metallic Navy', price: 24900, image: 'https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=600&q=80', specs: 'AMOLED, Body Battery, 11 дней.' },
-    { brand: 'GARMIN', series: 'Lily', category: 'Фитнес-трекеры', name: 'Garmin Lily 2 Active Lunar Gold / Bone', price: 27500, image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80', specs: 'Компактные женские, скрытый дисплей.' },
-    { brand: 'GARMIN', series: 'tactix', category: 'Спортивные часы', name: 'Garmin tactix 7 AMOLED Ballistics Titanium', price: 108900, image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80', specs: 'Баллистика Applied Ballistics, NVG.' },
-    { brand: 'GARMIN', series: 'epix', category: 'Спортивные часы', name: 'Garmin Epix Pro Gen 2 51 мм Sapphire Carbon', price: 79990, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', specs: 'AMOLED, фонарик, топокарты.' },
-    { brand: 'GARMIN', series: 'Enduro', category: 'Спортивные часы', name: 'Garmin Enduro 3 Solar Black', price: 69990, image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80', specs: 'Ультра-автономность 90 дней solar.' },
-    { brand: 'APPLE', series: 'Apple Watch', category: 'Спортивные часы', name: 'Apple Watch Ultra 2 49 мм Black Titanium Trail Loop', price: 74990, image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80', specs: 'Титан 49 мм, 3000 нит, EN13319.' },
-    { brand: 'APPLE', series: 'Apple Watch', category: 'Спортивные часы', name: 'Apple Watch Series 10 46 мм Jet Black', price: 42990, image: 'https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=600&q=80', specs: 'Тонкий корпус, OLED, глубиномер.' },
-    { brand: 'SAMSUNG', series: 'Galaxy Watch', category: 'Спортивные часы', name: 'Samsung Galaxy Watch Ultra 47 мм LTE Titanium Gray', price: 49990, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', specs: 'Титан, сапфир, 10 АТМ, Galaxy AI.' },
-    { brand: 'SAMSUNG', series: 'Galaxy Watch', category: 'Спортивные часы', name: 'Samsung Galaxy Watch 7 44 мм Green', price: 26990, image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80', specs: '3 нм, BioActive, двухчастотный GPS.' },
-    { brand: 'SUUNTO', series: 'Suunto', category: 'Спортивные часы', name: 'Suunto Vertical Titanium Solar Canyon', price: 64900, image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80', specs: 'Офлайн-карты, 60 дней.' },
-    { brand: 'SUUNTO', series: 'Suunto', category: 'Спортивные часы', name: 'Suunto Race S Titanium Canary AMOLED', price: 41500, image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80', specs: 'Мультиспорт, AMOLED.' },
-    { brand: 'POLAR', series: 'Polar', category: 'Спортивные часы', name: 'Polar Grit X2 Pro Titan Sapphire', price: 68400, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', specs: 'ЭКГ, SpO2, титан.' },
-    { brand: 'POLAR', series: 'Polar', category: 'Спортивные часы', name: 'Polar Vantage V3 Night Black', price: 54900, image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80', specs: 'Elixir biosensing, AMOLED.' },
-    { brand: 'COROS', series: 'COROS', category: 'Спортивные часы', name: 'COROS VERTIX 2S Space', price: 63500, image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&q=80', specs: '40 дней, офлайн-карты, сапфир+титан.' },
-    { brand: 'COROS', series: 'COROS', category: 'Спортивные часы', name: 'COROS Pace 3 White Nylon', price: 22990, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', specs: 'Легкие 30 г, 38 часов GPS.' },
-    { brand: 'HUAWEI', series: 'Huawei Watch', category: 'Спортивные часы', name: 'Huawei Watch Ultimate Green Zirconium', price: 59990, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', specs: 'Жидкий металл, 100 м.' },
-    { brand: 'HUAWEI', series: 'Huawei Watch', category: 'Спортивные часы', name: 'Huawei Watch GT 5 Pro Black Titanium', price: 32990, image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80', specs: 'Титан, ECG, 14 дней.' },
-    { brand: 'AMAZFIT', series: 'Amazfit', category: 'Спортивные часы', name: 'Amazfit T-Rex 3 48 мм Onyx Military', price: 25900, image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=80', specs: '2000 нит, -30C, 27 дней.' },
-    { brand: 'CASIO', series: 'G-Shock', category: 'Спортивные часы', name: 'Casio G-Shock GBD-H2000-1A9 Solar GPS', price: 37900, image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80', specs: 'Пульсометр, GPS, solar.' }
-  ];
-  const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?, ?, ?, ?, ?, ?, ?)');
-  for (const x of seed) ins.run(x.brand, x.series, x.category, x.name, x.price, x.image, x.specs);
+// Миграция старой ссылки менеджера на рабочего бота + колонка хитов для существующих БД
+if (getSetting('tg_link') === 'https://t.me/watchop_manager') setSetting('tg_link', 'https://t.me/wwwatchshop_bot');
+try { db.exec('ALTER TABLE products ADD COLUMN is_hit INTEGER DEFAULT 0'); } catch (e) {}
+
+const SEED_PRODUCTS = require('./public/products-data.js');
+{
+  const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, image, specs, is_hit) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+  const put = (x) => ins.run(x.brand, x.series, x.category, x.name, x.price, x.image, x.specs, x.hit ? 1 : 0);
+  if (db.prepare('SELECT COUNT(*) as c FROM products').get().c === 0) {
+    for (const x of SEED_PRODUCTS) put(x);
+    console.log(`Catalog seeded: ${SEED_PRODUCTS.length} products`);
+  } else {
+    const have = new Set(db.prepare('SELECT name FROM products').all().map((r) => r.name));
+    let added = 0;
+    for (const x of SEED_PRODUCTS) {
+      if (!have.has(x.name)) { put(x); added++; }
+    }
+    if (added) console.log(`Catalog upgraded: +${added} products`);
+  }
 }
+
 
 // ---------- API ----------
 let tgBot = null;
@@ -245,7 +227,8 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const shopKb = tgShopButtons();
     if (!isTgAdmin(ctx)) {
       const payload = ctx.startPayload;
-      if (payload && payload.startsWith('TG-')) return handleClientOrderLookupTg(ctx, payload);
+      const codeMatch = String(payload || '').match(/TG-\d+/i);
+      if (codeMatch) return handleSiteOrderPayload(ctx, codeMatch[0].toUpperCase(), payload);
       await ctx.reply('Здравствуйте! Магазин Watchop. Отправьте номер заказа (например, TG-1176), менеджер проверит наличие и пришлет реквизиты.');
       if (shopKb.length) return ctx.reply('Каталог и заказ в 1 клик — прямо в Telegram:', Markup.inlineKeyboard([shopKb]));
       return;
@@ -399,6 +382,37 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       .run(d.brand, d.series, d.category, d.name, d.price, imageUrl, d.specs || '');
     ctx.session = {};
     ctx.reply(`Часы "${d.name}" (${Number(d.price).toLocaleString('ru-RU')} ₽) добавлены! ID: ${info.lastInsertRowid}`);
+  }
+
+  // Заказ с витрины: если код уже есть в БД (свой бэкенд) — показываем его.
+  // Если витрина без бэкенда (GitHub Pages) — создаём заявку из deep link TG-XXXX_ID_PRICE.
+  function handleSiteOrderPayload(ctx, code, payload) {
+    let order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
+    if (!order) {
+      const parts = String(payload || '').split('_');
+      const prodId = parseInt(parts[1] || '', 10) || null;
+      const payloadPrice = parseInt(parts[2] || '', 10) || 0;
+      let name = prodId ? `Товар #${prodId}` : 'Заказ с сайта';
+      let dbPrice = 0;
+      if (prodId) {
+        const prod = db.prepare('SELECT name, price FROM products WHERE id = ?').get(prodId);
+        if (prod) { name = prod.name; dbPrice = prod.price; }
+      }
+      const total = payloadPrice > 0 ? payloadPrice : dbPrice;
+      try {
+        db.prepare('INSERT INTO orders (order_code, items_json, total, status) VALUES (?, ?, ?, ?)').run(
+          code, JSON.stringify([{ id: prodId, name, price: total, qty: 1 }]), total, 'Новый (сайт)'
+        );
+      } catch (e) { /* код уже занят — покажем существующий */ }
+      order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
+      if (order && isValidEnv(process.env.TG_ADMIN_ID)) {
+        const clientTag = ctx.from.username ? `@${ctx.from.username}` : (ctx.from.first_name || 'Клиент');
+        tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID,
+          `🔔 НОВАЯ ЗАЯВКА С САЙТА ${code}\n👤 Клиент: ${clientTag} (ID: ${ctx.from.id})\n📦 ${name}\n💰 ${Number(order.total).toLocaleString('ru-RU')} ₽`
+        ).catch(() => {});
+      }
+    }
+    return handleClientOrderLookupTg(ctx, code);
   }
 
   function handleClientOrderLookupTg(ctx, code) {

@@ -42,7 +42,7 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.equal(r.status, 200);
     const d = await r.json();
     assert.ok(d.settings.hero_title);
-    assert.ok(Array.isArray(d.products) && d.products.length > 0);
+    assert.ok(Array.isArray(d.products) && d.products.length >= 300);
   });
 
   it('POST /api/order creates TG-XXXX with payment details', async () => {
@@ -81,10 +81,12 @@ describe('HTTP API (real server, temp DB)', () => {
   it('server reprices from DB and rejects bad items', async () => {
     await new Promise((r) => setTimeout(r, 600));
     const post = (body) => fetch(`${BASE}/api/order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    // подмененная клиентом цена игнорируется: id 1 в сиде = 62320, qty 2
+    // подмененная клиентом цена игнорируется: сервер считает по своей БД
+    const st = await (await fetch(`${BASE}/api/state`)).json();
+    const p1 = st.products.find((p) => p.id === 1);
     const r1 = await post({ items: [{ id: 1, name: 'HACK', price: 1, qty: 2 }], total: 5 });
     assert.equal(r1.status, 200);
-    assert.equal((await r1.json()).total, 62320 * 2);
+    assert.equal((await r1.json()).total, p1.price * 2);
     await new Promise((r) => setTimeout(r, 600));
     // несуществующий товар
     const r2 = await post({ items: [{ id: 999999, price: 1, qty: 1 }], total: 1 });
