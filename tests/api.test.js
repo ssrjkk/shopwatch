@@ -98,6 +98,15 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.equal(r4.status, 413);
   });
 
+  it('GET /healthz reports ok with counters', async () => {
+    const r = await fetch(`${BASE}/healthz`);
+    assert.equal(r.status, 200);
+    const d = await r.json();
+    assert.equal(d.ok, true);
+    assert.ok(d.products > 0);
+    assert.ok(typeof d.uptime === 'number');
+  });
+
   it('serves the storefront and 404s missing uploads', async () => {
     const r1 = await fetch(`${BASE}/`);
     assert.equal(r1.status, 200);

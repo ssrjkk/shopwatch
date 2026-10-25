@@ -31,6 +31,22 @@ function isValidEnv(val) {
 // URL мини-приложения (Telegram Mini App), открывается кнопкой web_app в боте.
 // Задается в .env: WEBAPP_URL=https://<твой-домен> (нужен публичный HTTPS).
 const WEBAPP_URL = (process.env.WEBAPP_URL || '').trim();
+// Публичная витрина (например, GitHub Pages) — кнопка-ссылка, когда мини-аппа нет.
+const SHOP_URL = (process.env.SHOP_URL || '').trim();
+
+function tgShopButtons() {
+  if (WEBAPP_URL) return [Markup.button.webApp('Открыть магазин', WEBAPP_URL)];
+  if (SHOP_URL) return [Markup.button.url('Открыть каталог', SHOP_URL)];
+  return [];
+}
+
+function tgAdminMenuKb() {
+  return Markup.keyboard([
+    ['Добавить часы', 'Товары и цены'],
+    ['Реквизиты оплаты', 'Тексты и контакты'],
+    ['Последние заказы']
+  ]).resize();
+}
 
 function verifyTelegramInitData(initData) {
   // Проверка подписи https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
@@ -58,7 +74,7 @@ function verifyTelegramInitData(initData) {
 }
 
 // ---------- DB ----------
-const db = new DatabaseSync('watchop.db');
+const db = new DatabaseSync(process.env.DB_PATH || 'watchop.db');
 db.exec(`
   CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
   CREATE TABLE IF NOT EXISTS products (
@@ -143,6 +159,16 @@ app.get('/api/state', (req, res) => {
   res.json({ settings, products });
 });
 
+app.get('/healthz', (req, res) => {
+  try {
+    const products = db.prepare('SELECT COUNT(*) AS c FROM products').get().c;
+    const orders = db.prepare('SELECT COUNT(*) AS c FROM orders').get().c;
+    res.json({ ok: true, products, orders, uptime: Math.round(process.uptime()) });
+  } catch (e) {
+    res.status(500).json({ ok: false });
+  }
+});
+
 const orderRateLimit = new Map();
 const ORDER_COOLDOWN_MS = Math.max(Number(process.env.ORDER_COOLDOWN_MS || 5000), 0);
 
@@ -216,23 +242,20 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
   tgBot.command('id', (ctx) => ctx.reply(`Ваш Telegram ID: ${ctx.from.id}`));
 
   tgBot.start(async (ctx) => {
+    const shopKb = tgShopButtons();
     if (!isTgAdmin(ctx)) {
       const payload = ctx.startPayload;
       if (payload && payload.startsWith('TG-')) return handleClientOrderLookupTg(ctx, payload);
       await ctx.reply('Здравствуйте! Магазин Watchop. Отправьте номер заказа (например, TG-1176), менеджер проверит наличие и пришлет реквизиты.');
-      if (WEBAPP_URL) return ctx.reply('Каталог и заказ в 1 клик — прямо в Telegram:', Markup.inlineKeyboard([[Markup.button.webApp('Открыть магазин', WEBAPP_URL)]]));
+      if (shopKb.length) return ctx.reply('Каталог и заказ в 1 клик — прямо в Telegram:', Markup.inlineKeyboard([shopKb]));
       return;
     }
     ctx.session = {};
     await ctx.reply(
       `Админ-панель Watchop (Telegram)\nВаш ID: ${ctx.from.id}\nВыберите действие:`,
-      Markup.keyboard([
-        ['Добавить часы', 'Товары и цены'],
-        ['Реквизиты оплаты', 'Тексты и контакты'],
-        ['Последние заказы']
-      ]).resize()
+      tgAdminMenuKb()
     );
-    if (WEBAPP_URL) return ctx.reply('Мини-приложение магазина:', Markup.inlineKeyboard([[Markup.button.webApp('Открыть магазин', WEBAPP_URL)]]));
+    if (shopKb.length) return ctx.reply('Магазин:', Markup.inlineKeyboard([shopKb]));
   });
 
   tgBot.hears('Реквизиты оплаты', (ctx) => {
@@ -329,8 +352,10 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       const buf = Buffer.from(await resp.arrayBuffer());
       const fileName = `watch_${Date.now()}.jpg`;
       fs.writeFileSync(path.join(uploadsDir, fileName), buf);
+      console.log(`TG photo saved: ${fileName} (${(buf.length / 1024).toFixed(0)} KB)`);
       finishAddingProductTg(ctx, `/uploads/${fileName}`);
     } catch (e) {
+      console.error('TG photo save failed:', e.message);
       ctx.reply('Не удалось сохранить фото. Отправьте ссылку.');
     }
   });
@@ -347,6 +372,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       return ctx.reply('Спасибо! Менеджер получил сообщение и скоро ответит.');
     }
     const s = ctx.session || {};
+    if (txt === 'Отмена') { ctx.session = {}; return ctx.reply('Отменено. Выберите действие:', tgAdminMenuKb()); }
     if (s.step === 'wait_pay') { setSetting('payment_details', txt); ctx.session = {}; return ctx.reply('Реквизиты обновлены!'); }
     if (s.step === 'wait_cfg') { setSetting(s.key, txt); ctx.session = {}; return ctx.reply('Сохранено!'); }
     if (s.step === 'wait_price') {
@@ -400,21 +426,32 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
 const MAX_API = 'https://platform-api2.max.ru';
 const maxSessions = new Map(); // userId -> { step, draft, prodId, key }
 
-function maxKb(rows) {
-  // Кнопки типа message присылают боту заранее заданный текст — меню работает без answers API
+function maxKb(rows, extraButtons) {
+  // Кнопки типа message присылают боту заранее заданный текст — меню работает без answers API.
+  // extraButtons — готовые кнопки других типов (link), добавляются последним рядом.
+  const buttons = rows.map((r) => r.map((t) => ({ type: 'message', text: t, payload: t })));
+  if (extraButtons && extraButtons.length) buttons.push(extraButtons);
   return [{
     type: 'inline_keyboard',
-    payload: { buttons: rows.map((r) => r.map((t) => ({ type: 'message', text: t, payload: t }))) }
+    payload: { buttons }
   }];
+}
+
+function maxShopLinkButtons() {
+  const web = (process.env.WEBAPP_URL || '').trim();
+  const shop = (process.env.SHOP_URL || '').trim();
+  if (web) return [{ type: 'link', text: 'Открыть магазин', url: web }];
+  if (shop) return [{ type: 'link', text: 'Открыть каталог', url: shop }];
+  return [];
 }
 
 const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы']];
 const MAX_CANCEL = [['Отмена']];
 
-async function sendMaxMessage(userId, text, kbRows) {
+async function sendMaxMessage(userId, text, kbRows, extraButtons) {
   if (!isValidEnv(process.env.MAX_BOT_TOKEN)) return;
   const body = { text: String(text).slice(0, 4000) };
-  if (kbRows) body.attachments = maxKb(kbRows);
+  if (kbRows) body.attachments = maxKb(kbRows, extraButtons);
   await fetch(`${MAX_API}/messages?user_id=${userId}`, {
     method: 'POST',
     headers: { Authorization: process.env.MAX_BOT_TOKEN, 'Content-Type': 'application/json' },
@@ -455,7 +492,7 @@ async function maxNotifyAdmin(text, orderCode) {
 }
 
 async function maxAdminMenu(userId, title) {
-  await sendMaxMessage(userId, title || 'Админ-панель Watchop (MAX). Выберите действие:', [...MAX_MENU, ...MAX_CANCEL]);
+  await sendMaxMessage(userId, title || 'Админ-панель Watchop (MAX). Выберите действие:', [...MAX_MENU, ...MAX_CANCEL], maxShopLinkButtons());
 }
 
 const MAX_CFG_BUTTONS = {

@@ -20,6 +20,29 @@
    - `MAX_ADMIN_ID` — напиши MAX-боту `/id`
 3. `npm start` — сайт на http://localhost:3000
 
+## Docker (для VPS, например rdp.sh)
+
+```
+docker build -t watchop .
+docker run -d --name watchop -p 3000:3000 \
+  -v watchop-data:/data \
+  --env-file .env \
+  watchop
+```
+
+`.env` не копируется в образ (см. `.dockerignore`) — передаётся через `--env-file`.
+База лежит в volume (`DB_PATH=/data/watchop.db`), здоровье — `GET /healthz`.
+
+## Переменные окружения
+
+- `TG_BOT_TOKEN`, `TG_ADMIN_ID` — бот и ID админа (`/id` у бота)
+- `MAX_BOT_TOKEN`, `MAX_ADMIN_ID` — то же для MAX
+- `WEBAPP_URL` — публичный HTTPS мини-приложения (кнопка web_app в ТГ)
+- `SHOP_URL` — публичная витрина (кнопка-ссылка в ботах, если нет `WEBAPP_URL`)
+- `CORS_ORIGIN` — разрешённые origins через запятую (по умолчанию same-origin)
+- `ORDER_COOLDOWN_MS` — антиспам-кулдаун (по умолчанию 5000)
+- `DB_PATH` — путь к SQLite (по умолчанию `watchop.db`)
+
 Без токенов сервер работает в демо-режиме. `.env` не коммитится (см. `.gitignore`).
 
 ## Telegram-бот (админка)
@@ -62,6 +85,7 @@
 
 - `GET /api/state` → `{ settings, products }`
 - `POST /api/order {items, total}` → `{ orderCode: TG-XXXX, paymentDetails }`, антиспам 5 сек (`429`)
+- `GET /healthz` → `{ ok, products, orders, uptime }` (для Docker HEALTHCHECK и мониторинга)
 
 ## Защита
 
@@ -76,9 +100,9 @@
 
 ## Тесты
 
-`npm test` — 25 тестов, встроенный раннер Node (без установки):
+`npm test` — 27 тестов, встроенный раннер Node (без установки):
 
-- `tests/api.test.js` — живой сервер на временном порту и пустой БД: state, заказ `TG-XXXX`, антиспам `429`, `400`/`403`, статика, `404`
+- `tests/api.test.js` — живой сервер на временном порту и пустой БД: state, заказ `TG-XXXX`, антиспам `429`, `400`/`403`, перерасчёт цен, `healthz`, статика
 - `tests/initdata.test.js` — подпись Mini App: валидная/битая/пустая/без токена
-- `tests/max.test.js` — MAX-паритет: меню, мастер добавления, цены, реквизиты, настройки, статусы, клиентский поиск, отмена
+- `tests/max.test.js` — MAX-паритет: меню, мастер добавления, цены, реквизиты, настройки, статусы, клиентский поиск, отмена, кнопка магазина
 - `tests/virtual.test.js` — виртуализация: первый чанк 20/350, догрузка скроллом, сброс при поиске, экранирование XSS, избранное без перерисовки

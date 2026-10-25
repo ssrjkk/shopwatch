@@ -110,4 +110,12 @@ process.env.MAX_ADMIN_ID = '999';
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Отмена'));
     assert.ok(!api.maxSessions.has(999));
   });
+
+  it('admin menu appends shop link button when SHOP_URL is set', async () => {
+    process.env.SHOP_URL = 'https://example.com/shop';
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '/start'));
+    const atts = JSON.stringify(api.lastTo(999).body.attachments);
+    assert.ok(atts.includes('Открыть каталог') && atts.includes('https://example.com/shop'));
+    delete process.env.SHOP_URL;
+  });
 });

@@ -1,0 +1,6 @@
+node_modules/
+watchop.db
+.env
+*.log
+.git/
+tests/
