@@ -19,6 +19,33 @@ function isValidEnv(val) {
   return val && typeof val === 'string' && val.trim() !== '' && !val.startsWith('ВСТАВЬ_');
 }
 
+// URL мини-приложения (Telegram Mini App), открывается кнопкой web_app в боте.
+// Задается в .env: WEBAPP_URL=https://<твой-домен> (нужен публичный HTTPS).
+const WEBAPP_URL = (process.env.WEBAPP_URL || '').trim();
+
+function verifyTelegramInitData(initData) {
+  // Проверка подписи https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+  // Возвращает объект user из Mini App или null. Используется в тестах и в POST /api/order.
+  if (!initData || !isValidEnv(process.env.TG_BOT_TOKEN)) return null;
+  try {
+    const crypto = require('crypto');
+    const params = new URLSearchParams(initData);
+    const hash = params.get('hash');
+    if (!hash) return null;
+    params.delete('hash');
+    const dataCheckString = [...params.entries()]
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n');
+    const secret = crypto.createHmac('sha256', 'WebAppData').update(process.env.TG_BOT_TOKEN).digest();
+    const calc = crypto.createHmac('sha256', secret).update(dataCheckString).digest('hex');
+    if (calc !== hash) return null;
+    return JSON.parse(params.get('user') || 'null');
+  } catch (e) {
+    return null;
+  }
+}
+
 // ---------- DB ----------
 const db = new DatabaseSync('watchop.db');
 db.exec(`
@@ -115,8 +142,15 @@ app.post('/api/order', async (req, res) => {
   }
   orderRateLimit.set(ip, now);
 
-  const { items, total } = req.body;
+  const { items, total, initData } = req.body;
   if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'Пустой заказ' });
+
+  // Мини-апп может приложить initData для проверки подписи; без него — обычный веб-заказ.
+  let tgUser = null;
+  if (initData) {
+    tgUser = verifyTelegramInitData(initData);
+    if (!tgUser) return res.status(403).json({ error: 'Bad initData signature' });
+  }
 
   const nextNum = parseInt(getSetting('last_order_num') || '1175', 10) + 1;
   setSetting('last_order_num', nextNum);
@@ -125,7 +159,8 @@ app.post('/api/order', async (req, res) => {
   db.prepare('INSERT INTO orders (order_code, items_json, total) VALUES (?, ?, ?)').run(orderCode, JSON.stringify(items), total);
 
   const itemsText = items.map((i, idx) => `${idx + 1}. ${i.name} — ${i.qty} шт. x ${Number(i.price).toLocaleString('ru-RU')} ₽`).join('\n');
-  const notifyMsg = `НОВАЯ ЗАЯВКА ${orderCode}\n\nСостав:\n${itemsText}\n\nИтого: ${Number(total).toLocaleString('ru-RU')} ₽\nРеквизиты:\n${getSetting('payment_details')}`;
+  const clientTag = tgUser ? `\nКлиент TG: @${tgUser.username || tgUser.first_name} (id ${tgUser.id})` : '';
+  const notifyMsg = `НОВАЯ ЗАЯВКА ${orderCode}\n\nСостав:\n${itemsText}\n\nИтого: ${Number(total).toLocaleString('ru-RU')} ₽${clientTag}\nРеквизиты:\n${getSetting('payment_details')}`;
 
   if (tgBot && isValidEnv(process.env.TG_ADMIN_ID)) {
     tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID, notifyMsg, {
@@ -154,14 +189,16 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
 
   tgBot.command('id', (ctx) => ctx.reply(`Ваш Telegram ID: ${ctx.from.id}`));
 
-  tgBot.start((ctx) => {
+  tgBot.start(async (ctx) => {
     if (!isTgAdmin(ctx)) {
       const payload = ctx.startPayload;
       if (payload && payload.startsWith('TG-')) return handleClientOrderLookupTg(ctx, payload);
-      return ctx.reply('Здравствуйте! Магазин Watchop. Отправьте номер заказа (например, TG-1176), менеджер проверит наличие и пришлет реквизиты.');
+      await ctx.reply('Здравствуйте! Магазин Watchop. Отправьте номер заказа (например, TG-1176), менеджер проверит наличие и пришлет реквизиты.');
+      if (WEBAPP_URL) return ctx.reply('Каталог и заказ в 1 клик — прямо в Telegram:', Markup.inlineKeyboard([[Markup.button.webApp('Открыть магазин', WEBAPP_URL)]]));
+      return;
     }
     ctx.session = {};
-    return ctx.reply(
+    await ctx.reply(
       `Админ-панель Watchop (Telegram)\nВаш ID: ${ctx.from.id}\nВыберите действие:`,
       Markup.keyboard([
         ['Добавить часы', 'Товары и цены'],
@@ -169,6 +206,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
         ['Последние заказы']
       ]).resize()
     );
+    if (WEBAPP_URL) return ctx.reply('Мини-приложение магазина:', Markup.inlineKeyboard([[Markup.button.webApp('Открыть магазин', WEBAPP_URL)]]));
   });
 
   tgBot.hears('Реквизиты оплаты', (ctx) => {

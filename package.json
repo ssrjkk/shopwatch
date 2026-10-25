@@ -4,7 +4,8 @@
   "description": "Watchop Smartwatch Store with Telegram & MAX Admin Bots",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test tests/api.test.js tests/initdata.test.js tests/max.test.js tests/virtual.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

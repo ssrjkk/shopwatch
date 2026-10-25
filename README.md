@@ -44,7 +44,29 @@
 - Клиентам: номер `TG-XXXX` — состав + сумма + реквизиты; остальное пересылается админу
 - Примечание: long polling подходит для теста; для продакшена MAX рекомендует Webhook (`POST /subscriptions`)
 
+## Мини-приложение Telegram (Mini App)
+
+Та же витрина открывается внутри Telegram:
+
+1. Задеплой бота на публичный HTTPS (VPS/rdp.sh) и задай в `.env`: `WEBAPP_URL=https://<твой-домен>`
+2. В @BotFather: `/setmenubutton` → выбери `@wwwatchshop_bot` → пришли `WEBAPP_URL` + текст «Магазин»
+   (или `/newapp` для отдельной иконки приложения)
+3. Бот сам покажет кнопку «Открыть магазин» (web_app) в `/start` — и клиентам, и админу
+
+Что умеет мини-апп: `telegram-web-app.js`, `ready/expand`, тема из `themeParams`,
+`BackButton` (назад в каталог), `HapticFeedback` при заказе, подпись `initData`
+уходит в `POST /api/order` и проверяется сервером (`verifyTelegramInitData`, 403 при подделке).
+
 ## API сайта
 
 - `GET /api/state` → `{ settings, products }`
 - `POST /api/order {items, total}` → `{ orderCode: TG-XXXX, paymentDetails }`, антиспам 5 сек (`429`)
+
+## Тесты
+
+`npm test` — 22 теста, встроенный раннер Node (без установки):
+
+- `tests/api.test.js` — живой сервер на временном порту и пустой БД: state, заказ `TG-XXXX`, антиспам `429`, `400`/`403`, статика, `404`
+- `tests/initdata.test.js` — подпись Mini App: валидная/битая/пустая/без токена
+- `tests/max.test.js` — MAX-паритет: меню, мастер добавления, цены, реквизиты, настройки, статусы, клиентский поиск, отмена
+- `tests/virtual.test.js` — виртуализация: первый чанк 20/350, догрузка скроллом, сброс при поиске, избранное без перерисовки
