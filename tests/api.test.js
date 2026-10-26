@@ -48,7 +48,7 @@ describe('HTTP API (real server, temp DB)', () => {
   it('POST /api/order creates TG-XXXX with payment details', async () => {
     const r = await fetch(`${BASE}/api/order`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: [{ id: 1, name: 'Test', price: 1000, qty: 1 }], total: 1000 }),
+      body: JSON.stringify({ items: [{ id: 1, name: 'Test', price: 1000, qty: 1 }], total: 1000, customer: { fio: 'Test', phone: '+7000' } }),
     });
     assert.equal(r.status, 200);
     const d = await r.json();
@@ -73,7 +73,7 @@ describe('HTTP API (real server, temp DB)', () => {
     await new Promise((r) => setTimeout(r, 600)); // пустая заявка тоже ставит кулдаун
     const r2 = await fetch(`${BASE}/api/order`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: [{ id: 1, name: 'T', price: 1, qty: 1 }], total: 1, initData: 'x=1&hash=y' }),
+      body: JSON.stringify({ items: [{ id: 1, name: 'T', price: 1, qty: 1 }], total: 1, customer: { fio: 'T', phone: 'P' }, initData: 'x=1&hash=y' }),
     });
     assert.equal(r2.status, 403);
   });
@@ -84,7 +84,8 @@ describe('HTTP API (real server, temp DB)', () => {
     // подмененная клиентом цена игнорируется: сервер считает по своей БД
     const st = await (await fetch(`${BASE}/api/state`)).json();
     const p1 = st.products.find((p) => p.id === 1);
-    const r1 = await post({ items: [{ id: 1, name: 'HACK', price: 1, qty: 2 }], total: 5 });
+    const cust = { fio: 'Test', phone: '+7000' };
+    const r1 = await post({ items: [{ id: 1, name: 'HACK', price: 1, qty: 2 }], total: 5, customer: cust });
     assert.equal(r1.status, 200);
     assert.equal((await r1.json()).total, p1.price * 2);
     await new Promise((r) => setTimeout(r, 600));
@@ -98,6 +99,20 @@ describe('HTTP API (real server, temp DB)', () => {
     // тело больше лимита 100kb
     const r4 = await post({ items: [{ id: 1, price: 1, qty: 1 }], total: 1, pad: 'x'.repeat(150000) });
     assert.equal(r4.status, 413);
+  });
+
+  it('order requires customer name and phone', async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    const post = (body) => fetch(`${BASE}/api/order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const r1 = await post({ items: [{ id: 1, qty: 1 }], total: 1 });
+    assert.equal(r1.status, 400);
+    await new Promise((r) => setTimeout(r, 600));
+    const r2 = await post({ items: [{ id: 1, qty: 1 }], total: 1, customer: { fio: 'Иван' } });
+    assert.equal(r2.status, 400);
+    await new Promise((r) => setTimeout(r, 600));
+    const r3 = await post({ items: [{ id: 1, qty: 1 }], total: 1, customer: { fio: 'Иван', phone: '+7900', delivery: 'Почта России', address: 'г. Тест' } });
+    assert.equal(r3.status, 200);
+    assert.match((await r3.json()).orderCode, /^TG-\d+$/);
   });
 
   it('GET /healthz reports ok with counters', async () => {

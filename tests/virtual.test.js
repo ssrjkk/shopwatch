@@ -49,7 +49,7 @@ global.IntersectionObserver = global.window.IntersectionObserver;
 global.localStorage = { getItem: () => '[]', setItem: () => {} };
 global.fetch = async () => ({ ok: false });
 `;
-    g = eval(`(function(){ ${prelude}\n${PD_SRC}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, renderHits, toggleFav, openProduct, tgOrderLink, get document() { return document; }, hearts, esc }; })()`);
+    g = eval(`(function(){ ${prelude}\n${PD_SRC}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, renderHits, toggleFav, openProduct, tgOrderLink, addToCart, changeQty, removeFromCart, cartCount, cartTotal, renderCart, submitOrder, get document() { return document; }, hearts, esc }; })()`);
     await new Promise((r) => setTimeout(r, 50));
   });
 
@@ -109,10 +109,10 @@ global.fetch = async () => ({ ok: false });
     assert.ok(!g.state.favorites.includes(1000));
   });
 
-  it('deep link points to the bot with order payload', () => {
-    const p = { id: 15, price: 25900 };
-    assert.equal(g.tgOrderLink('TG-1176', p), 'https://t.me/wwwatchshop_bot?start=TG-1176_15_25900');
-    assert.equal(g.tgOrderLink('consult', p), 'https://t.me/wwwatchshop_bot');
+  it('deep link points to the bot with order and cart payload', () => {
+    const items = [{ id: 15, qty: 2, price: 25900 }, { id: 3, qty: 1, price: 10000 }];
+    assert.equal(g.tgOrderLink('TG-1176', items), 'https://t.me/wwwatchshop_bot?start=TG-1176_15x2x25900_3x1x10000');
+    assert.equal(g.tgOrderLink('consult'), 'https://t.me/wwwatchshop_bot');
   });
 
   it('hits section renders flagged products', () => {
@@ -120,5 +120,41 @@ global.fetch = async () => ({ ok: false });
     g.state.products.forEach((p, i) => { p.hit = i < 3 ? 1 : 0; });
     g.renderHits();
     assert.ok(g.document.getElementById('hits-grid').innerHTML.includes('Watch 0'));
+  });
+
+  it('cart add / qty / remove updates count and total', () => {
+    seed350();
+    g.state.cart = [];
+    g.addToCart(null, 1000);
+    g.addToCart(null, 1000);
+    g.addToCart(null, 1001);
+    assert.equal(g.cartCount(), 3);
+    assert.equal(g.cartTotal(), 10000 * 2 + 10001);
+    g.changeQty(1000, -1);
+    assert.equal(g.cartCount(), 2);
+    g.removeFromCart(1001);
+    assert.equal(g.cartCount(), 1);
+    assert.equal(g.cartTotal(), 10000);
+    assert.equal(g.document.getElementById('cart-badge').textContent, 1);
+  });
+
+  it('submitOrder validates the form and completes the order', async () => {
+    seed350();
+    g.state.cart = [];
+    g.addToCart(null, 1000);
+    g.document.getElementById('view-order-success').classList.add('hidden');
+    g.document.getElementById('f-fio').value = '';
+    g.document.getElementById('f-phone').value = '';
+    await g.submitOrder();
+    assert.equal(g.state.cart.length, 1);
+    assert.ok(g.document.getElementById('view-order-success').classList.contains('hidden'));
+    g.document.getElementById('f-fio').value = 'Иван Тестов';
+    g.document.getElementById('f-phone').value = '+7 900 000-00-00';
+    g.document.getElementById('f-delivery').value = 'СДЭК';
+    await g.submitOrder();
+    assert.equal(g.state.cart.length, 0);
+    assert.match(g.document.getElementById('order-code-badge').textContent, /^TG-\d+$/);
+    assert.ok(!g.document.getElementById('view-order-success').classList.contains('hidden'));
+    assert.match(g.document.getElementById('order-tg-btn').href, /start=TG-\d+_1000x1x10000/);
   });
 });
