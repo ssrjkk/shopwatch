@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test tests/api.test.js tests/initdata.test.js tests/max.test.js tests/tgdeeplink.test.js tests/virtual.test.js tests/search.test.js tests/catalog-export.test.js"
+    "test": "node --test tests/api.test.js tests/initdata.test.js tests/max.test.js tests/tgdeeplink.test.js tests/virtual.test.js tests/search.test.js tests/catalog-export.test.js tests/ui.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

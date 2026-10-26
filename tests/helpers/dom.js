@@ -57,7 +57,10 @@ const EXPOSE = [
   'switchTab', 'showView', 'route', 'toggleDrawer', 'submitOrder', 'renderFilters', 'setCategory', 'setSeries',
   'getFiltered', 'parseSearch', 'hayOf', 'isHit', 'tokenHit', 'onSearchInput', 'resetSearch', 'searchQuery',
   'setSearchQuery', 'syncCatalogHash', 'goAllProducts', 'goCatalogHome', 'quickOrder', 'fallbackCopy',
-  'updateGridStatus', 'parseHash', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
+  'updateGridStatus', 'parseHash', 'searchSuggestions', 'renderSuggestions', 'hideSuggestions', 'pickSuggest',
+  'moveSuggest', 'onSearchFocus', 'onSearchKey', 'toggleFilterSheet', 'closeFilterSheet', 'resetFilters',
+  'updateFilterChrome', 'activeFilterCount', 'filterSheetOpen', 'toggleSupportMenu', 'updateToTop', 'observeToTop',
+  'scrollToGrid', 'buildSugMap', 'sugMap', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
 ];
 
 // Монтирует фронтенд. seed — источник данных каталога (по PRODUCTS_DATA можно подменить файл).

@@ -62,7 +62,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </div>
 <div class="flex items-center gap-1">
 <a href="#/cart" class="relative p-2 text-gray-700" title="Корзина" aria-label="Корзина">
-<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9m-6-4h.01"/></svg>
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><circle cx="9" cy="20.5" r="1.4"/><circle cx="18" cy="20.5" r="1.4"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 3.5h2.2l2.5 11.3a1.6 1.6 0 0 1 1.6 1.2h8.6a1.6 1.6 0 0 0 1.6-1.2l1.7-7.6H5.6"/></svg>
 <span id="cart-badge" class="hidden absolute top-1 right-1 bg-[#10B981] text-white text-[10px] font-bold min-w-4 h-4 px-0.5 rounded-full items-center justify-center">0</span>
 </a>
 <a href="#/favorites" class="relative p-2 text-gray-700" title="Избранное" aria-label="Избранное">
@@ -72,17 +72,18 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </div>
 </div>
 <div class="relative">
-<input id="search-input" type="search" enterkeyhint="search" oninput="onSearchInput()" onkeydown="onSearchKey(event)" placeholder="Поиск: Fenix, эхолот, чехол, до 60000..." aria-label="Поиск по каталогу" class="w-full bg-[#F4F5F7] text-[13px] rounded-xl pl-9 pr-10 py-2.5 outline-none focus:ring-2 focus:ring-[#10B981]" />
-<button id="search-clear" onclick="resetSearch()" aria-label="Очистить поиск" class="hidden absolute right-2 top-2.5 w-6 h-6 rounded-full bg-white border border-gray-200 text-gray-500 text-xs items-center justify-center">✕</button>
+<input id="search-input" type="search" enterkeyhint="search" autocomplete="off" oninput="onSearchInput()" onkeydown="onSearchKey(event)" onfocus="onSearchFocus()" placeholder="Поиск: Fenix, эхолот, чехол, до 60000..." aria-label="Поиск по каталогу" role="combobox" aria-expanded="false" aria-controls="search-suggest" aria-autocomplete="list" class="w-full bg-[#F4F5F7] text-[13px] rounded-xl pl-9 pr-10 py-2.5 outline-none focus:ring-2 focus:ring-[#10B981]" />
+<button id="search-clear" onclick="resetSearch()" aria-label="Очистить поиск" class="hidden absolute right-2 top-2.5 w-6 h-6 rounded-full bg-white border border-gray-200 text-gray-500 text-xs items-center justify-center z-10">✕</button>
 <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M16.65 10.825a5.825 5.825 0 11-11.65 0 5.825 5.825 0 0111.65 0z"/></svg>
+<div id="search-suggest" class="hidden absolute left-0 right-0 top-[40px] z-40 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden" role="listbox" aria-label="Подсказки поиска"></div>
 </div>
 <div class="flex gap-1.5 mt-2.5 overflow-x-auto no-scrollbar">
 <a href="#/catalog" id="tab-btn-catalog" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141619] text-white whitespace-nowrap">Каталог</a>
-<a href="#/cart" id="tab-btn-cart" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Корзина</a>
 <a href="#/about" id="tab-btn-about" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">О магазине</a>
 <a href="#/delivery" id="tab-btn-delivery" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Оплата и доставка</a>
 <a href="#/warranty" id="tab-btn-warranty" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Гарантия и отзывы</a>
 <a href="#/contacts" id="tab-btn-contacts" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Контакты</a>
+<a href="#/cart" id="tab-btn-cart" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Корзина</a>
 </div>
 </div>
 </header>
@@ -90,7 +91,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 <main class="max-w-md mx-auto w-full px-3.5 pt-3.5 flex-1">
 
 <section id="view-catalog" class="space-y-5">
-<div class="relative rounded-2xl overflow-hidden shadow-sm">
+<div id="hero-block" class="relative rounded-2xl overflow-hidden shadow-sm">
 <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=900&q=80" alt="Магазин Watchop" class="w-full h-52 object-cover brightness-[0.6]" />
 <div class="absolute inset-0 p-4 flex flex-col justify-end text-white">
 <h1 id="ui-hero-title" class="text-[17px] font-bold leading-snug mb-3">Магазин оригинальной продукции Garmin и смарт-часов с доставкой по всей России — поможем выбрать под ваши задачи</h1>
@@ -104,31 +105,59 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 <div>
 <div class="flex items-center justify-between mb-2">
 <h2 class="text-base font-bold">Хиты продаж</h2>
-<button onclick="goAllProducts()" class="text-xs text-[#0E9F6E] font-semibold">Все товары →</button>
+<a href="#/catalog" onclick="setTimeout(scrollToGrid,60)" class="text-xs text-[#0E9F6E] font-semibold">Все товары →</a>
 </div>
 <div id="hits-grid" class="grid grid-cols-2 gap-2.5"></div>
 </div>
 
-<div id="catalog-anchor" class="scroll-mt-32">
-<div id="category-pills" class="flex gap-2 overflow-x-auto no-scrollbar pb-2"></div>
+<div id="catalog-anchor" class="scroll-mt-24">
+<div class="flex items-center justify-between mb-1.5">
+<h2 id="catalog-title" class="text-base font-bold">Все товары</h2>
+<button id="filter-btn" onclick="toggleFilterSheet()" aria-expanded="false" aria-controls="filter-sheet" class="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-700">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M7 12h10M10 18h4"/></svg>
+<span id="filter-btn-label">Фильтры</span>
+</button>
 </div>
-<div>
-<div class="text-[11px] font-bold uppercase text-gray-400 tracking-wider mb-2">Бренды и серии смарт-часов</div>
-<div id="series-pills" class="flex flex-wrap gap-1.5"></div>
-</div>
-<div class="flex items-center justify-between pt-1">
+<div class="flex items-center justify-between pb-2">
 <span id="found-count" class="text-xs text-gray-500 font-medium">Найдено: 0</span>
-<select id="sort-select" onchange="renderCatalog()" class="text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 font-medium outline-none">
-<option value="popular">Сначала популярные</option>
-<option value="asc">Сначала дешевле</option>
-<option value="desc">Сначала дороже</option>
-</select>
+<span id="filter-summary" class="text-[11px] text-gray-400 truncate pl-2"></span>
+</div>
 </div>
 <div id="products-grid" class="grid grid-cols-2 gap-2.5"></div>
 <div id="grid-sentinel" class="h-2"></div>
 <div id="grid-status" class="text-center text-[11px] text-gray-400 pb-2"></div>
 <div class="text-center pb-1"><button id="grid-reset" onclick="resetSearch()" class="hidden mx-auto bg-white border border-gray-200 rounded-lg px-3.5 py-1.5 text-xs font-semibold text-[#0E9F6E]">Сбросить поиск</button></div>
 </section>
+
+<div id="filter-backdrop" onclick="closeFilterSheet()" class="hidden fixed inset-0 bg-black/40 z-[45]"></div>
+<div id="filter-sheet" class="hidden fixed left-0 right-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl">
+<div class="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+<h3 class="text-base font-bold">Фильтры</h3>
+<button onclick="closeFilterSheet()" aria-label="Закрыть фильтры" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-600">✕</button>
+</div>
+<div class="px-4 py-3 space-y-4 max-h-[62vh] overflow-y-auto">
+<div>
+<div class="text-[11px] font-bold uppercase text-gray-400 tracking-wider mb-2">Категория</div>
+<div id="category-pills" class="flex flex-wrap gap-1.5"></div>
+</div>
+<div>
+<div class="text-[11px] font-bold uppercase text-gray-400 tracking-wider mb-2">Бренды и серии</div>
+<div id="series-pills" class="flex flex-wrap gap-1.5"></div>
+</div>
+<div>
+<div class="text-[11px] font-bold uppercase text-gray-400 tracking-wider mb-2">Сортировка</div>
+<select id="sort-select" onchange="renderCatalog()" class="w-full text-sm bg-[#F4F5F7] border border-gray-200 rounded-xl px-3 py-2.5 font-medium outline-none">
+<option value="popular">Сначала популярные</option>
+<option value="asc">Сначала дешевле</option>
+<option value="desc">Сначала дороже</option>
+</select>
+</div>
+</div>
+<div class="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-3 flex gap-2">
+<button onclick="resetFilters()" class="flex-1 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 py-3">Сбросить</button>
+<button onclick="closeFilterSheet()" id="filter-apply" class="flex-[2] bg-[#0E9F6E] text-white rounded-xl text-xs font-bold py-3">Показать</button>
+</div>
+</div>
 
 <section id="view-product" class="hidden">
 <a href="#/catalog" id="product-back-link" class="inline-block mb-3 text-xs font-semibold text-gray-600 bg-white px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300">← Назад в каталог</a>
@@ -294,19 +323,34 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </div>
 </footer>
 
-<div class="fixed bottom-4 right-4 z-30 flex flex-col gap-2">
-<button onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Наверх" class="w-11 h-11 rounded-full bg-white shadow-lg border border-gray-200 text-gray-700 font-bold">↑</button>
-<a id="ui-float-tg" href="https://t.me/wwwatchshop_bot" target="_blank" rel="noopener" aria-label="Написать в Telegram" class="w-11 h-11 rounded-full bg-[#2AABEE] shadow-lg flex items-center justify-center text-white font-bold">✈</a>
-<a id="ui-float-max" href="https://max.ru/watchop" target="_blank" rel="noopener" aria-label="Написать в MAX" class="w-11 h-11 rounded-full bg-[#141619] shadow-lg flex items-center justify-center text-white text-xs font-bold">M</a>
+<div class="fixed bottom-4 right-4 z-30 flex flex-col items-end gap-2">
+<button id="to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Наверх" class="hidden w-11 h-11 rounded-full bg-white shadow-lg border border-gray-200 text-gray-700 items-center justify-center">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+<div id="support-fab" class="flex flex-col items-end gap-2">
+<div id="support-menu" class="hidden flex-col gap-2">
+<a id="ui-float-tg" href="https://t.me/wwwatchshop_bot" target="_blank" rel="noopener" class="flex items-center gap-2 bg-white rounded-full shadow-lg border border-gray-200 pl-2.5 pr-3.5 py-1.5">
+<svg class="w-6 h-6" viewBox="0 0 24 24" fill="#2AABEE" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.415-1.212.277-1.912.19-.19 3.5-3.206 3.56-3.563.007-.04.013-.168-.062-.238-.075-.07-.185-.046-.264-.027-.112.026-1.91 1.213-5.39 3.56-.51.35-.97.52-1.39.51-.46-.01-1.34-.73-1.78-1.36-.29-.41-.52-.87-.29-1.33.13-.27.61-.83 1.66-1.1 2.84-.83 5.63-1.72 8.4-2.6 2.01-.67 3.52-1.24 5.24-1.9z"/></svg>
+<span class="text-xs font-semibold text-gray-900">Telegram</span>
+</a>
+<a id="ui-float-max" href="https://max.ru/watchop" target="_blank" rel="noopener" class="flex items-center gap-2 bg-white rounded-full shadow-lg border border-gray-200 pl-2.5 pr-3.5 py-1.5">
+<svg class="w-6 h-6" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#141619"/><path d="M6.5 17.5v-11l5.5 5.6 5.5-5.6v11" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<span class="text-xs font-semibold text-gray-900">MAX</span>
+</a>
+</div>
+<button id="support-btn" onclick="toggleSupportMenu()" aria-expanded="false" aria-label="Написать в поддержку" class="w-12 h-12 rounded-full bg-[#141619] text-white shadow-xl flex items-center justify-center">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3c-1.4 0-2.8-.35-4-.98L3 20l1.2-5.4A8.1 8.1 0 0 1 3.5 11.5 8.4 8.4 0 0 1 12 3.2a8.4 8.4 0 0 1 9 8.3z"/><path stroke-linecap="round" d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"/></svg>
+</button>
+</div>
 </div>
 
 <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#141619] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg"></div>
 
 <script src="products-data.js"></script>
 <script>
-const BUILD_ID='20261026b';try{if(typeof location!=='undefined'&&localStorage.getItem('watchop_build')!==BUILD_ID){localStorage.setItem('watchop_build',BUILD_ID);location.reload();}}catch(e){}
+const BUILD_ID='20261026c';try{if(typeof location!=='undefined'&&localStorage.getItem('watchop_build')!==BUILD_ID){localStorage.setItem('watchop_build',BUILD_ID);location.reload();}}catch(e){}
 const FALLBACK_PRODUCTS=(window.SEED_PRODUCTS||[]).map((p,i)=>({...p,id:Number(p.id)>0?Number(p.id):i+1}));
-let state={products:[...FALLBACK_PRODUCTS],settings:{hero_title:'Магазин оригинальной продукции Garmin и смарт-часов с доставкой по всей России — поможем выбрать под ваши задачи',phone:'+7 (473) 300-40-95',email:'watchopp@gmail.com',address:'Доставка по всей России — СДЭК, Почта России, Boxberry',tg_link:'https://t.me/wwwatchshop_bot',max_link:'https://max.ru/watchop',legal_name:'ИП Жукова Татьяна Юрьевна',legal_inn:'362703988401',legal_ogrnip:'304362725400110',payment_details:'СБП / Т-Банк / Сбер: +7 (900) 000-00-00 (Татьяна Ю.)\nВ комментарии к переводу укажите номер заказа.',show_payment:'1'},activeCategory:'Все товары',activeSeries:'Все модели',favorites:JSON.parse(localStorage.getItem('watchop_favs')||'[]'),cart:JSON.parse(localStorage.getItem('watchop_cart')||'[]'),lastOrderAt:0,currentProductId:null,filtered:[],shownCount:0,currentView:'catalog',lastCatalogHash:'#/catalog',orderInFlight:false};
+let state={products:[...FALLBACK_PRODUCTS],settings:{hero_title:'Магазин оригинальной продукции Garmin и смарт-часов с доставкой по всей России — поможем выбрать под ваши задачи',phone:'+7 (473) 300-40-95',email:'watchopp@gmail.com',address:'Доставка по всей России — СДЭК, Почта России, Boxberry',tg_link:'https://t.me/wwwatchshop_bot',max_link:'https://max.ru/watchop',legal_name:'ИП Жукова Татьяна Юрьевна',legal_inn:'362703988401',legal_ogrnip:'304362725400110',payment_details:'СБП / Т-Банк / Сбер: +7 (900) 000-00-00 (Татьяна Ю.)\nВ комментарии к переводу укажите номер заказа.',show_payment:'1'},activeCategory:'Все товары',activeSeries:'Все модели',favorites:JSON.parse(localStorage.getItem('watchop_favs')||'[]'),cart:JSON.parse(localStorage.getItem('watchop_cart')||'[]'),lastOrderAt:0,currentProductId:null,filtered:[],shownCount:0,currentView:'catalog',lastCatalogHash:'#/catalog',orderInFlight:false,suggest:[],suggestAt:-1,filterSheet:false,supportMenu:false};
 const CAT_ORDER=['Все товары','Спортивные часы','Эхолоты','Велокомпьютеры','GPS навигаторы','Фитнес-трекеры','Дайвинг компьютеры','Охота и дрессировка','Пульсометры','Аксессуары'];
 const CAT_DESC={'Спортивные часы':'Мультиспортивные часы с GPS: бег, велосипед, плавание, триатлон. Двухчастотный GNSS, пульсометр, барометр, музыка и бесконтактная оплата в старших моделях.','Эхолоты':'Эхолоты и картплоттеры с сонаром CHIRP, ClearVü и SideVü: поиск рыбы, рельеф дна, построение карт глубин Quickdraw.','Велокомпьютеры':'Велокомпьютеры с GPS, солнечной зарядкой, радарами заднего обзора и измерителями мощности.','GPS навигаторы':'Туристические и охотничьи навигаторы: мульти-GNSS, топокарты, спутниковая связь inReach, слежение за собаками.','Фитнес-трекеры':'Лёгкие трекеры активности и сна: AMOLED-экран, Body Battery, мониторинг пульса и стресса.','Дайвинг компьютеры':'Декомпрессиметры для рекреационного и технического дайвинга: режимы погружений, SubWave-связь, глубиномер до 200 м.','Охота и дрессировка':'Системы слежения и дрессировки: навигаторы Alpha/Astro, GPS-ошейники, управление с руки.','Пульсометры':'Нагрудные датчики пульса с ANT+/Bluetooth: точная ЧСС для тренировок.','Аксессуары':'Оригинальные аксессуары: ремешки QuickFit, зарядные кабели, защитные стёкла и крепления.'};
 // ---------- ПОИСК: нормализация, морфология, транслит, цены ----------
@@ -327,7 +371,7 @@ function tgOrderLink(code,items){const base=String(state.settings.tg_link||'http
 function getCategoryCount(cat){if(cat==='Все товары')return state.products.length;return state.products.filter(p=>p.category===cat).length;}
 function allSeries(){const seen=[];for(const p of state.products){if(seen.indexOf(p.series)<0)seen.push(p.series);}return ['Все модели',...seen];}
 function showToast(msg){const t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.classList.remove('hidden');clearTimeout(showToast._t);showToast._t=setTimeout(()=>t.classList.add('hidden'),1800);}
-async function initApp(){try{if(!IS_STATIC_DEMO&&typeof fetch==='function'){const r=await fetch('/api/state');if(r&&r.ok){const d=await r.json();if(d&&Array.isArray(d.products)&&d.products.length)state.products=d.products;if(d&&d.settings)state.settings={...state.settings,...d.settings};}}}catch(e){}try{applySettingsToUI();}catch(e){}try{renderFilters();renderCatalog();renderHits();updateBadges();}catch(e){}try{route();}catch(e){}}
+async function initApp(){try{if(!IS_STATIC_DEMO&&typeof fetch==='function'){const r=await fetch('/api/state');if(r&&r.ok){const d=await r.json();if(d&&Array.isArray(d.products)&&d.products.length)state.products=d.products;if(d&&d.settings)state.settings={...state.settings,...d.settings};}}}catch(e){}try{applySettingsToUI();}catch(e){}try{renderFilters();renderCatalog();renderHits();updateBadges();updateToTop();observeToTop();}catch(e){}try{route();}catch(e){}}
 function applySettingsToUI(){const s=state.settings||{};const txt=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.textContent=String(v);};const href=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.href=String(v);};txt('ui-hero-title',s.hero_title);txt('ui-address',s.address);txt('ui-phone',s.phone);href('ui-phone','tel:'+String(s.phone||'').replace(/[^\d+]/g,''));txt('ui-email',s.email);href('ui-email','mailto:'+String(s.email||'').trim().replace(/\s+/g,''));txt('ui-legal-name',s.legal_name);txt('ui-legal-inn',s.legal_inn);txt('ui-legal-ogrnip',s.legal_ogrnip);txt('ft-legal-name',s.legal_name);txt('ft-legal-inn',s.legal_inn);txt('ft-legal-ogrnip',s.legal_ogrnip);href('ui-consult-btn',s.tg_link);href('ui-float-tg',s.tg_link);href('ui-float-max',s.max_link);href('ft-tg-btn',s.tg_link);href('ft-max-btn',s.max_link);}
 function showView(tab){const VIEWS=['catalog','product','order-success','cart','checkout','favorites','about','delivery','warranty','contacts','offer','privacy'];if(VIEWS.indexOf(tab)<0)tab='catalog';state.currentView=tab;VIEWS.forEach(v=>{const el=document.getElementById('view-'+v);if(el)el.classList.add('hidden');});const cur=document.getElementById('view-'+tab);if(cur)cur.classList.remove('hidden');['catalog','cart','about','delivery','warranty','contacts'].forEach(t=>{const b=document.getElementById('tab-btn-'+t);if(!b)return;b.className=t===tab?'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141619] text-white whitespace-nowrap':'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap';});if(tab==='favorites')renderFavorites();if(tab==='cart')renderCart();if(tab==='checkout')renderCheckout();if(tab==='catalog'){requestAnimationFrame(pumpGrid);}syncMiniAppNav(tab);window.scrollTo({top:0,behavior:'smooth'});}
 function switchTab(tab){showView(tab);try{const h='#/'+tab;if(location.hash!==h)location.hash=h;}catch(e){}}
@@ -337,12 +381,12 @@ try{if(typeof window!=='undefined'&&'onhashchange' in window)window.onhashchange
 function toggleDrawer(open){try{const d=document.getElementById('drawer');const b=document.getElementById('drawer-backdrop');if(open){d.classList.remove('-translate-x-full');b.classList.remove('hidden');}else{d.classList.add('-translate-x-full');b.classList.add('hidden');}}catch(e){}}
 function renderDrawer(){document.getElementById('drawer-categories').innerHTML=CAT_ORDER.filter(c=>c!=='Все товары'&&getCategoryCount(c)>0).map(c=>`<a href="#/c/${encodeURIComponent(c)}" class="w-full flex items-center justify-between py-1 text-left"><span>${c}</span><span class="text-xs text-gray-400">${getCategoryCount(c)}</span></a>`).join('');}
 function renderHits(){const flagged=state.products.filter((p)=>isHit(p));const hits=(flagged.length?flagged:state.products).slice(0,8);document.getElementById('hits-grid').innerHTML=hits.map((p)=>productCardHTML(p)).join('');}
-function renderFilters(){document.getElementById('category-pills').innerHTML=CAT_ORDER.filter(c=>c==='Все товары'||getCategoryCount(c)>0).map(c=>`<a href="#/c/${encodeURIComponent(c)}" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${state.activeCategory===c?'bg-[#141619] text-white':'bg-white text-gray-700 border border-gray-200'}">${c}</a>`).join('');document.getElementById('series-pills').innerHTML=allSeries().map(s=>`<a href="#/s/${encodeURIComponent(s)}" class="px-3 py-1.5 rounded-full text-xs font-semibold ${state.activeSeries===s?'bg-[#10B981] text-white':'bg-white text-gray-700 border border-gray-200'}">${s}</a>`).join('');}
+function renderFilters(){document.getElementById('category-pills').innerHTML=CAT_ORDER.filter(c=>c==='Все товары'||getCategoryCount(c)>0).map(c=>`<a href="#/c/${encodeURIComponent(c)}" onclick="closeFilterSheet()" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${state.activeCategory===c?'bg-[#141619] text-white':'bg-white text-gray-700 border border-gray-200'}">${c} <span class="opacity-60">${getCategoryCount(c)}</span></a>`).join('');document.getElementById('series-pills').innerHTML=allSeries().map(s=>`<a href="#/s/${encodeURIComponent(s)}" onclick="closeFilterSheet()" class="px-3 py-1.5 rounded-full text-xs font-semibold ${state.activeSeries===s?'bg-[#10B981] text-white':'bg-white text-gray-700 border border-gray-200'}">${s}</a>`).join('');updateFilterChrome();}
 function setCategory(c){state.activeCategory=c;renderFilters();renderCatalog();}
 function setSeries(s){state.activeSeries=s;renderFilters();renderCatalog();}
 function matchProducts(tokens,min,max){const cat=state.activeCategory;const ser=state.activeSeries;return state.products.filter((p)=>{if(cat!=='Все товары'&&p.category!==cat)return false;if(ser!=='Все модели'&&p.series!==ser)return false;if(min&&Number(p.price)<min)return false;if(max&&Number(p.price)>max)return false;if(tokens.length){const h=hayOf(p);for(let i=0;i<tokens.length;i++){if(!tokenHit(h,tokens[i]))return false;}}return true;});}
 function getFiltered(){const{tokens,min,max}=parseSearch(document.getElementById('search-input').value);const sort=document.getElementById('sort-select').value;let list=matchProducts(tokens,min,max);if(!list.length){const num=tokens.find((t)=>/^\d{4,7}$/.test(t));if(num){const v=Number(num);list=matchProducts(tokens.filter((t)=>t!==num),Math.floor(v*0.95),Math.ceil(v*1.05));}}if(sort==='asc')list.sort((a,b)=>Number(a.price)-Number(b.price));else if(sort==='desc')list.sort((a,b)=>Number(b.price)-Number(a.price));else list.sort((a,b)=>(isHit(b)-isHit(a))||(Number(a.id)-Number(b.id)));return list;}
-function renderCatalog(){if(gridObserver){gridObserver.disconnect();gridObserver=null;}state.filtered=getFiltered();state.shownCount=0;document.getElementById('products-grid').innerHTML='';appendChunk();updateGridStatus();observeSentinel();pumpGrid();renderDrawer();toggleSearchClear();}
+function renderCatalog(){if(gridObserver){gridObserver.disconnect();gridObserver=null;}state.filtered=getFiltered();state.shownCount=0;document.getElementById('products-grid').innerHTML='';appendChunk();updateGridStatus();observeSentinel();pumpGrid();renderDrawer();toggleSearchClear();updateFilterChrome();}
 function appendChunk(){const grid=document.getElementById('products-grid');const next=state.filtered.slice(state.shownCount,state.shownCount+PAGE_SIZE);if(!next.length)return false;grid.insertAdjacentHTML('beforeend',next.map(p=>productCardHTML(p)).join(''));state.shownCount+=next.length;updateGridStatus();return state.shownCount<state.filtered.length;}
 function updateGridStatus(){const total=state.filtered.length;const fc=document.getElementById('found-count');if(fc)fc.textContent=`Найдено: ${total}`;const st=document.getElementById('grid-status');const rst=document.getElementById('grid-reset');if(!total){if(st)st.textContent='Ничего не найдено. Попробуйте короче: «Fenix», «эхолот», «чехол» или «до 60000».';if(rst)rst.classList.remove('hidden');}else{if(st)st.textContent=state.shownCount<total?`Показано ${state.shownCount} из ${total} — листайте вниз`:(total>PAGE_SIZE?`Показаны все ${total}`:'');if(rst)rst.classList.add('hidden');}}
 function searchQuery(){try{return String(document.getElementById('search-input').value||'').trim();}catch(e){return '';}}
@@ -350,11 +394,46 @@ function setSearchQuery(v){try{document.getElementById('search-input').value=Str
 function toggleSearchClear(){const b=document.getElementById('search-clear');if(!b)return;if(searchQuery())b.classList.remove('hidden');else b.classList.add('hidden');}
 function catalogBaseHash(){if(state.activeCategory!=='Все товары')return '#/c/'+encodeURIComponent(state.activeCategory);if(state.activeSeries!=='Все модели')return '#/s/'+encodeURIComponent(state.activeSeries);return '#/catalog';}
 function syncCatalogHash(){const q=searchQuery();const h=q?catalogBaseHash()+'?q='+encodeURIComponent(q):catalogBaseHash();try{if(location.hash===h)return;if(typeof history!=='undefined'&&history&&history.replaceState){history.replaceState(null,'',String(location.pathname||'/')+String(location.search||'')+h);return;}location.hash=h;}catch(e){try{location.hash=h;}catch(_){}}}
-function onSearchInput(){try{if(state.currentView&&state.currentView!=='catalog')showView('catalog');}catch(e){}renderCatalog();syncCatalogHash();}
-function onSearchKey(e){try{if(e&&e.key==='Escape'){resetSearch();return;}if(e&&e.key==='Enter'){e.preventDefault&&e.preventDefault();if(!state.filtered.length&&searchQuery())resetSearch();else{try{document.getElementById('search-input').blur();}catch(_){}showView('catalog');}}}catch(_){}}
-function resetSearch(){setSearchQuery('');renderCatalog();syncCatalogHash();try{const i=document.getElementById('search-input');if(i)i.focus();}catch(e){}}
+function onSearchInput(){try{if(state.currentView&&state.currentView!=='catalog')showView('catalog');}catch(e){}renderCatalog();syncCatalogHash();renderSuggestions();}
+function onSearchKey(e){if(!e)return;const k=e.key;try{if(k==='ArrowDown'){e.preventDefault&&e.preventDefault();if(!state.suggest.length)renderSuggestions();moveSuggest(1);return;}if(k==='ArrowUp'){e.preventDefault&&e.preventDefault();moveSuggest(-1);return;}if(k==='Enter'){e.preventDefault&&e.preventDefault();if(state.suggestAt>=0&&state.suggest[state.suggestAt]){pickSuggest(state.suggestAt);return;}hideSuggestions();if(!state.filtered.length&&searchQuery())resetSearch();else{try{document.getElementById('search-input').blur();}catch(_){}showView('catalog');scrollToGrid();}return;}if(k==='Escape'){if(!filterSheetOpen()&&document.getElementById('search-suggest')&&!document.getElementById('search-suggest').classList.contains('hidden')){hideSuggestions();return;}resetSearch();return;}}catch(_){}}
+function resetSearch(){setSearchQuery('');hideSuggestions();renderCatalog();syncCatalogHash();try{const i=document.getElementById('search-input');if(i)i.focus();}catch(e){}}
 function goAllProducts(){setSearchQuery('');state.activeCategory='Все товары';state.activeSeries='Все модели';renderFilters();renderCatalog();syncCatalogHash();try{document.getElementById('catalog-anchor').scrollIntoView({behavior:'smooth'});}catch(e){}}
-function goCatalogHome(){setSearchQuery('');state.activeCategory='Все товары';state.activeSeries='Все модели';renderFilters();renderCatalog();syncCatalogHash();try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}}
+function goCatalogHome(){setSearchQuery('');state.activeCategory='Все товары';state.activeSeries='Все модели';renderFilters();renderCatalog();syncCatalogHash();hideSuggestions();try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}}
+function scrollToGrid(){try{const a=document.getElementById('catalog-anchor');if(a)a.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}}
+// ---------- подсказки поиска ----------
+let SUG_SRC=null;let SUG_MAP=null;
+function buildSugMap(){const map=new Map();const put=(label)=>{const n=normText(label);if(!n)return;const cur=map.get(n);if(cur)cur.count++;else map.set(n,{label:String(label).trim(),count:1,norm:n});};
+for(const p of state.products){const t=String(p.name||'').split(/\s+/).filter(Boolean);let acc='';for(let k=0;k<Math.min(4,t.length);k++){acc=acc?acc+' '+t[k]:t[k];put(acc);}put(p.series);put(p.brand+' '+p.series);put(p.category);}
+return map;}
+function sugMap(){if(SUG_SRC!==state.products){SUG_SRC=state.products;SUG_MAP=buildSugMap();}return SUG_MAP;}
+function hlLabel(label,q){const s=esc(label);const nq=normText(q);if(!nq)return s;const low=label.toLowerCase();const i=low.indexOf(nq.toLowerCase());if(i<0)return s;return esc(label.slice(0,i))+'<b class="font-bold text-gray-900">'+esc(label.slice(i,i+nq.length))+'</b>'+esc(label.slice(i+nq.length));}
+function searchSuggestions(q){const map=sugMap();const nq=normText(q);if(!nq){const out=[];for(const c of CAT_ORDER){if(c==='Все товары')continue;const e=map.get(normText(c));if(e)out.push({label:c,count:getCategoryCount(c),kind:'категория'});}out.sort((a,b)=>b.count-a.count);return out.slice(0,5);}
+const pr=parseSearch(q);const toks=pr.tokens;if(!toks.length)return [];const scored=[];for(const [norm,e] of map){let ok=true;for(let i=0;i<toks.length;i++){if(!tokenHit(norm,toks[i])){ok=false;break;}}if(!ok)continue;scored.push({e,hit:norm.indexOf(nq)===0?0:1});}
+scored.sort((a,b)=>a.hit-b.hit||b.e.count-a.e.count||a.e.norm.length-b.e.norm.length);const seen=new Set();const res=[];for(const s of scored){if(res.length>=6)break;if(seen.has(s.e.norm))continue;seen.add(s.e.norm);res.push({label:s.e.label,count:s.e.count,kind:'модель'});}return res;}
+function renderSuggestions(){const box=document.getElementById('search-suggest');if(!box)return;const q=searchQuery();const list=searchSuggestions(q);state.suggest=list;state.suggestAt=-1;
+if(!list.length&&!q){box.classList.add('hidden');box.innerHTML='';setSuggestOpen(false);return;}
+const rows=list.map((s,i)=>`<button type="button" onmousedown="event.preventDefault()" onclick="pickSuggest(${i})" class="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left text-[13px] text-gray-800 border-b border-gray-50" style="${i===state.suggestAt?'background:#F4F5F7':''}"><span class="flex items-center gap-2 min-w-0"><svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M16.65 10.825a5.825 5.825 0 11-11.65 0 5.825 5.825 0 0111.65 0z"/></svg><span class="truncate">${hlLabel(s.label,q)}</span></span><span class="text-[11px] text-gray-400 whitespace-nowrap">${s.count}</span></button>`).join('');
+const total=q?state.filtered.length:0;
+const tail=q?`<button type="button" onclick="pickSuggest(-1)" class="w-full px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#0E9F6E]">Показать все ${total}</button>`:'';
+box.innerHTML=rows+tail;box.classList.remove('hidden');setSuggestOpen(true);}
+function setSuggestOpen(open){const box=document.getElementById('search-suggest');const inp=document.getElementById('search-input');if(inp)try{inp.setAttribute('aria-expanded',open?'true':'false');}catch(e){}if(box&&open)try{box.setAttribute('aria-hidden','false');}catch(e){}}
+function hideSuggestions(){const box=document.getElementById('search-suggest');if(box){box.classList.add('hidden');box.innerHTML='';}state.suggest=[];state.suggestAt=-1;setSuggestOpen(false);}
+function pickSuggest(i){if(i>=0&&state.suggest&&state.suggest[i])setSearchQuery(state.suggest[i].label);hideSuggestions();try{if(state.currentView&&state.currentView!=='catalog')showView('catalog');}catch(e){}renderCatalog();syncCatalogHash();scrollToGrid();}
+function moveSuggest(d){if(!state.suggest||!state.suggest.length)return;const n=state.suggest.length;state.suggestAt=(state.suggestAt+d+n)%n;renderSuggestionsAt();}
+function renderSuggestionsAt(){const box=document.getElementById('search-suggest');if(!box||!box.children)return;for(let i=0;i<box.children.length;i++){const c=box.children[i];if(c.tagName!=='BUTTON')continue;try{c.style.background=i===state.suggestAt?'#F4F5F7':'';}catch(e){}}}
+function onSearchFocus(){renderSuggestions();}
+// ---------- шторка фильтров ----------
+function filterSheetOpen(){return !!state.filterSheet;}
+function toggleFilterSheet(force){const s=document.getElementById('filter-sheet');const b=document.getElementById('filter-backdrop');if(!s)return;const open=force===undefined?!state.filterSheet:!!force;if(open){state.filterSheet=true;renderFilters();s.classList.remove('hidden');if(b)b.classList.remove('hidden');const btn=document.getElementById('filter-btn');if(btn)try{btn.setAttribute('aria-expanded','true');}catch(e){}}else closeFilterSheet();}
+function closeFilterSheet(){state.filterSheet=false;const s=document.getElementById('filter-sheet');const b=document.getElementById('filter-backdrop');if(s)s.classList.add('hidden');if(b)b.classList.add('hidden');const btn=document.getElementById('filter-btn');if(btn)try{btn.setAttribute('aria-expanded','false');}catch(e){}}
+function activeFilterCount(){let n=0;if(state.activeCategory!=='Все товары')n++;if(state.activeSeries!=='Все модели')n++;return n;}
+function updateFilterChrome(){const title=document.getElementById('catalog-title');if(title)title.textContent=state.activeSeries!=='Все модели'?state.activeSeries:state.activeCategory;const sum=document.getElementById('filter-summary');if(sum){const parts=[];if(state.activeCategory!=='Все товары')parts.push(state.activeCategory);if(state.activeSeries!=='Все модели')parts.push(state.activeSeries);sum.textContent=parts.join(' · ');}const lbl=document.getElementById('filter-btn-label');if(lbl){const n=activeFilterCount();lbl.textContent=n?'Фильтры · '+n:'Фильтры';}const apply=document.getElementById('filter-apply');if(apply)apply.textContent='Показать '+state.filtered.length;const btn=document.getElementById('filter-btn');if(btn){try{btn.className='flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border '+(activeFilterCount()?'bg-[#141619] text-white border-[#141619]':'bg-white text-gray-700 border-gray-200');}catch(e){}}}
+function resetFilters(){setSearchQuery('');state.activeCategory='Все товары';state.activeSeries='Все модели';try{document.getElementById('sort-select').value='popular';}catch(e){}renderFilters();renderCatalog();syncCatalogHash();}
+// ---------- плавающие кнопки ----------
+function toggleSupportMenu(force){const m=document.getElementById('support-menu');const b=document.getElementById('support-btn');if(!m)return;const open=force===undefined?!state.supportMenu:!!force;state.supportMenu=open;if(open)m.classList.remove('hidden');else m.classList.add('hidden');if(b)try{b.setAttribute('aria-expanded',open?'true':'false');}catch(e){}}
+function updateToTop(){const b=document.getElementById('to-top');if(!b)return;let y=0;try{y=window.scrollY||document.documentElement.scrollTop||0;}catch(e){}const show=y>420;if(show)b.classList.remove('hidden');else b.classList.add('hidden');}
+let toTopObserver=null;
+function observeToTop(){try{const hero=document.getElementById('hero-block');if(!hero||typeof IntersectionObserver==='undefined')return;if(toTopObserver)toTopObserver.disconnect();toTopObserver=new IntersectionObserver((es)=>{for(const e of es){if(!e.isIntersecting){const b=document.getElementById('to-top');if(b)b.classList.remove('hidden');}else{const y=window.scrollY||0;if(y<420){const b=document.getElementById('to-top');if(b)b.classList.add('hidden');}}}},{rootMargin:'-380px 0px 0px 0px'});toTopObserver.observe(hero);}catch(e){}}
 function observeSentinel(){const s=document.getElementById('grid-sentinel');if(!('IntersectionObserver' in window))return;gridObserver=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){if(!appendChunk()&&gridObserver){gridObserver.disconnect();gridObserver=null;}}} ,{rootMargin:'600px'});gridObserver.observe(s);}
 function pumpGrid(){const s=document.getElementById('grid-sentinel');if(!s||!state.filtered.length||state.shownCount>=state.filtered.length)return;const r=s.getBoundingClientRect();if(r.top<window.innerHeight+600){if(appendChunk())pumpGrid();else if(gridObserver){gridObserver.disconnect();gridObserver=null;}}}
 function productCardHTML(p){const isFav=state.favorites.includes(p.id);return `<div class="bg-white rounded-2xl p-3 flex flex-col justify-between border border-gray-100 relative"><button onclick="toggleFav(event,${p.id})" aria-label="${isFav?'Убрать из избранного':'Добавить в избранное'}: ${esc(p.name)}" aria-pressed="${isFav?'true':'false'}" class="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-white/90 border border-gray-200 flex items-center justify-center"><span data-fav-heart="${p.id}" class="${isFav?'text-red-500':'text-gray-400'} text-sm">♥</span></button><a href="#/p/${p.id}" class="block cursor-pointer"><img src="${esc(p.image)}" alt="${esc(p.name)} — ${esc(p.brand)} ${esc(p.series)}" loading="lazy" class="w-full h-36 object-cover rounded-xl mb-2 bg-gray-50" /><div class="text-[10px] font-bold uppercase text-[#10B981]">${esc(p.brand)}</div><h3 class="text-xs text-gray-900 line-clamp-2 mt-0.5 min-h-[32px]">${esc(p.name)}</h3><div class="text-[11px] text-gray-500 line-clamp-2 mt-0.5 min-h-[28px]">${esc(p.specs||'')}</div><div class="text-sm font-bold mt-1.5 mb-2.5">${Number(p.price).toLocaleString('ru-RU')} ₽</div></a><button onclick="addToCart(event,${p.id})" aria-label="Добавить в корзину: ${esc(p.name)}" class="w-full bg-[#141619] text-white text-xs font-semibold py-2.5 rounded-xl">Добавить в корзину</button></div>`;}
@@ -382,7 +461,10 @@ function renderFavorites(){const list=state.products.filter((p)=>state.favorites
 function setupMiniApp(){if(!MiniApp)return;try{MiniApp.ready();MiniApp.expand();}catch(e){}try{MiniApp.disableVerticalSwipes();}catch(e){}try{const p=MiniApp.themeParams||{};if(p.bg_color)document.body.style.background=p.bg_color;}catch(e){}try{MiniApp.BackButton.onClick(()=>switchTab('catalog'));}catch(e){}syncMiniAppNav('catalog');}
 let miniOrderHandler=null;
 function syncMiniAppNav(tab){if(!MiniApp)return;try{if(tab==='catalog'){MiniApp.BackButton.hide();try{MiniApp.MainButton.hide();}catch(e){}}else MiniApp.BackButton.show();}catch(e){}try{if(tab==='product'&&state.currentProductId){if(miniOrderHandler)try{MiniApp.MainButton.offClick(miniOrderHandler);}catch(e){}miniOrderHandler=()=>addToCart(null,state.currentProductId);MiniApp.MainButton.setText('Добавить в корзину');MiniApp.MainButton.onClick(miniOrderHandler);MiniApp.MainButton.show();}else if(tab==='cart'&&cartCount()>0){if(miniOrderHandler)try{MiniApp.MainButton.offClick(miniOrderHandler);}catch(e){}miniOrderHandler=()=>goCheckout();MiniApp.MainButton.setText('Перейти к оформлению');MiniApp.MainButton.onClick(miniOrderHandler);MiniApp.MainButton.show();}else if(tab==='checkout'&&cartCount()>0){if(miniOrderHandler)try{MiniApp.MainButton.offClick(miniOrderHandler);}catch(e){}miniOrderHandler=()=>submitOrder();MiniApp.MainButton.setText('Подтвердить • '+cartTotal().toLocaleString('ru-RU')+' ₽');MiniApp.MainButton.onClick(miniOrderHandler);MiniApp.MainButton.show();}else MiniApp.MainButton.hide();}catch(e){}}
-try{window.onkeydown=(e)=>{try{if(!e||e.key!=='Escape')return;const d=document.getElementById('drawer');if(d&&!d.classList.contains('-translate-x-full')){toggleDrawer(false);return;}const ae=document.activeElement;if(ae&&ae.id==='search-input')resetSearch();}catch(_){}};}catch(e){}
+try{window.onkeydown=(e)=>{try{if(!e||e.key!=='Escape')return;const d=document.getElementById('drawer');if(d&&!d.classList.contains('-translate-x-full'))toggleDrawer(false);}catch(_){}};}catch(e){}
+try{if(typeof window!=='undefined'&&window.addEventListener){window.addEventListener('scroll',updateToTop,{passive:true});window.addEventListener('resize',updateToTop);}}catch(e){}
+try{if(typeof document!=='undefined'&&document.addEventListener)document.addEventListener('scroll',updateToTop,{passive:true,capture:true});}catch(e){}
+try{if(typeof document!=='undefined'&&document.addEventListener){document.addEventListener('click',(e)=>{try{if(!state.supportMenu)return;const fab=document.getElementById('support-fab');if(fab&&e&&e.target&&fab.contains(e.target))return;toggleSupportMenu(false);}catch(_){}});}}catch(e){}
 setupMiniApp();initApp();
 </script>
 </body>
