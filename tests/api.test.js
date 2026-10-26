@@ -42,10 +42,11 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.equal(r.status, 200);
     const d = await r.json();
     assert.ok(d.settings.hero_title);
+    assert.equal(d.settings.payment_details, undefined);
     assert.ok(Array.isArray(d.products) && d.products.length >= 300);
   });
 
-  it('POST /api/order creates TG-XXXX with payment details', async () => {
+  it('POST /api/order creates TG-XXXX without payment details', async () => {
     const r = await fetch(`${BASE}/api/order`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items: [{ id: 1, name: 'Test', price: 1000, qty: 1 }], total: 1000, customer: { fio: 'Test', phone: '+7000' } }),
@@ -53,7 +54,7 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.equal(r.status, 200);
     const d = await r.json();
     assert.match(d.orderCode, /^TG-\d+$/);
-    assert.ok(typeof d.paymentDetails === 'string');
+    assert.equal(d.paymentDetails, undefined);
     assert.ok(typeof d.total === 'number');
   });
 

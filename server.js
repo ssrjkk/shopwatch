@@ -149,7 +149,10 @@ let tgBot = null;
 app.get('/api/state', (req, res) => {
   const settings = Object.fromEntries(db.prepare('SELECT key, value FROM settings').all().map((r) => [r.key, r.value]));
   const products = db.prepare('SELECT * FROM products ORDER BY id DESC').all();
-  res.json({ settings, products });
+  res.json({
+    settings: Object.fromEntries(Object.entries(settings).filter(([k]) => k !== 'payment_details')),
+    products
+  });
 });
 
 app.get('/healthz', (req, res) => {
@@ -230,11 +233,7 @@ app.post('/api/order', async (req, res) => {
     sendMaxMessage(process.env.MAX_ADMIN_ID, notifyMsg).catch((e) => console.error('MAX Send Error:', e.message));
   }
 
-  res.json({
-    orderCode,
-    total: serverTotal,
-    paymentDetails: getSetting('show_payment') === '1' ? getSetting('payment_details') : ''
-  });
+  res.json({ orderCode, total: serverTotal });
 });
 
 // ---------- Telegram bot ----------
