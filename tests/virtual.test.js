@@ -49,7 +49,7 @@ global.IntersectionObserver = global.window.IntersectionObserver;
 global.localStorage = { getItem: () => '[]', setItem: () => {} };
 global.fetch = async () => ({ ok: false });
 `;
-    g = eval(`(function(){ ${prelude}\n${PD_SRC}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, renderHits, toggleFav, openProduct, tgOrderLink, addToCart, changeQty, removeFromCart, cartCount, cartTotal, renderCart, submitOrder, get document() { return document; }, hearts, esc }; })()`);
+    g = eval(`(function(){ ${prelude}\n${PD_SRC}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, renderHits, toggleFav, openProduct, tgOrderLink, addToCart, changeQty, removeFromCart, cartCount, cartTotal, renderCart, renderCheckout, goCheckout, switchTab, submitOrder, get document() { return document; }, hearts, esc }; })()`);
     await new Promise((r) => setTimeout(r, 50));
   });
 
@@ -138,7 +138,7 @@ global.fetch = async () => ({ ok: false });
     assert.equal(g.document.getElementById('cart-badge').textContent, 1);
   });
 
-  it('submitOrder validates the form and completes the order', async () => {
+  it('submitOrder validates the form', async () => {
     seed350();
     g.state.cart = [];
     g.addToCart(null, 1000);
@@ -148,6 +148,17 @@ global.fetch = async () => ({ ok: false });
     await g.submitOrder();
     assert.equal(g.state.cart.length, 1);
     assert.ok(g.document.getElementById('view-order-success').classList.contains('hidden'));
+  });
+
+  it('checkout shows review and completes the order', async () => {
+    seed350();
+    g.state.cart = [];
+    g.addToCart(null, 1000);
+    g.addToCart(null, 1001);
+    g.switchTab('checkout');
+    assert.ok(g.document.getElementById('checkout-list').innerHTML.includes('Watch 0'));
+    assert.ok(g.document.getElementById('checkout-total').textContent.includes('20'));
+    g.document.getElementById('view-order-success').classList.add('hidden');
     g.document.getElementById('f-fio').value = 'Иван Тестов';
     g.document.getElementById('f-phone').value = '+7 900 000-00-00';
     g.document.getElementById('f-delivery').value = 'СДЭК';
@@ -155,6 +166,6 @@ global.fetch = async () => ({ ok: false });
     assert.equal(g.state.cart.length, 0);
     assert.match(g.document.getElementById('order-code-badge').textContent, /^TG-\d+$/);
     assert.ok(!g.document.getElementById('view-order-success').classList.contains('hidden'));
-    assert.match(g.document.getElementById('order-tg-btn').href, /start=TG-\d+_1000x1x10000/);
+    assert.match(g.document.getElementById('order-tg-btn').href, /start=TG-\d+_1000x1x10000_1001x1x10001/);
   });
 });
