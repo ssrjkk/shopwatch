@@ -1,57 +1,12 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('fs');
-const path = require('path');
-const { extractFrontendScript } = require('./helpers/load');
-const PD_SRC = fs.readFileSync(path.join(__dirname, '..', 'public', 'products-data.js'), 'utf8');
+const { mountFrontend } = require('./helpers/dom');
 
 describe('catalog virtualization', () => {
   let g;
 
   before(async () => {
-    const prelude = `
-const hearts = new Map();
-function makeClassList() {
-  const s = new Set();
-  return { toggle: (c, f) => { if (f) s.add(c); else s.delete(c); }, add: (c) => s.add(c), remove: (c) => s.delete(c), contains: (c) => s.has(c) };
-}
-function indexHearts(html) {
-  for (const m of html.matchAll(/data-fav-heart="(\\d+)"/g)) {
-    const id = Number(m[1]);
-    if (!hearts.has(id)) hearts.set(id, []);
-    hearts.get(id).push({ classList: makeClassList() });
-  }
-}
-const elements = {};
-function mkEl(id) {
-  return {
-    _html: '', textContent: '', href: '',
-    value: id === 'sort-select' ? 'popular' : '',
-    get innerHTML() { return this._html; },
-    set innerHTML(v) { this._html = v; if (id === 'products-grid') { hearts.clear(); indexHearts(v); } },
-    insertAdjacentHTML(pos, html) { this._html += html; if (id === 'products-grid') indexHearts(html); },
-    classList: makeClassList(),
-    getBoundingClientRect: () => ({ top: 10000 }),
-  };
-}
-global.document = {
-  getElementById: (id) => (elements[id] || (elements[id] = mkEl(id))),
-  querySelectorAll: (sel) => {
-    const m = sel.match(/data-fav-heart="(\\d+)"/);
-    return m ? (hearts.get(Number(m[1])) || []) : [];
-  },
-};
-global.window = {
-  innerHeight: 800, scrollTo: () => {}, requestAnimationFrame: (fn) => fn(),
-  IntersectionObserver: class { constructor(cb) { this.cb = cb; global.__obs = this; } observe() {} disconnect() {} },
-  onhashchange: null,
-};
-global.location = { hash: '', reload() {}, };
-global.IntersectionObserver = global.window.IntersectionObserver;
-global.localStorage = { getItem: () => '[]', setItem: () => {} };
-global.fetch = async () => ({ ok: false });
-`;
-    g = eval(`(function(){ ${prelude}\n${PD_SRC}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, renderHits, toggleFav, openProduct, tgOrderLink, addToCart, changeQty, removeFromCart, cartCount, cartTotal, renderCart, renderCheckout, goCheckout, switchTab, showView, route, toggleDrawer, submitOrder, renderFilters, setCategory, setSeries, get document() { return document; }, hearts, esc }; })()`);
+    g = mountFrontend();
     await new Promise((r) => setTimeout(r, 50));
   });
 

@@ -3,3 +3,5 @@ watchop.db
 .env
 *.log
 .DS_Store
+*.bak
+.scratch/

@@ -24,6 +24,20 @@ const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?')
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
 function isValidEnv(val) { return val && typeof val === 'string' && val.trim() !== '' && !val.startsWith('ВСТАВЬ_'); }
 const uploadsDir = 'uploads';
+const catalogFromDb = () => db.prepare('SELECT * FROM products ORDER BY id ASC').all().map((r) => ({ id: Number(r.id), brand: r.brand, series: r.series, category: r.category, name: r.name, price: Number(r.price), image: r.image, specs: r.specs, hit: Number(r.is_hit || 0) }));
+const fileCatalog = () => catalogFromDb().slice(0, -1);
+function diffCatalog(f, d) {
+  const k = (p) => [p.brand, p.series, p.category, p.name, p.price].join('|');
+  const fk = new Set(f.map(k)), dk = new Set(d.map(k));
+  return { fileCount: f.length, dbCount: d.length, onlyInDb: d.filter((p) => !fk.has(k(p))), onlyInFile: f.filter((p) => !dk.has(k(p))) };
+}
+function summarizeDiff(d) { return \`В базе: \${d.dbCount}, в файле: \${d.fileCount}.\nНовых в базе (попадут в файл): \${d.onlyInDb.length}.\`; }
+const exportCalls = [];
+function exportCatalog(force) {
+  const rows = catalogFromDb(), cur = fileCatalog();
+  exportCalls.push({ force, rows: rows.length });
+  return { blocked: false, diff: diffCatalog(cur, rows), written: ['products-data.js', 'public/products-data.js'], failed: [], rows: rows.length };
+}
 const sent = [];
 global.fetch = async (url, opts) => { sent.push({ url, body: opts?.body ? JSON.parse(opts.body) : null, auth: opts?.headers?.Authorization }); return { ok: true, json: async () => ({}) }; };
 process.env.MAX_BOT_TOKEN = 'fake-token';
@@ -117,5 +131,17 @@ process.env.MAX_ADMIN_ID = '999';
     const atts = JSON.stringify(api.lastTo(999).body.attachments);
     assert.ok(atts.includes('Открыть каталог') && atts.includes('https://example.com/shop'));
     delete process.env.SHOP_URL;
+  });
+
+  it('экспорт каталога: превью из меню, затем подтверждение', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '/start'));
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Экспорт каталога'), 'кнопка в админ-меню');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Экспорт каталога'));
+    const preview = api.lastTo(999);
+    assert.match(preview.body.text, /Выгрузка каталога/);
+    assert.match(preview.body.text, /Новых в базе \(попадут в файл\): 1/);
+    assert.ok(JSON.stringify(preview.body.attachments).includes('Подтвердить экспорт'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Подтвердить экспорт'));
+    assert.match(api.lastTo(999).body.text, /записано \d+ позиций/);
   });
 });

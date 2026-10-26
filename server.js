@@ -24,6 +24,8 @@ const uploadsDir = path.join(publicDir, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use(express.static(publicDir));
 
+const { normalizeRow, renderCatalogFile, readCatalogFile, diffCatalog, summarizeDiff } = require('./catalog-export.js');
+
 function isValidEnv(val) {
   return val && typeof val === 'string' && val.trim() !== '' && !val.startsWith('ВСТАВЬ_');
 }
@@ -44,7 +46,7 @@ function tgAdminMenuKb() {
   return Markup.keyboard([
     ['Добавить часы', 'Товары и цены'],
     ['Реквизиты оплаты', 'Тексты и контакты'],
-    ['Последние заказы']
+    ['Последние заказы', 'Экспорт каталога']
   ]).resize();
 }
 
@@ -120,9 +122,16 @@ try { db.exec('ALTER TABLE orders ADD COLUMN customer_json TEXT'); } catch (e) {
 const SEED_PRODUCTS = require('./public/products-data.js');
 {
   const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, image, specs, is_hit) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+  const insWithId = db.prepare('INSERT INTO products (id, brand, series, category, name, price, image, specs, is_hit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
   const put = (x) => ins.run(x.brand, x.series, x.category, x.name, x.price, x.image, x.specs, x.hit ? 1 : 0);
+  const putWithId = (x) => insWithId.run(Number(x.id), x.brand, x.series, x.category, x.name, x.price, x.image, x.specs, x.hit ? 1 : 0);
   if (db.prepare('SELECT COUNT(*) as c FROM products').get().c === 0) {
-    for (const x of SEED_PRODUCTS) put(x);
+    // Пустая база воспроизводит файл один в один, включая id: тогда #/p/<id> и payload
+    // заказа означают один и тот же товар и на сервере, и на статической витрине.
+    for (const x of SEED_PRODUCTS) {
+      if (Number(x.id) > 0) putWithId(x);
+      else put(x);
+    }
     console.log(`Catalog seeded: ${SEED_PRODUCTS.length} products`);
   } else {
     const have = new Set(db.prepare('SELECT name FROM products').all().map((r) => r.name));
@@ -142,6 +151,50 @@ const SEED_PRODUCTS = require('./public/products-data.js');
   }
 }
 
+
+// ---------- Экспорт каталога из базы в файл-источник ----------
+// products-data.js — единственный источник для витрины без бэкенда (GitHub Pages)
+// и для начального засева базы. Кнопка в админке приводит базу к файлу.
+const CATALOG_FILES = [path.join(__dirname, 'products-data.js'), path.join(publicDir, 'products-data.js')];
+
+function catalogFromDb() {
+  return db.prepare('SELECT * FROM products ORDER BY id ASC').all().map(normalizeRow);
+}
+
+function fileCatalog() {
+  try {
+    return readCatalogFile(fs.readFileSync(CATALOG_FILES[0], 'utf8')) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function exportCatalog(force) {
+  const rows = catalogFromDb();
+  const current = fileCatalog();
+  const diff = diffCatalog(current, rows);
+  if (!force && current.length && rows.length < current.length) {
+    return {
+      blocked: true,
+      diff,
+      text: `Экспорт остановлен: в базе ${rows.length} позиций, в файле ${current.length}. Сначала разберитесь с потерей — либо подтвердите принудительно.`,
+    };
+  }
+  const text = renderCatalogFile(rows);
+  const written = [];
+  const failed = [];
+  for (const f of CATALOG_FILES) {
+    const label = path.relative(__dirname, f).replace(/\\/g, '/');
+    try {
+      if (fs.existsSync(f)) fs.copyFileSync(f, f + '.bak');
+      fs.writeFileSync(f, text);
+      written.push(label);
+    } catch (e) {
+      failed.push(`${label}: ${e.message}`);
+    }
+  }
+  return { blocked: false, diff, written, failed, rows: rows.length };
+}
 
 // ---------- API ----------
 let tgBot = null;
@@ -335,6 +388,39 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     if (!orders.length) return ctx.reply('Заявок пока нет.');
     ctx.reply(orders.map((o) => `• ${o.order_code} — ${Number(o.total).toLocaleString('ru-RU')} ₽ [${o.status}]`).join('\n'));
   });
+  tgBot.hears('Экспорт каталога', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    const preview = summarizeDiff(diffCatalog(fileCatalog(), catalogFromDb()));
+    ctx.reply(
+      `Выгрузка каталога из рабочей базы в products-data.js\n\n${preview}\n\nФайл перезапишется целиком, текущая копия уйдёт в products-data.js.bak.`,
+      Markup.inlineKeyboard([[Markup.button.callback('Выгрузить', 'tg_export_yes'), Markup.button.callback('Отмена', 'tg_export_no')]])
+    );
+  });
+  tgBot.action('tg_export_no', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery('Отменено');
+    ctx.reply('Экспорт отменён. Выберите действие:', tgAdminMenuKb());
+  });
+  tgBot.action('tg_export_yes', async (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery('Выгружаю');
+    const res = exportCatalog(true);
+    if (res.blocked) return ctx.reply(res.text);
+    const lines = [
+      `Готово: в products-data.js записано ${res.rows} позиций.`,
+      `Позиций, которых не было в файле: ${res.diff.onlyInDb.length}.`,
+      `Позиций из файла, которых нет в базе: ${res.diff.onlyInFile.length} — они из файла ушли.`,
+      res.written.length ? `Записано: ${res.written.join(', ')}` : 'Файлы не записаны.',
+      res.failed.length ? `Ошибки записи: ${res.failed.join('; ')}` : '',
+      'Файл нужно закоммитить и пересобрать GitHub Pages — витрина без бэкенда берёт каталог из него.',
+    ].filter(Boolean);
+    await ctx.reply(lines.join('\n'));
+    try {
+      await ctx.replyWithDocument({ source: CATALOG_FILES[0], filename: 'products-data.js' });
+    } catch (e) {
+      ctx.reply(`Файл не приложить: ${e.message}`);
+    }
+  });
   tgBot.action(/^st_(TG-\d+)_(.+)$/, (ctx) => {
     if (!isTgAdmin(ctx)) return;
     const [, code, st] = ctx.match;
@@ -497,7 +583,7 @@ function maxShopLinkButtons() {
   return [];
 }
 
-const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы']];
+const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога']];
 const MAX_CANCEL = [['Отмена']];
 
 async function sendMaxMessage(userId, text, kbRows, extraButtons) {
@@ -726,6 +812,24 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     const key = MAX_CFG_BUTTONS[text];
     maxSessions.set(senderId, { step: 'wait_cfg', key });
     return sendMaxMessage(senderId, `Текущее:\n${getSetting(key)}\n\nОтправьте новое значение:`, MAX_CANCEL);
+  }
+  if (text === 'Экспорт каталога' || text === '/export') {
+    const preview = summarizeDiff(diffCatalog(fileCatalog(), catalogFromDb()));
+    return sendMaxMessage(senderId, `Выгрузка каталога из рабочей базы в products-data.js\n\n${preview}\n\nФайл перезапишется целиком, текущая копия уйдёт в products-data.js.bak.`, [['Подтвердить экспорт'], ['Отмена']]);
+  }
+  if (text === 'Подтвердить экспорт') {
+    const res = exportCatalog(true);
+    if (res.blocked) return sendMaxMessage(senderId, res.text, MAX_MENU);
+    const lines = [
+      `Готово: в products-data.js записано ${res.rows} позиций.`,
+      `Позиций, которых не было в файле: ${res.diff.onlyInDb.length}.`,
+      `Позиций из файла, которых нет в базе: ${res.diff.onlyInFile.length} — они из файла ушли.`,
+      res.written.length ? `Записано: ${res.written.join(', ')}` : 'Файлы не записаны.',
+      res.failed.length ? `Ошибки записи: ${res.failed.join('; ')}` : '',
+      'Файл нужно закоммитить и пересобрать GitHub Pages — витрина без бэкенда берёт каталог из него.',
+      'В Telegram-боте тот же экспорт отдаёт файл документом.',
+    ].filter(Boolean);
+    return sendMaxMessage(senderId, lines.join('\n'), MAX_MENU);
   }
   if (text === 'Последние заказы' || text === '/orders') {
     const orders = db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 10').all();

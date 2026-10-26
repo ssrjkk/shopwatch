@@ -3,7 +3,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
-COPY server.js ./
+COPY server.js catalog-export.js products-data.js index.html ./
 COPY public ./public
 RUN mkdir -p /data
 ENV DB_PATH=/data/watchop.db PORT=3000
