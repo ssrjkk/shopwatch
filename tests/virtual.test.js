@@ -49,7 +49,7 @@ global.IntersectionObserver = global.window.IntersectionObserver;
 global.localStorage = { getItem: () => '[]', setItem: () => {} };
 global.fetch = async () => ({ ok: false });
 `;
-    g = eval(`(function(){ ${prelude}\n${PD_SRC}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, renderHits, toggleFav, openProduct, tgOrderLink, addToCart, changeQty, removeFromCart, cartCount, cartTotal, renderCart, renderCheckout, goCheckout, switchTab, submitOrder, get document() { return document; }, hearts, esc }; })()`);
+    g = eval(`(function(){ ${prelude}\n${PD_SRC}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, renderHits, toggleFav, openProduct, tgOrderLink, addToCart, changeQty, removeFromCart, cartCount, cartTotal, renderCart, renderCheckout, goCheckout, switchTab, toggleDrawer, goCategory, submitOrder, get document() { return document; }, hearts, esc }; })()`);
     await new Promise((r) => setTimeout(r, 50));
   });
 
@@ -148,6 +148,16 @@ global.fetch = async () => ({ ok: false });
     await g.submitOrder();
     assert.equal(g.state.cart.length, 1);
     assert.ok(g.document.getElementById('view-order-success').classList.contains('hidden'));
+  });
+
+  it('goCategory closes drawer, filters and shows catalog', () => {
+    seed350();
+    g.state.products.forEach((p, i) => { if (i < 5) p.category = 'Эхолоты'; });
+    g.toggleDrawer(true);
+    g.goCategory('Эхолоты');
+    assert.ok(g.document.getElementById('drawer').classList.contains('-translate-x-full'));
+    assert.ok(!g.document.getElementById('view-catalog').classList.contains('hidden'));
+    assert.equal(g.document.getElementById('found-count').textContent, 'Найдено: 5');
   });
 
   it('checkout shows review and completes the order', async () => {
