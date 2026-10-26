@@ -44,12 +44,14 @@ global.document = {
 global.window = {
   innerHeight: 800, scrollTo: () => {}, requestAnimationFrame: (fn) => fn(),
   IntersectionObserver: class { constructor(cb) { this.cb = cb; global.__obs = this; } observe() {} disconnect() {} },
+  onhashchange: null,
 };
+global.location = { hash: '', reload() {}, };
 global.IntersectionObserver = global.window.IntersectionObserver;
 global.localStorage = { getItem: () => '[]', setItem: () => {} };
 global.fetch = async () => ({ ok: false });
 `;
-    g = eval(`(function(){ ${prelude}\n${PD_SRC}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, renderHits, toggleFav, openProduct, tgOrderLink, addToCart, changeQty, removeFromCart, cartCount, cartTotal, renderCart, renderCheckout, goCheckout, switchTab, toggleDrawer, goCategory, submitOrder, get document() { return document; }, hearts, esc }; })()`);
+    g = eval(`(function(){ ${prelude}\n${PD_SRC}\n${extractFrontendScript()}\n;return { get state() { return state; }, renderCatalog, renderHits, toggleFav, openProduct, tgOrderLink, addToCart, changeQty, removeFromCart, cartCount, cartTotal, renderCart, renderCheckout, goCheckout, switchTab, showView, route, toggleDrawer, submitOrder, renderFilters, setCategory, setSeries, get document() { return document; }, hearts, esc }; })()`);
     await new Promise((r) => setTimeout(r, 50));
   });
 
@@ -150,14 +152,35 @@ global.fetch = async () => ({ ok: false });
     assert.ok(g.document.getElementById('view-order-success').classList.contains('hidden'));
   });
 
-  it('goCategory closes drawer, filters and shows catalog', () => {
+  it('hash routes drive navigation and filters', () => {
     seed350();
     g.state.products.forEach((p, i) => { if (i < 5) p.category = 'Эхолоты'; });
-    g.toggleDrawer(true);
-    g.goCategory('Эхолоты');
-    assert.ok(g.document.getElementById('drawer').classList.contains('-translate-x-full'));
-    assert.ok(!g.document.getElementById('view-catalog').classList.contains('hidden'));
+    global.location.hash = '#/c/' + encodeURIComponent('Эхолоты');
+    g.route();
+    assert.equal(g.state.activeCategory, 'Эхолоты');
     assert.equal(g.document.getElementById('found-count').textContent, 'Найдено: 5');
+    assert.ok(!g.document.getElementById('view-catalog').classList.contains('hidden'));
+    global.location.hash = '#/p/1001';
+    g.route();
+    assert.ok(!g.document.getElementById('view-product').classList.contains('hidden'));
+    assert.ok(g.document.getElementById('order-code-badge') !== undefined);
+    global.location.hash = '#/cart';
+    g.route();
+    assert.ok(!g.document.getElementById('view-cart').classList.contains('hidden'));
+    global.location.hash = '';
+  });
+
+  it('cards and pills render real hyperlinks', () => {
+    seed350();
+    g.state.activeCategory = 'Все товары';
+    g.state.activeSeries = 'Все модели';
+    g.renderCatalog();
+    const gridHtml = g.document.getElementById('products-grid').innerHTML;
+    assert.ok(gridHtml.includes('href="#/p/1000"'), 'product link present');
+    g.renderFilters();
+    const pillsHtml = g.document.getElementById('category-pills').innerHTML;
+    assert.ok(pillsHtml.includes('href="#/c/'), 'category links present');
+    assert.ok(pillsHtml.includes(encodeURIComponent('Спортивные часы')), 'cyrillic category encoded');
   });
 
   it('checkout shows review and completes the order', async () => {

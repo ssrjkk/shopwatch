@@ -27,12 +27,12 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </div>
 <div class="p-4 space-y-5">
 <nav class="space-y-3 text-[15px] font-medium text-gray-900">
-<button onclick="toggleDrawer(false);switchTab('catalog')" class="block w-full text-left py-1">Каталог</button>
-<button onclick="toggleDrawer(false);switchTab('cart')" class="block w-full text-left py-1">Корзина</button>
-<button onclick="toggleDrawer(false);switchTab('about')" class="block w-full text-left py-1">О нас</button>
-<button onclick="toggleDrawer(false);switchTab('delivery')" class="block w-full text-left py-1">Доставка и оплата</button>
-<button onclick="toggleDrawer(false);switchTab('warranty')" class="block w-full text-left py-1">Гарантия и отзывы</button>
-<button onclick="toggleDrawer(false);switchTab('contacts')" class="block w-full text-left py-1">Контакты</button>
+<a href="#/catalog" onclick="toggleDrawer(false)" class="block w-full text-left py-1">Каталог</a>
+<a href="#/cart" onclick="toggleDrawer(false)" class="block w-full text-left py-1">Корзина</a>
+<a href="#/about" onclick="toggleDrawer(false)" class="block w-full text-left py-1">О нас</a>
+<a href="#/delivery" onclick="toggleDrawer(false)" class="block w-full text-left py-1">Доставка и оплата</a>
+<a href="#/warranty" onclick="toggleDrawer(false)" class="block w-full text-left py-1">Гарантия и отзывы</a>
+<a href="#/contacts" onclick="toggleDrawer(false)" class="block w-full text-left py-1">Контакты</a>
 </nav>
 <hr class="border-gray-100" />
 <div>
@@ -55,14 +55,14 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </div>
 </div>
 <div class="flex items-center gap-1">
-<button onclick="switchTab('cart')" class="relative p-2 text-gray-700" title="Корзина">
+<a href="#/cart" class="relative p-2 text-gray-700" title="Корзина">
 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9m-6-4h.01"/></svg>
 <span id="cart-badge" class="hidden absolute top-1 right-1 bg-[#10B981] text-white text-[10px] font-bold min-w-4 h-4 px-0.5 rounded-full items-center justify-center">0</span>
-</button>
-<button onclick="switchTab('favorites')" class="relative p-2 text-gray-700">
+</a>
+<a href="#/favorites" class="relative p-2 text-gray-700">
 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
 <span id="fav-badge" class="hidden absolute top-1 right-1 bg-[#10B981] text-white text-[10px] font-bold w-4 h-4 rounded-full items-center justify-center">0</span>
-</button>
+</a>
 </div>
 </div>
 <div class="relative">
@@ -70,12 +70,12 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M16.65 10.825a5.825 5.825 0 11-11.65 0 5.825 5.825 0 0111.65 0z"/></svg>
 </div>
 <div class="flex gap-1.5 mt-2.5 overflow-x-auto no-scrollbar">
-<button onclick="switchTab('catalog')" id="tab-btn-catalog" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141619] text-white whitespace-nowrap">Каталог</button>
-<button onclick="switchTab('cart')" id="tab-btn-cart" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Корзина</button>
-<button onclick="switchTab('about')" id="tab-btn-about" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">О магазине</button>
-<button onclick="switchTab('delivery')" id="tab-btn-delivery" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Оплата и доставка</button>
-<button onclick="switchTab('warranty')" id="tab-btn-warranty" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Гарантия и отзывы</button>
-<button onclick="switchTab('contacts')" id="tab-btn-contacts" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Контакты</button>
+<a href="#/catalog" id="tab-btn-catalog" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141619] text-white whitespace-nowrap">Каталог</a>
+<a href="#/cart" id="tab-btn-cart" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Корзина</a>
+<a href="#/about" id="tab-btn-about" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">О магазине</a>
+<a href="#/delivery" id="tab-btn-delivery" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Оплата и доставка</a>
+<a href="#/warranty" id="tab-btn-warranty" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Гарантия и отзывы</a>
+<a href="#/contacts" id="tab-btn-contacts" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Контакты</a>
 </div>
 </div>
 </header>
@@ -123,7 +123,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </section>
 
 <section id="view-product" class="hidden">
-<button onclick="switchTab('catalog')" class="mb-3 text-xs font-semibold text-gray-600 bg-white px-3 py-2 rounded-xl border border-gray-200">← Назад в каталог</button>
+<a href="#/catalog" class="inline-block mb-3 text-xs font-semibold text-gray-600 bg-white px-3 py-2 rounded-xl border border-gray-200">← Назад в каталог</a>
 <div id="product-detail-box" class="bg-white rounded-2xl p-4 border border-gray-100"></div>
 </section>
 
@@ -144,7 +144,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 <!-- ОФОРМЛЕНИЕ ЗАКАЗА -->
 <section id="view-checkout" class="hidden space-y-3">
 <h2 class="text-lg font-bold">Оформление заказа</h2>
-<button onclick="switchTab('cart')" class="mb-1 text-xs font-semibold text-gray-600 bg-white px-3 py-2 rounded-xl border border-gray-200">← Назад в корзину</button>
+<a href="#/cart" class="inline-block mb-1 text-xs font-semibold text-gray-600 bg-white px-3 py-2 rounded-xl border border-gray-200">← Назад в корзину</a>
 <div class="text-xs font-bold uppercase text-gray-400 tracking-wider">Проверьте состав заказа</div>
 <div id="checkout-list" class="space-y-2"></div>
 <div class="bg-white rounded-2xl p-4 border border-gray-100 space-y-3">
@@ -180,7 +180,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 <div class="space-y-2">
 <a id="order-tg-btn" href="#" target="_blank" class="block w-full bg-[#141619] text-white font-semibold text-sm py-3 rounded-xl">Написать в Telegram</a>
 <a id="order-max-btn" href="#" target="_blank" class="block w-full bg-white border border-gray-300 text-gray-900 font-semibold text-sm py-3 rounded-xl">Написать в MAX</a>
-<button onclick="switchTab('catalog')" class="block w-full text-xs text-emerald-600 font-semibold py-2.5">Вернуться в каталог</button>
+<a href="#/catalog" class="block w-full text-xs text-emerald-600 font-semibold py-2.5 text-center">Вернуться в каталог</a>
 </div>
 </div>
 </section>
@@ -263,12 +263,12 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 <div>
 <div class="text-[11px] font-bold uppercase text-gray-400 tracking-wider mb-2">Покупателям</div>
 <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-[13px] font-medium">
-<button onclick="switchTab('about')" class="text-left">О магазине</button>
-<button onclick="switchTab('delivery')" class="text-left">Оплата и доставка</button>
-<button onclick="switchTab('warranty')" class="text-left">Гарантия и отзывы</button>
-<button onclick="switchTab('contacts')" class="text-left">Контакты</button>
-<button onclick="switchTab('offer')" class="text-left">Оферта</button>
-<button onclick="switchTab('privacy')" class="text-left">Конфиденциальность</button>
+<a href="#/about" class="text-left">О магазине</a>
+<a href="#/delivery" class="text-left">Оплата и доставка</a>
+<a href="#/warranty" class="text-left">Гарантия и отзывы</a>
+<a href="#/contacts" class="text-left">Контакты</a>
+<a href="#/offer" class="text-left">Оферта</a>
+<a href="#/privacy" class="text-left">Конфиденциальность</a>
 </div>
 </div>
 <div class="grid grid-cols-2 gap-2">
@@ -306,14 +306,16 @@ function tgOrderLink(code,items){const base=String(state.settings.tg_link||'http
 function getCategoryCount(cat){if(cat==='Все товары')return state.products.length;return state.products.filter(p=>p.category===cat).length;}
 function allSeries(){const seen=[];for(const p of state.products){if(seen.indexOf(p.series)<0)seen.push(p.series);}return ['Все модели',...seen];}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');clearTimeout(showToast._t);showToast._t=setTimeout(()=>t.classList.add('hidden'),1800);}
-async function initApp(){try{const r=await fetch('/api/state');if(r.ok){const d=await r.json();if(d.products?.length)state.products=d.products;if(d.settings)state.settings={...state.settings,...d.settings};}}catch(e){}applySettingsToUI();renderFilters();renderCatalog();renderHits();updateBadges();}
+async function initApp(){try{const r=await fetch('/api/state');if(r.ok){const d=await r.json();if(d.products?.length)state.products=d.products;if(d.settings)state.settings={...state.settings,...d.settings};}}catch(e){}applySettingsToUI();renderFilters();renderCatalog();renderHits();updateBadges();route();}
 function applySettingsToUI(){const s=state.settings;document.getElementById('ui-hero-title').textContent=s.hero_title;document.getElementById('ui-address').textContent=s.address;document.getElementById('ui-phone').textContent=s.phone;document.getElementById('ui-phone').href='tel:'+s.phone.replace(/[^\d+]/g,'');document.getElementById('ui-email').textContent=s.email;document.getElementById('ui-legal-name').textContent=s.legal_name;document.getElementById('ui-legal-inn').textContent=s.legal_inn;document.getElementById('ui-legal-ogrnip').textContent=s.legal_ogrnip;document.getElementById('ft-legal-name').textContent=s.legal_name;document.getElementById('ft-legal-inn').textContent=s.legal_inn;document.getElementById('ft-legal-ogrnip').textContent=s.legal_ogrnip;document.getElementById('ui-consult-btn').href=s.tg_link;document.getElementById('ui-float-tg').href=s.tg_link;document.getElementById('ui-float-max').href=s.max_link;document.getElementById('ft-tg-btn').href=s.tg_link;document.getElementById('ft-max-btn').href=s.max_link;}
-function switchTab(tab){['catalog','product','order-success','cart','checkout','favorites','about','delivery','warranty','contacts','offer','privacy'].forEach(v=>document.getElementById('view-'+v).classList.add('hidden'));document.getElementById('view-'+tab).classList.remove('hidden');['catalog','cart','about','delivery','warranty','contacts'].forEach(t=>{const b=document.getElementById('tab-btn-'+t);if(!b)return;b.className=t===tab?'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141619] text-white whitespace-nowrap':'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap';});if(tab==='favorites')renderFavorites();if(tab==='cart')renderCart();if(tab==='checkout')renderCheckout();if(tab==='catalog')requestAnimationFrame(pumpGrid);syncMiniAppNav(tab);window.scrollTo({top:0,behavior:'smooth'});}
+function showView(tab){['catalog','product','order-success','cart','checkout','favorites','about','delivery','warranty','contacts','offer','privacy'].forEach(v=>document.getElementById('view-'+v).classList.add('hidden'));document.getElementById('view-'+tab).classList.remove('hidden');['catalog','cart','about','delivery','warranty','contacts'].forEach(t=>{const b=document.getElementById('tab-btn-'+t);if(!b)return;b.className=t===tab?'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141619] text-white whitespace-nowrap':'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap';});if(tab==='favorites')renderFavorites();if(tab==='cart')renderCart();if(tab==='checkout')renderCheckout();if(tab==='catalog')requestAnimationFrame(pumpGrid);syncMiniAppNav(tab);window.scrollTo({top:0,behavior:'smooth'});}
+function switchTab(tab){showView(tab);try{const h='#/'+tab;if(location.hash!==h)location.hash=h;}catch(e){}}
+function route(){try{try{toggleDrawer(false);}catch(e){}const parts=String(location.hash||'').replace(/^#/,'').split('/').filter(Boolean).map(s=>{try{return decodeURIComponent(s)}catch(e){return s}});const r0=(parts[0]||'catalog').toLowerCase();const VIEWS=['catalog','product','order-success','cart','checkout','favorites','about','delivery','warranty','contacts','offer','privacy'];if(r0==='c'&&parts[1]!==undefined){const cat=parts[1];state.activeCategory=CAT_ORDER.includes(cat)?cat:'Все товары';state.activeSeries='Все модели';setCategory(state.activeCategory);showView('catalog');return;}if(r0==='s'&&parts[1]!==undefined){const ser=parts[1];state.activeCategory='Все товары';state.activeSeries=allSeries().includes(ser)?ser:'Все модели';setSeries(state.activeSeries);showView('catalog');return;}if((r0==='p'||r0==='product')&&parts[1]!==undefined){const id=Number(parts[1]);if(state.products.some(p=>p.id===id)){openProduct(id);return;}}if(VIEWS.includes(r0)){showView(r0);return;}showView('catalog');}catch(e){try{showView('catalog');}catch(_){}}}
+try{if(typeof window!=='undefined'&&'onhashchange' in window)window.onhashchange=route;}catch(e){}
 function toggleDrawer(open){try{const d=document.getElementById('drawer');const b=document.getElementById('drawer-backdrop');if(open){d.classList.remove('-translate-x-full');b.classList.remove('hidden');}else{d.classList.add('-translate-x-full');b.classList.add('hidden');}}catch(e){}}
-function goCategory(cat){try{toggleDrawer(false);}catch(e){}try{setCategory(cat);}catch(e){state.activeCategory=cat;try{renderFilters();}catch(_){}}try{switchTab('catalog');}catch(e){window.scrollTo(0,0);}}
-function renderDrawer(){document.getElementById('drawer-categories').innerHTML=CAT_ORDER.filter(c=>c!=='Все товары'&&getCategoryCount(c)>0).map(c=>`<button onclick="goCategory('${c}')" class="w-full flex items-center justify-between py-1 text-left"><span>${c}</span><span class="text-xs text-gray-400">${getCategoryCount(c)}</span></button>`).join('');}
+function renderDrawer(){document.getElementById('drawer-categories').innerHTML=CAT_ORDER.filter(c=>c!=='Все товары'&&getCategoryCount(c)>0).map(c=>`<a href="#/c/${encodeURIComponent(c)}" class="w-full flex items-center justify-between py-1 text-left"><span>${c}</span><span class="text-xs text-gray-400">${getCategoryCount(c)}</span></a>`).join('');}
 function renderHits(){const flagged=state.products.filter(p=>p.hit);const hits=(flagged.length?flagged:state.products).slice(0,8);document.getElementById('hits-grid').innerHTML=hits.map(p=>productCardHTML(p)).join('');}
-function renderFilters(){document.getElementById('category-pills').innerHTML=CAT_ORDER.filter(c=>c==='Все товары'||getCategoryCount(c)>0).map(c=>`<button onclick="setCategory('${c}')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${state.activeCategory===c?'bg-[#141619] text-white':'bg-white text-gray-700 border border-gray-200'}">${c}</button>`).join('');document.getElementById('series-pills').innerHTML=allSeries().map(s=>`<button onclick="setSeries('${s}')" class="px-3 py-1.5 rounded-full text-xs font-semibold ${state.activeSeries===s?'bg-[#10B981] text-white':'bg-white text-gray-700 border border-gray-200'}">${s}</button>`).join('');}
+function renderFilters(){document.getElementById('category-pills').innerHTML=CAT_ORDER.filter(c=>c==='Все товары'||getCategoryCount(c)>0).map(c=>`<a href="#/c/${encodeURIComponent(c)}" class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${state.activeCategory===c?'bg-[#141619] text-white':'bg-white text-gray-700 border border-gray-200'}">${c}</a>`).join('');document.getElementById('series-pills').innerHTML=allSeries().map(s=>`<a href="#/s/${encodeURIComponent(s)}" class="px-3 py-1.5 rounded-full text-xs font-semibold ${state.activeSeries===s?'bg-[#10B981] text-white':'bg-white text-gray-700 border border-gray-200'}">${s}</a>`).join('');}
 function setCategory(c){state.activeCategory=c;renderFilters();renderCatalog();}
 function setSeries(s){state.activeSeries=s;renderFilters();renderCatalog();}
 function getFiltered(){const q=document.getElementById('search-input').value.trim().toLowerCase();const sort=document.getElementById('sort-select').value;let list=state.products.filter(p=>{if(state.activeCategory!=='Все товары'&&p.category!==state.activeCategory)return false;if(state.activeSeries!=='Все модели'&&p.series!==state.activeSeries)return false;if(q&&!(p.name.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q)||p.series.toLowerCase().includes(q)||p.category.toLowerCase().includes(q)))return false;return true;});if(sort==='asc')list.sort((a,b)=>a.price-b.price);if(sort==='desc')list.sort((a,b)=>b.price-a.price);return list;}
@@ -322,8 +324,8 @@ function appendChunk(){const grid=document.getElementById('products-grid');const
 function updateGridStatus(){const total=state.filtered.length;document.getElementById('found-count').textContent=`Найдено: ${total}`;const st=document.getElementById('grid-status');if(!total){st.textContent='Ничего не найдено. Попробуйте изменить запрос.';}else if(state.shownCount<total){st.textContent=`Показано ${state.shownCount} из ${total} — листайте вниз`;}else{st.textContent=total>PAGE_SIZE?`Показаны все ${total}`:'';}}
 function observeSentinel(){const s=document.getElementById('grid-sentinel');if(!('IntersectionObserver' in window))return;gridObserver=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){if(!appendChunk()&&gridObserver){gridObserver.disconnect();gridObserver=null;}}} ,{rootMargin:'600px'});gridObserver.observe(s);}
 function pumpGrid(){const s=document.getElementById('grid-sentinel');if(!s||!state.filtered.length||state.shownCount>=state.filtered.length)return;const r=s.getBoundingClientRect();if(r.top<window.innerHeight+600){if(appendChunk())pumpGrid();else if(gridObserver){gridObserver.disconnect();gridObserver=null;}}}
-function productCardHTML(p){const isFav=state.favorites.includes(p.id);return `<div class="bg-white rounded-2xl p-3 flex flex-col justify-between border border-gray-100 relative"><button onclick="toggleFav(event,${p.id})" class="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-white/90 border border-gray-200 flex items-center justify-center"><span data-fav-heart="${p.id}" class="${isFav?'text-red-500':'text-gray-400'} text-sm">♥</span></button><div onclick="openProduct(${p.id})" class="cursor-pointer"><img src="${esc(p.image)}" alt="" loading="lazy" class="w-full h-36 object-cover rounded-xl mb-2 bg-gray-50" /><div class="text-[10px] font-bold uppercase text-[#10B981]">${esc(p.brand)}</div><h3 class="text-xs text-gray-900 line-clamp-2 mt-0.5 min-h-[32px]">${esc(p.name)}</h3><div class="text-[11px] text-gray-500 line-clamp-2 mt-0.5 min-h-[28px]">${esc(p.specs||'')}</div><div class="text-sm font-bold mt-1.5 mb-2.5">${Number(p.price).toLocaleString('ru-RU')} ₽</div></div><button onclick="addToCart(event,${p.id})" class="w-full bg-[#141619] text-white text-xs font-semibold py-2.5 rounded-xl">Добавить в корзину</button></div>`;}
-function openProduct(id){const p=state.products.find(x=>x.id===id);if(!p)return;state.currentProductId=id;document.getElementById('product-detail-box').innerHTML=`<img src="${esc(p.image)}" class="w-full h-64 object-cover rounded-xl mb-3 bg-gray-50" /><div class="text-xs font-bold uppercase text-[#10B981]">${esc(p.brand)} • ${esc(p.series)}</div><h1 class="text-lg font-bold mt-1">${esc(p.name)}</h1><div class="text-2xl font-extrabold my-3">${Number(p.price).toLocaleString('ru-RU')} ₽</div><div class="bg-gray-50 rounded-xl p-3 text-xs text-gray-700 space-y-1 mb-3"><div class="flex justify-between"><span class="text-gray-400">Артикул</span><span class="font-semibold">W-${p.id}</span></div><div class="flex justify-between"><span class="text-gray-400">Бренд</span><span class="font-semibold">${esc(p.brand)}</span></div><div class="flex justify-between"><span class="text-gray-400">Серия</span><span class="font-semibold">${esc(p.series)}</span></div><div class="flex justify-between"><span class="text-gray-400">Категория</span><span class="font-semibold">${esc(p.category)}</span></div></div><p class="text-xs text-gray-600 leading-relaxed mb-4">${esc(p.specs||'Оригинальные смарт-часы с гарантией Watchop.')}<br><br>${esc(CAT_DESC[p.category]||'Оригинальный товар с официальной гарантией 12 месяцев, полной комплектацией и проверкой перед отправкой.')}</p><div class="space-y-2"><button onclick="addToCart(event,${p.id});switchTab('cart')" class="w-full bg-[#10B981] text-white font-bold text-sm py-3.5 rounded-xl">Добавить в корзину — ${Number(p.price).toLocaleString('ru-RU')} ₽</button><a href="${tgOrderLink('consult')}" target="_blank" class="block text-center w-full bg-[#2AABEE] text-white font-semibold text-xs py-3 rounded-xl">Задать вопрос в Telegram</a></div>`;switchTab('product');}
+function productCardHTML(p){const isFav=state.favorites.includes(p.id);return `<div class="bg-white rounded-2xl p-3 flex flex-col justify-between border border-gray-100 relative"><button onclick="toggleFav(event,${p.id})" class="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-white/90 border border-gray-200 flex items-center justify-center"><span data-fav-heart="${p.id}" class="${isFav?'text-red-500':'text-gray-400'} text-sm">♥</span></button><a href="#/p/${p.id}" class="block cursor-pointer"><img src="${esc(p.image)}" alt="" loading="lazy" class="w-full h-36 object-cover rounded-xl mb-2 bg-gray-50" /><div class="text-[10px] font-bold uppercase text-[#10B981]">${esc(p.brand)}</div><h3 class="text-xs text-gray-900 line-clamp-2 mt-0.5 min-h-[32px]">${esc(p.name)}</h3><div class="text-[11px] text-gray-500 line-clamp-2 mt-0.5 min-h-[28px]">${esc(p.specs||'')}</div><div class="text-sm font-bold mt-1.5 mb-2.5">${Number(p.price).toLocaleString('ru-RU')} ₽</div></a><button onclick="addToCart(event,${p.id})" class="w-full bg-[#141619] text-white text-xs font-semibold py-2.5 rounded-xl">Добавить в корзину</button></div>`;}
+function openProduct(id){const p=state.products.find(x=>x.id===id);if(!p)return;state.currentProductId=id;document.getElementById('product-detail-box').innerHTML=`<img src="${esc(p.image)}" class="w-full h-64 object-cover rounded-xl mb-3 bg-gray-50" /><div class="text-xs font-bold uppercase text-[#10B981]">${esc(p.brand)} • ${esc(p.series)}</div><h1 class="text-lg font-bold mt-1">${esc(p.name)}</h1><div class="text-2xl font-extrabold my-3">${Number(p.price).toLocaleString('ru-RU')} ₽</div><div class="bg-gray-50 rounded-xl p-3 text-xs text-gray-700 space-y-1 mb-3"><div class="flex justify-between"><span class="text-gray-400">Артикул</span><span class="font-semibold">W-${p.id}</span></div><div class="flex justify-between"><span class="text-gray-400">Бренд</span><span class="font-semibold">${esc(p.brand)}</span></div><div class="flex justify-between"><span class="text-gray-400">Серия</span><span class="font-semibold">${esc(p.series)}</span></div><div class="flex justify-between"><span class="text-gray-400">Категория</span><span class="font-semibold">${esc(p.category)}</span></div></div><p class="text-xs text-gray-600 leading-relaxed mb-4">${esc(p.specs||'Оригинальные смарт-часы с гарантией Watchop.')}<br><br>${esc(CAT_DESC[p.category]||'Оригинальный товар с официальной гарантией 12 месяцев, полной комплектацией и проверкой перед отправкой.')}</p><div class="space-y-2"><button onclick="addToCart(event,${p.id});switchTab('cart')" class="w-full bg-[#10B981] text-white font-bold text-sm py-3.5 rounded-xl">Добавить в корзину — ${Number(p.price).toLocaleString('ru-RU')} ₽</button><a href="${tgOrderLink('consult')}" target="_blank" class="block text-center w-full bg-[#2AABEE] text-white font-semibold text-xs py-3 rounded-xl">Задать вопрос в Telegram</a></div>`;showView('product');try{const h='#/p/'+id;if(location.hash!==h)location.hash=h;}catch(e){}}
 function cartCount(){return state.cart.reduce((s,i)=>s+(i.qty||0),0);}
 function cartTotal(){return state.cart.reduce((s,i)=>{const p=state.products.find(x=>x.id===i.id);return s+(p?Number(p.price)*i.qty:0);},0);}
 function saveCart(){localStorage.setItem('watchop_cart',JSON.stringify(state.cart));updateBadges();}
