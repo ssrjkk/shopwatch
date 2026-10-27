@@ -113,6 +113,7 @@ describe('витрина: поиск, фильтры и оформление н�
     g.document.getElementById('search-input').value = 'эхолот';
     g.onSearchInput();
     assert.equal(g.state.currentView, 'catalog', 'поиск сам открывает каталог');
+    g.renderSuggestionsNow();
     assert.equal(decodeURIComponent(global.location.hash), '#/catalog?q=эхолот');
     assert.ok(g.state.filtered.length > 0);
   });

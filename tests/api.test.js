@@ -59,10 +59,14 @@ describe('HTTP API (real server, temp DB)', () => {
   });
 
   it('immediate second order is rate-limited (429)', async () => {
-    const body = JSON.stringify({ items: [{ id: 1, name: 'Test', price: 1000, qty: 1 }], total: 1000 });
-    const r = await fetch(`${BASE}/api/order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-    assert.equal(r.status, 429);
-    assert.ok((await r.json()).error.includes('Слишком быстро'));
+    const body = JSON.stringify({ items: [{ id: 1, name: 'Test', price: 1000, qty: 1 }], total: 1000, customer: { fio: 'Test', phone: '+7 900 000-00-05' } });
+    const post = () => fetch(`${BASE}/api/order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    await new Promise((r) => setTimeout(r, 600)); // ждём конца кулдауна от предыдущей заявки
+    const first = await post();
+    assert.equal(first.status, 200, 'первая заявка проходит');
+    const second = await post();
+    assert.equal(second.status, 429);
+    assert.ok((await second.json()).error.includes('Слишком быстро'));
   });
 
   it('empty cart is rejected (400), bad initData is rejected (403)', async () => {

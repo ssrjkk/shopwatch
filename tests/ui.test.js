@@ -18,6 +18,7 @@ describe('витрина: подсказки, шторка фильтров и �
   function type(q) {
     g.document.getElementById('search-input').value = q;
     g.onSearchInput();
+    g.renderSuggestionsNow();
   }
 
   it('подсказки строятся из реального каталога и всегда что-то находят', () => {
@@ -158,6 +159,19 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.match(g.document.getElementById('cart-error').textContent, /телефон/i);
   });
 
+  it('набор текста не тормозит: выдача и подсказки пересчитываются после паузы', () => {
+    g.document.getElementById('search-input').value = 'эхолот';
+    g.renderSuggestionsNow();
+    const before = { n: g.state.filtered.length, s: g.state.suggest.length };
+    g.document.getElementById('search-input').value = 'garmin edge';
+    g.onSearchInput();
+    assert.equal(g.state.filtered.length, before.n, 'сразу после нажатия сетка не перестилается');
+    assert.equal(g.state.suggest.length, before.s, 'подсказки тоже ждут паузу');
+    g.renderSuggestionsNow();
+    assert.ok(g.state.filtered.length > 0, 'после паузы выдача обновилась');
+    assert.ok(g.state.suggest.length > 0 && g.state.suggest.every((s) => /edge/i.test(s.label)), 'и подсказки по обоим словам');
+  });
+
   it('битая корзина в localStorage не убивает сайт, а ссылка на MAX без бота скрыта', () => {
     const broken = mountFrontend({ storage: "{ getItem: (k) => (k === 'watchop_cart' ? 'не-json' : null), setItem: () => {} }" });
     assert.ok(broken.state.products.length > 300, 'каталог загрузился');
@@ -202,6 +216,29 @@ describe('витрина: подсказки, шторка фильтров и �
 
     const hits = HTML.slice(HTML.indexOf('Хиты продаж'), HTML.indexOf('Хиты продаж') + 400);
     assert.match(hits, /href="#\/catalog"/, '«Все товары →» — настоящая ссылка');
+  });
+
+  it('счётчик подсказок не протухает: кэш сбрасывается вместе с фильтром и каталогом', () => {
+    type('Fenix');
+    const all = g.state.suggest.map((s) => `${s.label}:${s.count}`).join('|');
+    global.location.hash = '#/c/' + encodeURIComponent('Велокомпьютеры');
+    g.route();
+    type('Fenix');
+    assert.equal(g.state.suggest.length, 0, 'в другой категории счётчики пересчитаны');
+    global.location.hash = '#/catalog';
+    g.route();
+    type('Fenix');
+    assert.equal(g.state.suggest.map((s) => `${s.label}:${s.count}`).join('|'), all, 'после возврата счётчики те же');
+    g.state.products = g.state.products.map((p) => ({ ...p }));
+    g.invalidateSugCounts();
+    g.renderFilters();
+    type('Fenix');
+    assert.equal(g.state.suggest.map((s) => `${s.label}:${s.count}`).join('|'), all, 'копия каталога даёт те же числа');
+    const target = g.state.products.find((p) => /Fenix 8 47 мм AMOLED Black/.test(p.name));
+    target.price = 1;
+    g.invalidateSugCounts();
+    type('до 1000');
+    assert.ok(g.state.filtered.some((p) => /Fenix 8 47 мм AMOLED Black/.test(p.name)), 'изменённая цена учитывается');
   });
 
   it('после смены каталога подсказки пересобираются, а не берутся из старого списка', () => {
