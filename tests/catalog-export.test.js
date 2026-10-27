@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { normalizeRow, renderCatalogFile, readCatalogFile, diffCatalog, summarizeDiff } = require('../catalog-export.js');
+const { normalizeRow, renderCatalogFile, readCatalogFile, diffCatalog, summarizeDiff, seedKey } = require('../catalog-export.js');
 const { mountFrontend, withIds } = require('./helpers/dom');
 
 const DB_ROWS = [
@@ -105,7 +105,17 @@ CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT C
     const first = applySeed(memdb, src);
     assert.equal(first.added, src.length, 'пустая база заполняется целиком');
     assert.deepEqual(memdb.prepare('SELECT id FROM products ORDER BY id').all().map((r) => r.id), src.map((r) => r.id), 'id не съехали');
+    assert.equal(memdb.prepare('SELECT COUNT(*) AS c FROM products WHERE seed_key IS NULL').get().c, 0, 'каждая позиция помечена ключом файла');
     assert.equal(applySeed(memdb, src).added, 0, 'повторный запуск ничего не добавляет');
+
+    // база, доставшаяся без seed_key (старая), помечается при первом же запуске
+    const legacy = new (require('node:sqlite').DatabaseSync)(':memory:');
+    legacy.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
+CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
+    legacy.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('GARMIN', 'fēnix', 'Спортивные часы', 'Старая позиция', 1000, 'x', 's');
+    assert.equal(applySeed(legacy, [{ brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Старая позиция', price: 1000, image: 'x', specs: 's' }]).added, 0, 'дубль не добавляется');
+    assert.equal(legacy.prepare('SELECT seed_key FROM products').get().seed_key, seedKey({ brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Старая позиция' }), 'ключ проставлен');
+    legacy.close();
 
     // админ удалил товар — перезапуск сервера обязан оставить его удалённым
     const removed = memdb.prepare('SELECT id, name FROM products ORDER BY id LIMIT 1').get();

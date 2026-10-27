@@ -86,6 +86,9 @@ function summarizeDiff(diff) {
 function applySeed(db, rows) {
   const mark = db.prepare('INSERT OR IGNORE INTO seed_marks (seed_key) VALUES (?)');
   for (const r of db.prepare('SELECT brand, series, category, name FROM products').all()) mark.run(seedKey(r));
+  // строки, пришедшие из файла, помечаем ключом — по нему видно, что добавлено админом
+  const setKey = db.prepare('UPDATE products SET seed_key = ? WHERE id = ?');
+  for (const r of db.prepare('SELECT id, brand, series, category, name FROM products WHERE seed_key IS NULL').all()) setKey.run(seedKey(r), r.id);
   const marked = new Set(db.prepare('SELECT seed_key FROM seed_marks').all().map((r) => r.seed_key));
   const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
   const insWithId = db.prepare('INSERT INTO products (id, brand, series, category, name, price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
