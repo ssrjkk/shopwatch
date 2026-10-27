@@ -20,11 +20,15 @@ const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map((s) => s.trim
 app.use(cors(corsOrigins.length ? { origin: corsOrigins } : { origin: false }));
 
 const publicDir = path.join(__dirname, 'public');
-const uploadsDir = path.join(publicDir, 'uploads');
+// Фото из админки должны переживать пересборку контейнера: в Docker UPLOADS_DIR указывает на /data.
+const uploadsDir = path.isAbsolute(process.env.UPLOADS_DIR || '')
+  ? process.env.UPLOADS_DIR
+  : path.join(publicDir, process.env.UPLOADS_DIR || 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
 app.use(express.static(publicDir));
 
-const { normalizeRow, renderCatalogFile, readCatalogFile, diffCatalog, summarizeDiff } = require('./catalog-export.js');
+const { applySeed, commitCatalogFiles, normalizeRow, renderCatalogFile, readCatalogFile, diffCatalog, summarizeDiff } = require('./catalog-export.js');
 
 function isValidEnv(val) {
   return val && typeof val === 'string' && val.trim() !== '' && !val.startsWith('ВСТАВЬ_');
@@ -117,38 +121,16 @@ if (getSetting('tg_link') === 'https://t.me/watchop_manager') setSetting('tg_lin
 if (getSetting('hero_title').includes('Воронеже')) setSetting('hero_title', 'Магазин оригинальной продукции Garmin и смарт-часов с доставкой по всей России — поможем выбрать под ваши задачи');
 if (getSetting('address').includes('Воронеж') || getSetting('address').includes('Пушкинская')) setSetting('address', 'Доставка по всей России — СДЭК, Почта России, Boxberry');
 try { db.exec('ALTER TABLE products ADD COLUMN is_hit INTEGER DEFAULT 0'); } catch (e) {}
+try { db.exec('ALTER TABLE products ADD COLUMN seed_key TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN customer_json TEXT'); } catch (e) {}
+try { db.exec('ALTER TABLE orders ADD COLUMN owner_tg TEXT'); } catch (e) {}
+try { db.exec('ALTER TABLE orders ADD COLUMN owner_max TEXT'); } catch (e) {}
+db.exec('CREATE TABLE IF NOT EXISTS seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
 
 const SEED_PRODUCTS = require('./public/products-data.js');
 {
-  const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, image, specs, is_hit) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-  const insWithId = db.prepare('INSERT INTO products (id, brand, series, category, name, price, image, specs, is_hit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-  const put = (x) => ins.run(x.brand, x.series, x.category, x.name, x.price, x.image, x.specs, x.hit ? 1 : 0);
-  const putWithId = (x) => insWithId.run(Number(x.id), x.brand, x.series, x.category, x.name, x.price, x.image, x.specs, x.hit ? 1 : 0);
-  if (db.prepare('SELECT COUNT(*) as c FROM products').get().c === 0) {
-    // Пустая база воспроизводит файл один в один, включая id: тогда #/p/<id> и payload
-    // заказа означают один и тот же товар и на сервере, и на статической витрине.
-    for (const x of SEED_PRODUCTS) {
-      if (Number(x.id) > 0) putWithId(x);
-      else put(x);
-    }
-    console.log(`Catalog seeded: ${SEED_PRODUCTS.length} products`);
-  } else {
-    const have = new Set(db.prepare('SELECT name FROM products').all().map((r) => r.name));
-    let added = 0;
-    for (const x of SEED_PRODUCTS) {
-      if (!have.has(x.name)) { put(x); added++; }
-    }
-    if (added) console.log(`Catalog upgraded: +${added} products`);
-    // Обновление картинок у существующих позиций (замена заглушек на реальные фото)
-    const updImg = db.prepare('UPDATE products SET image = ? WHERE name = ?');
-    let fixed = 0;
-    for (const x of SEED_PRODUCTS) {
-      const row = db.prepare('SELECT image FROM products WHERE name = ?').get(x.name);
-      if (row && row.image !== x.image) { updImg.run(x.image, x.name); fixed++; }
-    }
-    if (fixed) console.log(`Catalog images refreshed: ${fixed}`);
-  }
+  const res = applySeed(db, SEED_PRODUCTS);
+  if (res.added) console.log(res.empty ? `Catalog seeded: ${res.added} products` : `Catalog upgraded: +${res.added} products`);
 }
 
 
@@ -181,19 +163,15 @@ function exportCatalog(force) {
     };
   }
   const text = renderCatalogFile(rows);
-  const written = [];
-  const failed = [];
-  for (const f of CATALOG_FILES) {
-    const label = path.relative(__dirname, f).replace(/\\/g, '/');
-    try {
-      if (fs.existsSync(f)) fs.copyFileSync(f, f + '.bak');
-      fs.writeFileSync(f, text);
-      written.push(label);
-    } catch (e) {
-      failed.push(`${label}: ${e.message}`);
-    }
+  const validate = (src) => {
+    const parsed = readCatalogFile(src);
+    return Array.isArray(parsed) && parsed.length === rows.length ? true : false;
+  };
+  if (!validate(text)) {
+    return { blocked: true, diff, text: 'Экспорт остановлен: сгенерированный файл не читается обратно. Ни один файл не тронут.' };
   }
-  return { blocked: false, diff, written, failed, rows: rows.length };
+  const res = commitCatalogFiles(CATALOG_FILES, text, validate);
+  return { blocked: false, diff, written: res.written, failed: res.failed, aborted: res.aborted, rows: rows.length };
 }
 
 // ---------- API ----------
@@ -202,10 +180,11 @@ let tgBot = null;
 app.get('/api/state', (req, res) => {
   const settings = Object.fromEntries(db.prepare('SELECT key, value FROM settings').all().map((r) => [r.key, r.value]));
   const products = db.prepare('SELECT * FROM products ORDER BY id DESC').all();
-  res.json({
-    settings: Object.fromEntries(Object.entries(settings).filter(([k]) => k !== 'payment_details')),
-    products
-  });
+  const clean = Object.fromEntries(Object.entries(settings).filter(([k]) => k !== 'payment_details'));
+  // Ссылка на MAX показывается на витрине только когда MAX-бот действительно настроен,
+  // иначе покупатель уходит в 404.
+  if (!isValidEnv(process.env.MAX_BOT_TOKEN) || !isValidEnv(settings.max_link)) clean.max_link = '';
+  res.json({ settings: clean, products });
 });
 
 app.get('/healthz', (req, res) => {
@@ -221,7 +200,29 @@ app.get('/healthz', (req, res) => {
 const orderRateLimit = new Map();
 const ORDER_COOLDOWN_MS = Math.max(Number(process.env.ORDER_COOLDOWN_MS || 5000), 0);
 
+// Номер заказа выдаёт сервер: витрина без бэкенда может предложить уже занятый код,
+// поэтому берём следующий из счётчика и пропускаем совпадения.
+function allocateOrderCode() {
+  for (let i = 0; i < 200; i++) {
+    const next = (parseInt(getSetting('last_order_num') || '1175', 10) || 1175) + 1;
+    setSetting('last_order_num', next);
+    const code = `TG-${next}`;
+    if (!db.prepare('SELECT 1 AS x FROM orders WHERE order_code = ?').get(code)) return code;
+  }
+  return `TG-${Date.now()}`;
+}
+
 app.post('/api/order', async (req, res) => {
+  try {
+    return await handleApiOrder(req, res);
+  } catch (e) {
+    console.error('Order API error:', e.message);
+    if (!res.headersSent) return res.status(500).json({ error: 'Не удалось оформить заказ. Попробуйте ещё раз.' });
+    return res.end();
+  }
+});
+
+async function handleApiOrder(req, res) {
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
   if (orderRateLimit.has(ip) && now - orderRateLimit.get(ip) < ORDER_COOLDOWN_MS) {
@@ -241,6 +242,7 @@ app.post('/api/order', async (req, res) => {
     delivery: ['СДЭК', 'Почта России', 'Boxberry'].includes(cRaw.delivery) ? cRaw.delivery : 'СДЭК'
   };
   if (!customer.fio || !customer.phone) return res.status(400).json({ error: 'Укажите ФИО и телефон' });
+  if (customer.phone.replace(/\D/g, '').length < 10) return res.status(400).json({ error: 'Телефон нужно указать полностью — минимум 10 цифр' });
 
   // Цены и названия берем только из своей БД — значениям от клиента не доверяем.
   const cleanItems = [];
@@ -262,11 +264,9 @@ app.post('/api/order', async (req, res) => {
     if (!tgUser) return res.status(403).json({ error: 'Bad initData signature' });
   }
 
-  const nextNum = parseInt(getSetting('last_order_num') || '1175', 10) + 1;
-  setSetting('last_order_num', nextNum);
-  const orderCode = `TG-${nextNum}`;
-
-  db.prepare('INSERT INTO orders (order_code, items_json, total, customer_json) VALUES (?, ?, ?, ?)').run(orderCode, JSON.stringify(cleanItems), serverTotal, JSON.stringify(customer));
+  const orderCode = allocateOrderCode();
+  db.prepare('INSERT INTO orders (order_code, items_json, total, customer_json, owner_tg) VALUES (?, ?, ?, ?, ?)')
+    .run(orderCode, JSON.stringify(cleanItems), serverTotal, JSON.stringify(customer), tgUser ? String(tgUser.id) : null);
 
   const itemsText = cleanItems.map((i, idx) => `${idx + 1}. ${i.name} — ${i.qty} шт. x ${Number(i.price).toLocaleString('ru-RU')} ₽`).join('\n');
   const clientTag = tgUser ? `\nКлиент TG: @${tgUser.username || tgUser.first_name} (id ${tgUser.id})` : '';
@@ -282,12 +282,10 @@ app.post('/api/order', async (req, res) => {
     }).catch((e) => console.error('TG Send Error:', e.message));
   }
 
-  if (isValidEnv(process.env.MAX_BOT_TOKEN) && isValidEnv(process.env.MAX_ADMIN_ID)) {
-    sendMaxMessage(process.env.MAX_ADMIN_ID, notifyMsg).catch((e) => console.error('MAX Send Error:', e.message));
-  }
+  maxNotifyAdmin(notifyMsg, orderCode).catch((e) => console.error('MAX Send Error:', e.message));
 
   res.json({ orderCode, total: serverTotal });
-});
+}
 
 // ---------- Telegram bot ----------
 if (isValidEnv(process.env.TG_BOT_TOKEN)) {
@@ -493,55 +491,93 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
 
   // Заказ с витрины: если код уже есть в БД (свой бэкенд) — показываем его.
   // Если витрина без бэкенда (GitHub Pages) — создаём заявку из deep link TG-XXXX_IDxQTYxPRICE_...
-  function handleSiteOrderPayload(ctx, code, payload) {
-    let order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
-    if (!order) {
-      const rest = String(payload || '').split('_').slice(1);
-      const items = [];
-      for (const part of rest) {
-        let m = part.match(/^(\d+)x(\d+)x(\d+)$/);
-        if (m) {
-          const prod = db.prepare('SELECT name FROM products WHERE id = ?').get(Number(m[1]));
-          items.push({ id: Number(m[1]), name: prod ? prod.name : `Товар #${m[1]}`, price: Number(m[3]), qty: Math.min(Number(m[2]) || 1, 99) });
-          continue;
-        }
-        m = part.match(/^(\d+)x(\d+)$/);
-        if (m) {
-          const prod = db.prepare('SELECT id, name, price FROM products WHERE id = ?').get(Number(m[1]));
-          if (prod) items.push({ id: prod.id, name: prod.name, price: prod.price, qty: Math.min(Number(m[2]) || 1, 99) });
-          continue;
-        }
+  // Названия и цены берутся только из базы: ссылку может прислать кто угодно.
+  function parseOrderPayload(payload) {
+    const rest = String(payload || '').split('_').slice(1);
+    const items = [];
+    const unknown = [];
+    const byId = (id) => db.prepare('SELECT id, name, price FROM products WHERE id = ?').get(id);
+    for (const part of rest) {
+      let m = part.match(/^(\d+)x(\d+)x(?:\d+)$/);
+      if (m) {
+        const prod = byId(Number(m[1]));
+        if (prod) items.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty: Math.min(Number(m[2]) || 1, 99) });
+        else unknown.push(m[1]);
+        continue;
       }
-      // Совместимость со старым форматом TG-XXXX_ID_PRICE
-      if (!items.length && rest.length >= 2 && /^\d+$/.test(rest[0] || '') && /^\d+$/.test(rest[1] || '')) {
-        const prodId = parseInt(rest[0], 10);
-        const prod = db.prepare('SELECT name, price FROM products WHERE id = ?').get(prodId);
-        const price = parseInt(rest[1], 10) || prod?.price || 0;
-        items.push({ id: prodId, name: prod ? prod.name : `Товар #${prodId}`, price, qty: 1 });
-      }
-      if (items.length) {
-        const total = items.reduce((s, i) => s + i.price * i.qty, 0);
-        try {
-          db.prepare('INSERT INTO orders (order_code, items_json, total, status) VALUES (?, ?, ?, ?)').run(
-            code, JSON.stringify(items), total, 'Новый (сайт)'
-          );
-        } catch (e) { /* код уже занят — покажем существующий */ }
-        order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
-        if (order && isValidEnv(process.env.TG_ADMIN_ID)) {
-          const clientTag = ctx.from.username ? `@${ctx.from.username}` : (ctx.from.first_name || 'Клиент');
-          const list = items.map((i) => `• ${i.name} × ${i.qty}`).join('\n');
-          tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID,
-            `🔔 НОВАЯ ЗАЯВКА С САЙТА ${code}\n👤 Клиент: ${clientTag} (ID: ${ctx.from.id})\n📦\n${list}\n💰 ${Number(order.total).toLocaleString('ru-RU')} ₽`
-          ).catch(() => {});
-        }
+      m = part.match(/^(\d+)x(\d+)$/);
+      if (m) {
+        const prod = byId(Number(m[1]));
+        if (prod) items.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty: Math.min(Number(m[2]) || 1, 99) });
+        else unknown.push(m[1]);
       }
     }
-    return handleClientOrderLookupTg(ctx, code);
+    // Совместимость со старым форматом TG-XXXX_ID_PRICE
+    if (!items.length && !unknown.length && rest.length >= 2 && /^\d+$/.test(rest[0] || '') && /^\d+$/.test(rest[1] || '')) {
+      const prod = byId(parseInt(rest[0], 10));
+      if (prod) items.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty: 1 });
+      else unknown.push(rest[0]);
+    }
+    return { items, unknown };
+  }
+
+  function samePayload(order, items) {
+    try {
+      const stored = JSON.parse(order.items_json || '[]');
+      if (stored.length !== items.length) return false;
+      const key = (list) => list.map((i) => `${i.id ?? i.name}x${i.qty}`).sort().join('_');
+      return key(stored) === key(items);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function handleSiteOrderPayload(ctx, code, payload) {
+    let order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
+    const parsed = parseOrderPayload(payload);
+    // Одинаковый номер у двух покупателей статической витрины — не их вина: счётчик
+    // живёт в их браузере. Совпал состав — показываем существующую заявку,
+    // не совпал — берём свободный номер и говорим об этом админу.
+    if (order && parsed.items.length && !samePayload(order, parsed.items)) order = null;
+    if (!order && parsed.items.length) {
+      const total = parsed.items.reduce((s, i) => s + i.price * i.qty, 0);
+      const taken = (c) => !!db.prepare('SELECT 1 AS x FROM orders WHERE order_code = ?').get(c);
+      let wanted = taken(code) ? allocateOrderCode() : code;
+      try {
+        db.prepare('INSERT INTO orders (order_code, items_json, total, status, owner_tg) VALUES (?, ?, ?, ?, ?)')
+          .run(wanted, JSON.stringify(parsed.items), total, 'Новый (сайт)', String(ctx.from.id));
+      } catch (e) {
+        wanted = allocateOrderCode();
+        db.prepare('INSERT INTO orders (order_code, items_json, total, status, owner_tg) VALUES (?, ?, ?, ?, ?)')
+          .run(wanted, JSON.stringify(parsed.items), total, 'Новый (сайт)', String(ctx.from.id));
+      }
+      order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(wanted);
+      if (order && tgBot && isValidEnv(process.env.TG_ADMIN_ID)) {
+        const clientTag = ctx.from.username ? `@${ctx.from.username}` : (ctx.from.first_name || 'Клиент');
+        const list = parsed.items.map((i) => `• ${i.name} × ${i.qty}`).join('\n');
+        tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID,
+          `🔔 НОВАЯ ЗАЯВКА С САЙТА ${wanted}${wanted === code ? '' : ' (витрина предложила занятый номер ' + code + ')'}\n👤 Клиент: ${clientTag} (ID: ${ctx.from.id})\n📦\n${list}\n💰 ${Number(order.total).toLocaleString('ru-RU')} ₽`
+        ).catch(() => {});
+      }
+    }
+    if (!order) {
+      if (parsed.unknown.length) return ctx.reply(`Не нашёл в каталоге позиции: ${parsed.unknown.join(', ')}. Отправьте заказ заново или напишите менеджеру.`);
+      return ctx.reply('Не удалось распознать состав заказа. Отправьте номер (например, TG-1176) или напишите менеджеру.');
+    }
+    return handleClientOrderLookupTg(ctx, order.order_code);
   }
 
   function handleClientOrderLookupTg(ctx, code) {
     const order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
     if (!order) return ctx.reply(`Заказ ${code} не найден.`);
+    const requester = String(ctx.from?.id || '');
+    const admin = isValidEnv(process.env.TG_ADMIN_ID) && requester === String(process.env.TG_ADMIN_ID);
+    if (!order.owner_tg && !admin) {
+      db.prepare('UPDATE orders SET owner_tg = ? WHERE order_code = ?').run(requester, code);
+      order.owner_tg = requester;
+    } else if (!admin && order.owner_tg && String(order.owner_tg) !== requester) {
+      return ctx.reply(`Заказ ${code} оформлен другим покупателем. Состав и реквизиты пришлёт менеджер — напишите, если нужна помощь.`);
+    }
     const items = JSON.parse(order.items_json || '[]');
     const list = items.map((i) => `• ${i.name} (${Number(i.price).toLocaleString('ru-RU')} ₽)`).join('\n');
     ctx.reply(`Ваш заказ ${code} найден!\n\n${list}\nИтого: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\nРеквизиты:\n${getSetting('payment_details')}`);
@@ -587,14 +623,21 @@ const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['�
 const MAX_CANCEL = [['Отмена']];
 
 async function sendMaxMessage(userId, text, kbRows, extraButtons) {
-  if (!isValidEnv(process.env.MAX_BOT_TOKEN)) return;
+  if (!isValidEnv(process.env.MAX_BOT_TOKEN)) return false;
   const body = { text: String(text).slice(0, 4000) };
   if (kbRows) body.attachments = maxKb(kbRows, extraButtons);
-  await fetch(`${MAX_API}/messages?user_id=${userId}`, {
-    method: 'POST',
-    headers: { Authorization: process.env.MAX_BOT_TOKEN, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
+  try {
+    const res = await fetch(`${MAX_API}/messages?user_id=${userId}`, {
+      method: 'POST',
+      headers: { Authorization: process.env.MAX_BOT_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) console.error(`MAX send failed: ${res.status} for user ${userId}`);
+    return res.ok;
+  } catch (e) {
+    console.error(`MAX send error for user ${userId}: ${e.message}`);
+    return false;
+  }
 }
 
 async function startMaxBotPolling() {
@@ -695,20 +738,26 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   if (text === '/id') return sendMaxMessage(senderId, `Ваш MAX ID: ${senderId}`);
 
   const stMatch = text.match(/^(В сборку|Оплачен|Отменить)\s+(TG-\d+)$/i);
-    if (stMatch) {
-      const map = { 'в сборку': 'В сборке', 'оплачен': 'Оплачен', 'отменить': 'Отменен' };
-      const status = map[stMatch[1].toLowerCase()];
-      db.prepare('UPDATE orders SET status = ? WHERE order_code = ?').run(status, stMatch[2].toUpperCase());
-      return sendMaxMessage(senderId, `Статус ${stMatch[2].toUpperCase()}: ${status}`, MAX_MENU);
-    }
-
-  
+  if (stMatch) {
+    if (!isMaxAdmin) return sendMaxMessage(senderId, 'Менять статус заказа может только администратор.');
+    const map = { 'в сборку': 'В сборке', 'оплачен': 'Оплачен', 'отменить': 'Отменен' };
+    const status = map[stMatch[1].toLowerCase()];
+    db.prepare('UPDATE orders SET status = ? WHERE order_code = ?').run(status, stMatch[2].toUpperCase());
+    return sendMaxMessage(senderId, `Статус ${stMatch[2].toUpperCase()}: ${status}`, MAX_MENU);
+  }
 
   const orderMatch = text.match(/TG-\d+/i);
   if (orderMatch && !text.startsWith('/')) {
     const code = orderMatch[0].toUpperCase();
     const order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
     if (order) {
+      if (!order.owner_max && !isMaxAdmin) {
+        db.prepare('UPDATE orders SET owner_max = ? WHERE order_code = ?').run(senderId, code);
+        order.owner_max = senderId;
+      } else if (!isMaxAdmin && order.owner_max && String(order.owner_max) !== String(senderId)) {
+        await sendMaxMessage(senderId, `Заказ ${code} оформлен другим покупателем. Состав и реквизиты пришлёт менеджер.`);
+        return;
+      }
       const items = JSON.parse(order.items_json || '[]');
       const list = items.map((i) => `• ${i.name} (${Number(i.price).toLocaleString('ru-RU')} ₽)`).join('\n');
       await sendMaxMessage(senderId, `Заказ ${code} принят!\n\n${list}\nК оплате: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\nРеквизиты:\n${getSetting('payment_details')}`);

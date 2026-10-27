@@ -7,6 +7,7 @@ const { extractFrontendScript, ROOT } = require('./load');
 function prelude(opts) {
   const loc = opts.location || {};
   const fetchImpl = opts.fetch || 'async () => ({ ok: false })';
+  const storeImpl = opts.storage || '{ getItem: () => null, setItem: () => {} }';
   return `
 const hearts = new Map();
 function makeClassList() {
@@ -46,7 +47,7 @@ global.window = {
 };
 global.location = { hash: '', reload() {}, ${Object.entries(loc).map(([k, v]) => `${k}: ${JSON.stringify(v)},`).join(' ')} };
 global.IntersectionObserver = global.window.IntersectionObserver;
-global.localStorage = { getItem: () => '[]', setItem: () => {} };
+global.localStorage = ${storeImpl};
 global.fetch = ${fetchImpl};
 `;
 }
@@ -59,7 +60,8 @@ const EXPOSE = [
   'setSearchQuery', 'syncCatalogHash', 'goAllProducts', 'goCatalogHome', 'quickOrder', 'fallbackCopy',
   'updateGridStatus', 'parseHash', 'searchSuggestions', 'renderSuggestions', 'hideSuggestions', 'pickSuggest',
   'moveSuggest', 'onSearchFocus', 'onSearchKey', 'toggleFilterSheet', 'closeFilterSheet', 'resetFilters',
-  'updateFilterChrome', 'activeFilterCount', 'filterSheetOpen', 'toggleSupportMenu', 'updateToTop', 'observeToTop',
+  'updateFilterChrome', 'activeFilterCount', 'filterSheetOpen', 'toggleSupportMenu', 'updateToTop',
+  'readStore', 'rememberOrder', 'lastOrder', 'showOrderSuccess', 'applyOrderToDom', 'suggestionCount', 'applySettingsToUI',
   'scrollToGrid', 'buildSugMap', 'sugMap', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
 ];
 

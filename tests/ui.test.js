@@ -99,9 +99,79 @@ describe('витрина: подсказки, шторка фильтров и �
     global.window.scrollY = 0;
     g.updateToTop();
     assert.equal(btn.classList.contains('hidden'), true, 'снова пропала наверху');
-    assert.doesNotThrow(() => g.observeToTop(), 'страховка через IntersectionObserver не падает');
-    assert.ok(HTML.includes('id="hero-block"'), 'наблодан за баннером есть');
     assert.ok(/addEventListener\(['"]scroll['"]/.test(HTML), 'слушатель scroll на месте');
+    assert.equal(HTML.includes('maximum-scale'), false, 'страницу можно приблизить пальцем');
+    assert.equal(HTML.includes('user-scalable'), false, 'то же про user-scalable');
+  });
+
+  it('цифра в запросе сужает выдачу и совпадает со счётчиком подсказки', () => {
+    const run = (q) => { type(q); return g.state.filtered.slice(); };
+    const fenix = run('Fenix');
+    const fenix8 = run('Fenix 8');
+    assert.ok(fenix8.length > 0 && fenix8.length < fenix.length, `Fenix 8: ${fenix8.length} из ${fenix.length}`);
+    assert.equal(run('fenix   8').length, fenix8.length, 'лишние пробелы не ломают модель');
+    assert.ok(run('Fenix 6').length > 0 && run('Fenix 6').length < fenix.length, 'Fenix 6 — своя линейка');
+    type('Fenix');
+    for (const s of g.state.suggest) {
+      assert.equal(s.count, run(s.label).length, `счётчик подсказки «${s.label}» совпадает с выдачей`);
+    }
+    // подсказки считаются с учётом активного фильтра
+    global.location.hash = '#/c/' + encodeURIComponent('Эхолоты');
+    g.route();
+    type('fenix');
+    assert.equal(g.state.suggest.length, 0, 'в эхолотах Fenix не предлагем');
+    global.location.hash = '#/catalog';
+    g.route();
+  });
+
+  it('пустой экран «заказ принят» возвращает в каталог, а заказ этой сессии — остаётся', async () => {
+    global.location.hash = '#/order-success';
+    g.route();
+    assert.equal(g.state.currentView, 'catalog', 'прямая ссылка на пустой экран не работает');
+    g.state.cart = [];
+    g.addToCart(null, g.state.products[0].id);
+    g.document.getElementById('f-fio').value = 'Иван';
+    g.document.getElementById('f-phone').value = '+7 900 000-00-00';
+    g.state.lastOrderAt = 0;
+    g.document.getElementById('order-submit-btn').disabled = false;
+    await g.submitOrder();
+    assert.equal(g.state.currentView, 'order-success');
+    const code = g.document.getElementById('order-code-badge').textContent;
+    assert.match(code, /^TG-\d+$/);
+    global.location.hash = '#/catalog';
+    g.route();
+    global.location.hash = '#/order-success';
+    g.route();
+    assert.equal(g.state.currentView, 'order-success', 'заказ этой сессии переживает переход');
+    assert.equal(g.document.getElementById('order-code-badge').textContent, code);
+  });
+
+  it('телефон из одних букв не проходит, заказ остаётся в корзине', async () => {
+    g.state.cart = [];
+    g.addToCart(null, g.state.products[1].id);
+    g.document.getElementById('f-fio').value = 'Иван';
+    g.document.getElementById('f-phone').value = 'абвгдежзклмн';
+    g.state.lastOrderAt = 0;
+    g.document.getElementById('cart-error').classList.add('hidden');
+    await g.submitOrder();
+    assert.equal(g.state.cart.length, 1, 'заявка не отправлена');
+    assert.match(g.document.getElementById('cart-error').textContent, /телефон/i);
+  });
+
+  it('битая корзина в localStorage не убивает сайт, а ссылка на MAX без бота скрыта', () => {
+    const broken = mountFrontend({ storage: "{ getItem: (k) => (k === 'watchop_cart' ? 'не-json' : null), setItem: () => {} }" });
+    assert.ok(broken.state.products.length > 300, 'каталог загрузился');
+    assert.deepEqual(broken.state.cart, [], 'битая корзина сброшена');
+    broken.renderCatalog();
+    assert.ok(broken.document.getElementById('products-grid').innerHTML.includes('#/p/'), 'сетка отрисована');
+
+    const g2 = mountFrontend();
+    assert.equal(g2.state.settings.max_link, '', 'по умолчанию MAX не подключен');
+    g2.applySettingsToUI();
+    assert.equal(g2.document.getElementById('ui-float-max').classList.contains('hidden'), true, 'без бота ссылка не светится');
+    g2.state.settings = { ...g2.state.settings, max_link: 'https://max.ru/watchop' };
+    g2.applySettingsToUI();
+    assert.equal(g2.document.getElementById('ui-float-max').classList.contains('hidden'), false, 'с настроенным MAX ботом ссылка возвращается');
   });
 
   it('разметка: вкладки, иконка корзины, шторка вместо стены чипов, значок поддержки', () => {
@@ -114,7 +184,9 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.equal(cartIcon.includes('M3 3h2l.4 2M7 13h10l4-8H5.4'), false, 'старая битая дорожка удалена');
 
     const sheet = HTML.slice(HTML.indexOf('id="filter-sheet"'), HTML.indexOf('id="view-product"'));
-    assert.match(HTML.slice(HTML.indexOf('id="filter-sheet"'), HTML.indexOf('id="filter-sheet"') + 60), /class="hidden/, 'шторка стартует закрытой');
+    assert.match(HTML.slice(HTML.indexOf('id="filter-sheet"'), HTML.indexOf('id="filter-sheet"') + 200), /class="hidden/, 'шторка стартует закрытой');
+    assert.match(sheet, /role="dialog"/, 'шторка — диалог для скринридера');
+    assert.match(sheet, /aria-modal="true"/);
     assert.ok(sheet.includes('id="category-pills"') && sheet.includes('id="series-pills"') && sheet.includes('id="sort-select"'), 'категории, серии и сортировка — внутри шторки');
     assert.equal(HTML.includes('Бренды и серии смарт-часов'), false, 'стена чипов убрана из тела страницы');
     assert.equal(HTML.includes('id="category-pills" class="flex gap-2 overflow-x-auto'), false, 'чипы категорий больше не лежат отдельным рядом');

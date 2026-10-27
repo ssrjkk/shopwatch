@@ -25,6 +25,17 @@ function extractVerifyFn() {
   return tail.slice(0, m.index + 2);
 }
 
+// Реальный выдающий номера заказов код сервера — тесты не должны подменять его заглушкой.
+function extractOrderCodeFn() {
+  const src = serverSrc();
+  const start = src.indexOf('function allocateOrderCode()');
+  if (start < 0) throw new Error('allocateOrderCode not found in server.js');
+  const tail = src.slice(start);
+  const m = /\n\}\n/.exec(tail);
+  if (!m) throw new Error('allocateOrderCode end not found');
+  return tail.slice(0, m.index + 2);
+}
+
 function extractFrontendScript() {
   const html = fs.readFileSync(path.join(ROOT, 'public', 'index.html'), 'utf8');
   const m = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
@@ -32,4 +43,4 @@ function extractFrontendScript() {
   return m[1];
 }
 
-module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractFrontendScript };
+module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript };

@@ -2,7 +2,17 @@
 // Формат файла: одна позиция = одна строка JSON, id сохраняются, чтобы deep link
 // #/p/<id> и payload заказа значили одно и то же на сервере и на GitHub Pages.
 
+const crypto = require('crypto');
+const fs = require('fs');
+
 const FIELDS = ['id', 'brand', 'series', 'category', 'name', 'price', 'image', 'specs', 'hit'];
+
+// Устойчивый идентификатор позиции файла-источника. По нему сервер понимает,
+// что товар уже жил в базе, — в том числе если админ его удалил.
+function seedKey(p) {
+  const parts = [p.brand, p.series, p.category, p.name].map((v) => String(v == null ? '' : v).trim().toLowerCase());
+  return crypto.createHash('sha1').update(parts.join('\u0001')).digest('hex');
+}
 
 function normalizeRow(r) {
   return {
@@ -71,4 +81,67 @@ function summarizeDiff(diff) {
   return lines.join('\n');
 }
 
-module.exports = { FIELDS, normalizeRow, renderCatalogFile, readCatalogFile, rowKey, diffCatalog, summarizeDiff };
+// Засев/апгрейд базы из файла-источника. Таблица seed_marks хранит ключи позиций,
+// которые в базе уже были: удалённый админом товар не должен воскрешать перезапуск.
+function applySeed(db, rows) {
+  const mark = db.prepare('INSERT OR IGNORE INTO seed_marks (seed_key) VALUES (?)');
+  for (const r of db.prepare('SELECT brand, series, category, name FROM products').all()) mark.run(seedKey(r));
+  const marked = new Set(db.prepare('SELECT seed_key FROM seed_marks').all().map((r) => r.seed_key));
+  const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const insWithId = db.prepare('INSERT INTO products (id, brand, series, category, name, price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const empty = db.prepare('SELECT COUNT(*) AS c FROM products').get().c === 0;
+  let added = 0;
+  for (const x of rows) {
+    const key = seedKey(x);
+    if (!empty && marked.has(key)) continue;
+    const hit = Number(x.hit || x.is_hit) > 0 ? 1 : 0;
+    if (empty && Number(x.id) > 0) insWithId.run(Number(x.id), x.brand, x.series, x.category, x.name, x.price, x.image, x.specs, hit, key);
+    else ins.run(x.brand, x.series, x.category, x.name, x.price, x.image, x.specs, hit, key);
+    mark.run(key);
+    added++;
+  }
+  return { added, empty, seeded: rows.length };
+}
+
+// Записывает файл во все цели атомарно: сначала временная копия и проверка,
+// что она читается, только потом подмена. Бэкап предыдущей версии остаётся целым.
+function commitCatalogFiles(paths, text, validate) {
+  const name = (f) => String(f).split(/[\\/]/).slice(-2).join('/');
+  const written = [];
+  const failed = [];
+  const prepared = [];
+  for (const f of paths) {
+    const tmp = f + '.tmp';
+    try {
+      fs.writeFileSync(tmp, text);
+      if (validate && validate(fs.readFileSync(tmp, 'utf8')) !== true) throw new Error('временная копия не прошла проверку');
+      prepared.push({ f, tmp });
+    } catch (e) {
+      failed.push(`${name(f)}: ${e.message}`);
+      try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch (e2) {}
+    }
+  }
+  if (failed.length) {
+    for (const p of prepared) { try { fs.unlinkSync(p.tmp); } catch (e) {} }
+    return { written, failed, aborted: true };
+  }
+  for (const { f, tmp } of prepared) {
+    const bak = f + '.bak';
+    try {
+      if (fs.existsSync(f)) fs.copyFileSync(f, bak);
+      fs.copyFileSync(tmp, f);
+      if (validate && validate(fs.readFileSync(f, 'utf8')) !== true) {
+        if (fs.existsSync(bak)) fs.copyFileSync(bak, f);
+        throw new Error('не прошёл проверку после записи, откат из .bak');
+      }
+      written.push(name(f));
+    } catch (e) {
+      failed.push(`${name(f)}: ${e.message}`);
+    } finally {
+      try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch (e) {}
+    }
+  }
+  return { written, failed, aborted: false };
+}
+
+module.exports = { FIELDS, seedKey, normalizeRow, renderCatalogFile, readCatalogFile, rowKey, diffCatalog, summarizeDiff, applySeed, commitCatalogFiles };

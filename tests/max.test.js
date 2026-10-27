@@ -11,7 +11,7 @@ describe('MAX bot (parity with Telegram)', () => {
     memdb = new DatabaseSync(':memory:');
     memdb.exec(`CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT);
-CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
+CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, owner_tg TEXT, owner_max TEXT);`);
     const seed = { payment_details: 'PAY', show_payment: '1', hero_title: 'H', phone: 'P', email: 'E', address: 'A', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I' };
     for (const [k, v] of Object.entries(seed)) memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(k, v);
     memdb.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('GARMIN', 'fēnix', 'Спортивные часы', 'Fenix 8', 60000, 'img', 's');
@@ -131,6 +131,27 @@ process.env.MAX_ADMIN_ID = '999';
     const atts = JSON.stringify(api.lastTo(999).body.attachments);
     assert.ok(atts.includes('Открыть каталог') && atts.includes('https://example.com/shop'));
     delete process.env.SHOP_URL;
+  });
+
+  it('order status buttons work only for the admin', async () => {
+    api.db.prepare("UPDATE orders SET status = 'Новый' WHERE order_code = 'TG-9000'").run();
+    await api.handleMaxUpdate(api.upd(555, 'Ivan', 'Оплачен TG-9000'));
+    assert.equal(api.db.prepare('SELECT status FROM orders WHERE order_code=?').get('TG-9000').status, 'Новый', 'клиент статус не меняет');
+    assert.match(api.lastTo(555).body.text, /только администратор/);
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Оплачен TG-9000'));
+    assert.equal(api.db.prepare('SELECT status FROM orders WHERE order_code=?').get('TG-9000').status, 'Оплачен');
+  });
+
+  it('order details are shown to the owner and the admin only', async () => {
+    api.db.prepare('UPDATE orders SET owner_max = ? WHERE order_code = ?').run('444', 'TG-9000');
+    await api.handleMaxUpdate(api.upd(555, 'Ivan', 'TG-9000'));
+    assert.match(api.lastTo(555).body.text, /другим покупателем/);
+    assert.equal(api.lastTo(555).body.text.includes('СБП 123'), false, 'реквизиты чужому не отдаём');
+    await api.handleMaxUpdate(api.upd(444, 'Vera', 'TG-9000'));
+    assert.match(api.lastTo(444).body.text, /К оплате/);
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'TG-9000'));
+    assert.match(api.lastTo(999).body.text, /К оплате/);
+    api.db.prepare("UPDATE orders SET owner_max = NULL WHERE order_code = 'TG-9000'").run();
   });
 
   it('экспорт каталога: превью из меню, затем подтверждение', async () => {

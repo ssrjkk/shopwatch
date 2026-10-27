@@ -49,6 +49,32 @@ describe('экспорт каталога из базы в файл-источн
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
+  it('запись файла атомарна: битый результат не трогает ни рабочую копию, ни бэкап', () => {
+    const { commitCatalogFiles } = require('../catalog-export.js');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'watchop-commit-'));
+    const targets = [path.join(dir, 'products-data.js'), path.join(dir, 'public', 'products-data.js')];
+    fs.mkdirSync(path.join(dir, 'public'));
+    const good = renderCatalogFile(DB_ROWS, { date: '2026-10-26' });
+    for (const f of targets) fs.writeFileSync(f, 'старое содержимое');
+    const validate = (src) => { const r = readCatalogFile(src); return Array.isArray(r) && r.length === DB_ROWS.length ? true : false; };
+
+    const ok = commitCatalogFiles(targets, good, validate);
+    assert.deepEqual(ok.failed, [], 'оба файла записаны');
+    assert.equal(ok.written.length, 2);
+    for (const f of targets) assert.equal(fs.existsSync(f + '.bak'), true, 'резервная копия цела');
+
+    const broken = 'const PD_SEED_PRODUCTS = [ {oops';
+    const bad = commitCatalogFiles(targets, broken, validate);
+    assert.equal(bad.aborted, true, 'битый файл не записывается');
+    assert.equal(bad.written.length, 0);
+    for (const f of targets) {
+      assert.equal(fs.readFileSync(f, 'utf8'), good, 'рабочий файл не испорчен');
+      assert.equal(fs.readFileSync(f + '.bak', 'utf8'), 'старое содержимое', 'бэкап не перезаписан битым');
+    }
+    for (const f of targets) assert.equal(fs.existsSync(f + '.tmp'), false, 'временные файлы убраны');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
   it('боевой products-data.js читается тем же парсером', () => {
     const live = readCatalogFile(fs.readFileSync(path.join(__dirname, '..', 'products-data.js'), 'utf8'));
     assert.ok(Array.isArray(live) && live.length >= 300, `файл-источник читается, позиций: ${live && live.length}`);
@@ -69,17 +95,34 @@ describe('экспорт каталога из базы в файл-источн
     assert.equal(d2.onlyInDb.length, 3, 'смена цены — это новая позиция');
   });
 
-  it('пустая база воспроизводит файл один в один, id не съезжают', () => {
+  it('пустая база воспроизводит файл один в один, а перезапуск не воскрешает удалённое', () => {
     const { DatabaseSync } = require('node:sqlite');
+    const { applySeed } = require('../catalog-export.js');
     const memdb = new DatabaseSync(':memory:');
-    memdb.exec('CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0);');
+    memdb.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
+CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
     const src = withIds(require(path.join(__dirname, '..', 'products-data.js')).slice(0, 25));
-    const ins = memdb.prepare('INSERT INTO products (id, brand, series, category, name, price, image, specs, is_hit) VALUES (?,?,?,?,?,?,?,?,?)');
-    for (const x of src) ins.run(x.id, x.brand, x.series, x.category, x.name, x.price, x.image, x.specs, x.hit ? 1 : 0);
+    const first = applySeed(memdb, src);
+    assert.equal(first.added, src.length, 'пустая база заполняется целиком');
+    assert.deepEqual(memdb.prepare('SELECT id FROM products ORDER BY id').all().map((r) => r.id), src.map((r) => r.id), 'id не съехали');
+    assert.equal(applySeed(memdb, src).added, 0, 'повторный запуск ничего не добавляет');
+
+    // админ удалил товар — перезапуск сервера обязан оставить его удалённым
+    const removed = memdb.prepare('SELECT id, name FROM products ORDER BY id LIMIT 1').get();
+    memdb.prepare('DELETE FROM products WHERE id = ?').run(removed.id);
+    const afterRestart = applySeed(memdb, src);
+    assert.equal(afterRestart.added, 0, 'удалённый товар не воскресает');
+    assert.equal(memdb.prepare('SELECT COUNT(*) AS c FROM products').get().c, src.length - 1);
+
+    // новая позиция файла (например, после выгрузки с другого сервера) добавляется
+    const fresh = { id: 9001, brand: 'TEST', series: 'TestSeries', category: 'Аксессуары', name: 'Новая позиция', price: 1000, image: 'x', specs: '', hit: 0 };
+    assert.equal(applySeed(memdb, [...src, fresh]).added, 1, 'новые позиции догружаются');
+    assert.ok(memdb.prepare('SELECT 1 AS x FROM products WHERE name = ?').get('Новая позиция'));
+
+    const kept = src.filter((x) => x.id !== removed.id);
     const back = memdb.prepare('SELECT * FROM products ORDER BY id ASC').all();
-    assert.deepEqual(back.map((r) => r.id), src.map((r) => r.id), 'id не съехали');
-    assert.deepEqual(diffCatalog(src, back.map(normalizeRow)).onlyInDb.length, 0, 'после выгрузки база и файл совпадают');
-    const text = renderCatalogFile(back);
-    assert.deepEqual(readCatalogFile(text), src.map(normalizeRow), 'выгрузка повторима: файл -> база -> файл идентичен');
+    assert.deepEqual(diffCatalog(kept, back.map(normalizeRow)).onlyInDb.map((p) => p.name), ['Новая позиция']);
+    const text = renderCatalogFile(memdb.prepare("SELECT * FROM products WHERE name <> 'Новая позиция' ORDER BY id ASC").all());
+    assert.deepEqual(readCatalogFile(text), kept.map(normalizeRow), 'выгрузка повторима: файл -> база -> файл идентичен');
   });
 });
