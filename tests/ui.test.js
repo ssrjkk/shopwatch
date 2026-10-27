@@ -159,17 +159,32 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.match(g.document.getElementById('cart-error').textContent, /телефон/i);
   });
 
-  it('набор текста не тормозит: выдача и подсказки пересчитываются после паузы', () => {
+  it('набор текста не тормозит, но устаревшие подсказки исчезают сразу', () => {
     g.document.getElementById('search-input').value = 'эхолот';
     g.renderSuggestionsNow();
-    const before = { n: g.state.filtered.length, s: g.state.suggest.length };
+    const before = g.state.filtered.length;
+    const beforeSuggest = g.state.suggest.length;
+    assert.ok(beforeSuggest > 0 && g.state.suggest.every((s) => /эхолот/i.test(s.label)), 'под списком только то, что просили');
     g.document.getElementById('search-input').value = 'garmin edge';
     g.onSearchInput();
-    assert.equal(g.state.filtered.length, before.n, 'сразу после нажатия сетка не перестилается');
-    assert.equal(g.state.suggest.length, before.s, 'подсказки тоже ждут паузу');
+    assert.equal(g.state.filtered.length, before, 'сетка перестилается после паузы, а не на каждом нажатии');
+    assert.equal(g.state.suggest.length, 0, 'старые подсказки не предлагаются под новый запрос');
     g.renderSuggestionsNow();
-    assert.ok(g.state.filtered.length > 0, 'после паузы выдача обновилась');
+    assert.ok(g.state.filtered.length > 0 && g.state.filtered.length !== before, 'после паузы выдача обновилась');
     assert.ok(g.state.suggest.length > 0 && g.state.suggest.every((s) => /edge/i.test(s.label)), 'и подсказки по обоим словам');
+  });
+
+  it('Enter без паузы показывает выдачу по текущему тексту', () => {
+    g.document.getElementById('search-input').value = '';
+    g.renderSuggestionsNow();
+    const all = g.state.filtered.length;
+    g.document.getElementById('search-input').value = 'велокомп';
+    g.onSearchInput();
+    assert.equal(g.state.filtered.length, all, 'без паузы сетка ещё не перестелена');
+    g.onSearchKey({ key: 'Enter', preventDefault() {} });
+    assert.ok(g.state.filtered.length > 0 && g.state.filtered.length < all, 'Enter дорисовывает сразу');
+    assert.ok(g.state.filtered.every((p) => /велокомп/i.test(p.name + ' ' + p.category + ' ' + (p.specs || ''))));
+    assert.equal(g.document.getElementById('search-input').value, 'велокомп', 'Enter не стирает запрос');
   });
 
   it('битая корзина в localStorage не убивает сайт, а ссылка на MAX без бота скрыта', () => {
