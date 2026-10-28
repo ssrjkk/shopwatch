@@ -27,6 +27,34 @@ describe('витрина: поиск, фильтры и оформление н�
     assert.equal(search('').length, TOTAL);
   });
 
+  it('выдача отсортирована по релевантности, а не по порядку файла', () => {
+    const pace = search('корос пейс');
+    assert.ok(pace.length > 0, 'запрос «корос пейс» что-то находит');
+    assert.match(pace[0].name, /Pace/, 'модель Pace впереди VERTIX Space, где «pace» — часть другого слова');
+    const echo = search('эхолот');
+    assert.equal(echo[0].category, 'Эхолоты', 'запрос категории даёт товары категории, а не аккумулятор «для эхолотов»');
+    assert.ok(echo.some((p) => /Аккумулятор/i.test(p.name)), 'аксессуар никуда не делся — он просто ниже');
+    const hr = search('пульсометр');
+    assert.equal(hr[0].category, 'Пульсометры', 'нагрудный датчик впереди часов, где пульсометр только в характеристиках');
+    const apple = search('эпл вотч ультра');
+    assert.ok(apple.length > 0, 'разговорное «эпл» находит Apple');
+    assert.match(apple[0].name, /Apple Watch Ultra/);
+    const race = search('суунто рейс');
+    assert.ok(race.length > 0, 'разговорное «рейс» находит Race');
+    assert.match(race[0].name, /Suunto Race/);
+    const fenix = search('fenix 8');
+    const foreign = fenix.findIndex((p) => !/fenix 8/i.test(p.name));
+    if (foreign >= 0) {
+      assert.ok(fenix.slice(0, foreign).every((p) => /fenix 8/i.test(p.name)), 'часы Fenix 8 стоят выше аксессуаров «для Fenix 7X/8»');
+      assert.ok(fenix.slice(foreign).every((p) => !/fenix 8/i.test(p.name)), 'и ниже они уже не перескакивают');
+    }
+    g.document.getElementById('sort-select').value = 'asc';
+    const byPrice = search('корос пейс');
+    assert.ok(byPrice.every((p, i, a) => i === 0 || Number(a[i - 1].price) <= Number(p.price)), 'выбранный сортировщик важнее релевантности');
+    g.document.getElementById('sort-select').value = 'popular';
+    search('');
+  });
+
   it('при нуле результатов счётчик не показывает цифры прошлого запроса', () => {
     search('Fenix 8');
     assert.ok(g.document.getElementById('found-count').textContent !== 'Найдено: 0');
