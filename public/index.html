@@ -348,7 +348,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
 <script src="products-data.js"></script>
 <script>
-const BUILD_ID='20261028a';try{if(typeof location!=='undefined'&&localStorage.getItem('watchop_build')!==BUILD_ID){localStorage.setItem('watchop_build',BUILD_ID);location.reload();}}catch(e){}
+const BUILD_ID='20261028b';try{if(typeof location!=='undefined'&&localStorage.getItem('watchop_build')!==BUILD_ID){localStorage.setItem('watchop_build',BUILD_ID);location.reload();}}catch(e){}
 const FALLBACK_PRODUCTS=(window.SEED_PRODUCTS||[]).map((p,i)=>({...p,id:Number(p.id)>0?Number(p.id):i+1}));
 function readStore(key,fallback){try{const raw=localStorage.getItem(key);if(!raw)return fallback;const val=JSON.parse(raw);return Array.isArray(val)?val:fallback;}catch(e){try{localStorage.removeItem(key);}catch(_){ }return fallback;}}
 // Корзина и избранное хранят только id. Пересборка каталога (экспорт из базы)
@@ -418,8 +418,12 @@ function goCatalogHome(){setSearchQuery('');state.activeCategory='Все тов�
 function scrollToGrid(){try{const a=document.getElementById('catalog-anchor');if(a)a.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}}
 // ---------- подсказки поиска ----------
 let SUG_SRC=null;let SUG_MAP=null;let SUG_SORTED=null;let SUG_T=null;
-function buildSugMap(){const map=new Map();const put=(label)=>{const n=normText(label);if(!n)return;const cur=map.get(n);if(cur)cur.count++;else map.set(n,{label:String(label).trim(),count:1,norm:n});};
-for(const p of state.products){const t=String(p.name||'').split(/\s+/).filter(Boolean);let acc='';for(let k=0;k<Math.min(4,t.length);k++){acc=acc?acc+' '+t[k]:t[k];put(acc);}put(p.series);put(p.brand+' '+p.series);put(p.category);}
+function buildSugMap(){const map=new Map();const brandCase={};// в базе бренд хранится в верхнем регистре («GARMIN»), а в названиях — как его читают («Garmin»):
+// подсказки должны показывать одну и ту же форму, иначе в списке рядом «Garmin» и «GARMIN Descent»
+for(const p of state.products){const b=normText(p.brand);if(!b||brandCase[b])continue;const t0=String(p.name||'').trim().split(/\s+/)[0]||'';if(normText(t0)===b)brandCase[b]=t0;}
+const dispBrand=(b)=>brandCase[normText(b)]||String(b||'').trim();
+const put=(label)=>{const n=normText(label);if(!n)return;const cur=map.get(n);if(cur)cur.count++;else map.set(n,{label:String(label).trim(),count:1,norm:n});};
+for(const p of state.products){const t=String(p.name||'').split(/\s+/).filter(Boolean);let acc='';for(let k=0;k<Math.min(4,t.length);k++){acc=acc?acc+' '+t[k]:t[k];put(acc);}put(p.series);put(dispBrand(p.brand)+' '+p.series);put(p.category);}
 return map;}
 function sugMap(){if(SUG_SRC!==state.products){SUG_SRC=state.products;SUG_MAP=buildSugMap();SUG_SORTED=[...SUG_MAP.values()].sort((a,b)=>b.count-a.count||a.norm.length-b.norm.length);}return SUG_MAP;}
 function sortedSug(){sugMap();return SUG_SORTED;}

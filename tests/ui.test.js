@@ -36,6 +36,19 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.ok(g.state.suggest[0].count >= g.state.suggest[g.state.suggest.length - 1].count, 'отсортировано по числу позиций');
   });
 
+  it('бренд в подсказках пишется в той же форме, что и в названиях', () => {
+    type('гармин');
+    const labels = g.state.suggest.map((s) => s.label);
+    assert.ok(labels.length > 1, `подсказок: ${labels.length}`);
+    const forms = new Set();
+    for (const l of labels) for (const w of l.split(/\s+/)) if (/^garmin$/i.test(w)) forms.add(w);
+    assert.equal(forms.size, 1, 'одна форма написания бренда, а не «Garmin» рядом с «GARMIN Descent»: ' + [...forms].join(' / '));
+    type('suunto');
+    const suunto = new Set();
+    for (const l of g.state.suggest.map((s) => s.label)) for (const w of l.split(/\s+/)) if (/^suunto$/i.test(w)) suunto.add(w);
+    assert.ok(suunto.size <= 1, 'и для остальных брендов форма одна');
+  });
+
   it('дропдаун открывается, выбирается по тапу и закрывается по Escape', () => {
     const box = g.document.getElementById('search-suggest');
     assert.equal(box.classList.contains('hidden'), false, 'дропдаун виден при наборе');
