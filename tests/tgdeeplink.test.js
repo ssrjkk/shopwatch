@@ -62,14 +62,14 @@ const mkCtx = (id) => ({ from: { username: 'ivan', first_name: 'Ivan', id: id ||
     assert.equal(items[0].name, 'Fenix 8');
   });
 
-  it('ignores prices from the link and orders only what exists', () => {
+  it('refuses a link whose price disagrees with the base instead of ordering another product', () => {
     api.clear();
-    // товар за 60 000 в ссылке продается за 2 ₽ — берём цену из базы
+    // товар за 60 000 в ссылке продается за 2 ₽: это либо правка ссылки, либо
+    // устаревший каталог на витрине, где под тем же id другой товар. Не угадываем.
     api.handleSiteOrderPayload(api.mkCtx(), 'TG-20010', 'TG-20010_1x2x2');
-    const order = api.db.prepare('SELECT * FROM orders WHERE order_code = ?').get('TG-20010');
-    assert.equal(order.total, 120000, 'считаем по серверной цене');
-    const items = JSON.parse(order.items_json);
-    assert.equal(items[0].price, 60000);
+    assert.equal(api.db.prepare('SELECT COUNT(*) AS c FROM orders WHERE order_code=?').get('TG-20010').c, 0, 'заявка не создана');
+    assert.match(flat(), /расходится/);
+    assert.ok(api.sent().some((m) => /ЗАКАЗ TG-20010 НЕ СОЗДАН/.test(m.text)), 'админ увидел расхождение');
     api.clear();
     // несуществующий id не превращается в «Товар #999999»
     api.handleSiteOrderPayload(api.mkCtx(), 'TG-20011', 'TG-20011_999999x1x5');

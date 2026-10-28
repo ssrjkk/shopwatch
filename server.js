@@ -496,13 +496,19 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const rest = String(payload || '').split('_').slice(1);
     const items = [];
     const unknown = [];
+    const stale = [];
     const byId = (id) => db.prepare('SELECT id, name, price FROM products WHERE id = ?').get(id);
     for (const part of rest) {
-      let m = part.match(/^(\d+)x(\d+)x(?:\d+)$/);
+      let m = part.match(/^(\d+)x(\d+)x(\d+)$/);
       if (m) {
         const prod = byId(Number(m[1]));
-        if (prod) items.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty: Math.min(Number(m[2]) || 1, 99) });
-        else unknown.push(m[1]);
+        if (prod) {
+          // Разошлась цена — значит под этим id в базе другой товар (витрина отдаёт
+          // устаревший products-data.js). Молча подставить базу = оформить не то,
+          // что человек видел на экране, поэтому заявку не создаём вовсе.
+          if (Number(m[3]) !== Number(prod.price)) stale.push({ id: prod.id, site: Number(m[3]), db: Number(prod.price) });
+          else items.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty: Math.min(Number(m[2]) || 1, 99) });
+        } else unknown.push(m[1]);
         continue;
       }
       m = part.match(/^(\d+)x(\d+)$/);
@@ -513,12 +519,12 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       }
     }
     // Совместимость со старым форматом TG-XXXX_ID_PRICE
-    if (!items.length && !unknown.length && rest.length >= 2 && /^\d+$/.test(rest[0] || '') && /^\d+$/.test(rest[1] || '')) {
+    if (!items.length && !unknown.length && !stale.length && rest.length >= 2 && /^\d+$/.test(rest[0] || '') && /^\d+$/.test(rest[1] || '')) {
       const prod = byId(parseInt(rest[0], 10));
       if (prod) items.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty: 1 });
       else unknown.push(rest[0]);
     }
-    return { items, unknown };
+    return { items, unknown, stale };
   }
 
   function samePayload(order, items) {
@@ -535,6 +541,19 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
   function handleSiteOrderPayload(ctx, code, payload) {
     let order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
     const parsed = parseOrderPayload(payload);
+    // Витрина отдаёт каталог, который расходится с базой (старый products-data.js
+    // на Pages): под теми же id там другие товары. Оформлять такое по базе —
+    // значит прислать клиенту не то, что он выбирал.
+    if (parsed.stale.length) {
+      if (tgBot && isValidEnv(process.env.TG_ADMIN_ID)) {
+        const clientTag = ctx.from.username ? `@${ctx.from.username}` : (ctx.from.first_name || 'Клиент');
+        const detail = parsed.stale.map((s) => `id ${s.id}: сайт ${s.site} ₽ / база ${s.db} ₽`).join('\n');
+        tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID,
+          `⚠️ ЗАКАЗ ${code} НЕ СОЗДАН: каталог на витрине расходится с базой\n👤 ${clientTag} (ID: ${ctx.from.id})\n${detail}\nНужно обновить файл: кнопка «Экспорт каталога» в админке, затем коммит products-data.js.`
+        ).catch(() => {});
+      }
+      return ctx.reply(`Каталог на сайте сейчас расходится с нашей базой, поэтому заявку по этим позициям не создали, чтобы не перепутать товар. Напишите менеджеру — подтвердим наличие и цену вручную.`);
+    }
     // Одинаковый номер у двух покупателей статической витрины — не их вина: счётчик
     // живёт в их браузере. Совпал состав — показываем существующую заявку,
     // не совпал — берём свободный номер и говорим об этом админу.

@@ -203,6 +203,45 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.equal(g2.document.getElementById('ui-float-max').classList.contains('hidden'), false, 'с настроенным MAX ботом ссылка возвращается');
   });
 
+  it('пересборка каталога сбрасывает корзину и избранное, совпадение — оставляет', () => {
+    // harness монтирует скрипт своим eval'ом, поэтому хранилище передаём через global:
+    // замыкание на локальную переменную теста внутри eval недосягаемо.
+    const mk = (rows) => {
+      const store = new Map(rows);
+      global.__tstore = store;
+      const g = mountFrontend({ storage: '{ getItem: (k) => (globalThis.__tstore.has(k) ? globalThis.__tstore.get(k) : null), setItem: (k, v) => globalThis.__tstore.set(k, String(v)) }' });
+      return { g, store };
+    };
+    const first = mk([['watchop_cart', JSON.stringify([{ id: 7, qty: 1 }])], ['watchop_favs', '[7]']]);
+    assert.equal(first.g.state.cart.length, 1, 'корзина читается из хранилища');
+    assert.deepEqual(first.g.state.favorites, [7]);
+    assert.equal(first.g.syncCatalogFp(), false, 'первый запуск: отпечатка ещё нет, списки не трогаем');
+    assert.equal(first.g.state.cart.length, 1);
+    assert.equal(first.g.syncCatalogFp(), false, 'второй запуск: отпечаток совпал');
+    assert.equal(first.g.state.cart.length, 1, 'без смены каталога корзина живёт');
+
+    // id в корзине — номер позиции; если файл пересобран из базы, номер указывает на другой товар
+    const stale = mk([['watchop_catfp', '111'], ['watchop_cart', JSON.stringify([{ id: 7, qty: 3 }])], ['watchop_favs', '[7,9]']]);
+    assert.equal(stale.g.state.cart.length, 1, 'до проверки корзина читается из хранилища');
+    assert.equal(stale.g.syncCatalogFp(), true, 'отпечаток разошёлся — нужен сброс');
+    assert.deepEqual(stale.g.state.cart, [], 'корзина очищена');
+    assert.deepEqual(stale.g.state.favorites, [], 'избранное очищено');
+    assert.equal(stale.store.get('watchop_cart'), '[]', 'сброс записан в хранилище');
+    assert.equal(stale.store.get('watchop_favs'), '[]');
+    assert.notEqual(stale.store.get('watchop_catfp'), '111', 'отпечаток обновлён');
+    assert.equal(stale.g.syncCatalogFp(), false, 'следующий запуск уже чистый');
+
+    const g = stale.g;
+    const full = g.state.products.slice();
+    g.state.cart = [{ id: 3, qty: 1 }];
+    g.state.products = full.slice().reverse();
+    assert.equal(g.syncCatalogFp(), false, 'тот же состав в другом порядке — это тот же каталог');
+    assert.equal(g.state.cart.length, 1, 'порядок сам по себя корзину не сбрасывает');
+    g.state.products = full.slice(0, full.length - 1);
+    assert.equal(g.syncCatalogFp(), true, 'убрали позицию — нумерация другая, корзину выбрасываем');
+    assert.deepEqual(g.state.cart, []);
+  });
+
   it('разметка: вкладки, иконка корзины, шторка вместо стены чипов, значок поддержки', () => {
     const tabs = HTML.slice(HTML.indexOf('id="tab-btn-catalog"'), HTML.indexOf('</div>\n</header>'));
     assert.ok(tabs.indexOf('tab-btn-cart') > tabs.indexOf('tab-btn-contacts'), '«Корзина» в конце списка вкладок');

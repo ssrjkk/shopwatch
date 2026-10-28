@@ -81,6 +81,18 @@ describe('экспорт каталога из базы в файл-источн
     assert.ok(live.every((p) => p.name && Number(p.price) > 0 && p.category));
   });
 
+  it('боевой файл несёт id базы: #/p/<id> и payload значат один товар и на Pages, и в боте', () => {
+    const live = readCatalogFile(fs.readFileSync(path.join(__dirname, '..', 'products-data.js'), 'utf8'));
+    const ids = live.map((p) => p.id);
+    assert.ok(ids.every((id) => Number.isInteger(id) && id > 0), 'у всех позиций есть положительный id');
+    assert.equal(new Set(ids).size, ids.length, 'id уникальны');
+    assert.deepEqual(ids, [...ids].sort((a, b) => a - b), 'порядок строк = возрастание id');
+    // Без id витрина придумывает i+1, и deep link с.pages ведёт к другому товару в базе бота.
+    assert.equal(require(path.join(__dirname, '..', 'products-data.js')).filter((p) => p.id === undefined).length, 0, 'ни одной позиции без id');
+    const pub = readCatalogFile(fs.readFileSync(path.join(__dirname, '..', 'public', 'products-data.js'), 'utf8'));
+    assert.deepEqual(pub.map((p) => p.id), ids, 'копия для Pages несёт те же id');
+  });
+
   it('diff показывает, что живёт только в базе', () => {
     const file = DB_ROWS.slice(0, 2).map(normalizeRow);
     const db = DB_ROWS.map(normalizeRow);

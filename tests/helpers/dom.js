@@ -63,6 +63,7 @@ const EXPOSE = [
   'updateFilterChrome', 'activeFilterCount', 'filterSheetOpen', 'toggleSupportMenu', 'updateToTop',
   'readStore', 'rememberOrder', 'lastOrder', 'showOrderSuccess', 'applyOrderToDom', 'suggestionCount', 'invalidateSugCounts', 'applySettingsToUI',
   'scrollToGrid', 'buildSugMap', 'sugMap', 'renderSuggestionsNow', 'scheduleSuggestions', 'sortedSug', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
+  'catalogFp', 'syncCatalogFp',
 ];
 
 // Монтирует фронтенд. seed — источник данных каталога (по PRODUCTS_DATA можно подменить файл).
@@ -75,7 +76,8 @@ function mountFrontend(opts = {}) {
   return eval(body);
 }
 
-// Проставляет id позициям из seed-файла (в файле id нет — их назначает БД).
+// Подстраховка для старых срезов каталога: файл обязан нести id из базы (за этим
+// следит тест в catalog-export.test.js), но если id нет — не даём harness'у undefined.
 function withIds(rows) {
   return rows.map((p, i) => ({ ...p, id: Number(p.id) > 0 ? Number(p.id) : i + 1 }));
 }
