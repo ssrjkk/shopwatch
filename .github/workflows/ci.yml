@@ -1,0 +1,31 @@
+name: CI
+
+# Витрина и бот живут одним process'ом (server.js), поэтому гейт простой:
+# реальные HTTP-тесты на поднятом сервере с временной БД + аудит прод-зависимостей.
+# Node 24: тесты работают через node:sqlite (DatabaseSync) без внешних сервисов.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund --ignore-scripts
+      - name: Test the storefront, the API and both bots
+        run: npm test
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
