@@ -125,6 +125,28 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.match((await r4.json()).error, /телефон/i);
   });
 
+  it('customer поля только строки: объект или число вместо текста — 400', async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    const post = (body) => fetch(`${BASE}/api/order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    // Без проверки типов String({...}) дал бы «[object Object]» в заявке, а число
+    // превратилось бы в строку и прошло дальше в уведомление админу.
+    for (const [i, customer] of [
+      { fio: { name: 'Иван' }, phone: '+7 900 000-00-10' },
+      { fio: 'Иван', phone: 7900000011 },
+      { fio: 'Иван', phone: '+7 900 000-00-12', address: ['г. Тест'] },
+      { fio: 'Иван', phone: '+7 900 000-00-13' },
+    ].entries()) {
+      await new Promise((r) => setTimeout(r, 600));
+      const r = await post({ items: [{ id: 1, qty: 1 }], total: 1, customer });
+      if (i === 3) {
+        assert.equal(r.status, 200, `обычная заявка проходит, ответ: ${await r.text()}`);
+      } else {
+        assert.equal(r.status, 400, `кейс ${i}`);
+        assert.match((await r.json()).error, /Некорректные данные покупателя/);
+      }
+    }
+  });
+
   it('GET /healthz reports ok with counters', async () => {
     const r = await fetch(`${BASE}/healthz`);
     assert.equal(r.status, 200);

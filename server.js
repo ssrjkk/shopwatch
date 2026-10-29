@@ -8,7 +8,6 @@ const { Telegraf, Markup, session } = require('telegraf');
 
 const app = express();
 // --- Защита: лимит тела, security-заголовки, закрытый CORS по умолчанию ---
-app.use(express.json({ limit: '100kb' }));
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
@@ -16,6 +15,7 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   next();
 });
+app.use(express.json({ limit: '100kb' }));
 const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map((s) => s.trim()).filter(Boolean);
 app.use(cors(corsOrigins.length ? { origin: corsOrigins } : { origin: false }));
 
@@ -61,18 +61,20 @@ function verifyTelegramInitData(initData) {
   try {
     const crypto = require('crypto');
     const params = new URLSearchParams(initData);
+    if (new Set(params.keys()).size !== [...params.keys()].length) return null;
     const hash = params.get('hash');
-    if (!hash) return null;
+    if (!/^[a-f0-9]{64}$/.test(hash || '')) return null;
     const authDate = Number(params.get('auth_date') || 0);
-    if (!(authDate > 0) || Date.now() / 1000 - authDate > 86400) return null; // подпись старше суток — недействительна
+    const age = Date.now() / 1000 - authDate;
+    if (!Number.isSafeInteger(authDate) || authDate <= 0 || age < -60 || age > 86400) return null;
     params.delete('hash');
     const dataCheckString = [...params.entries()]
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
       .map(([k, v]) => `${k}=${v}`)
       .join('\n');
     const secret = crypto.createHmac('sha256', 'WebAppData').update(process.env.TG_BOT_TOKEN).digest();
-    const calc = crypto.createHmac('sha256', secret).update(dataCheckString).digest('hex');
-    if (calc !== hash) return null;
+    const calc = crypto.createHmac('sha256', secret).update(dataCheckString).digest();
+    if (!crypto.timingSafeEqual(calc, Buffer.from(hash, 'hex'))) return null;
     return JSON.parse(params.get('user') || 'null');
   } catch (e) {
     return null;
@@ -234,11 +236,15 @@ async function handleApiOrder(req, res) {
   if (!Array.isArray(items) || !items.length || items.length > 50) return res.status(400).json({ error: 'Пустой заказ' });
 
   const cRaw = req.body.customer || {};
+  if (typeof cRaw !== 'object' || Array.isArray(cRaw) ||
+      ['fio', 'phone', 'email', 'address', 'delivery'].some((key) => cRaw[key] !== undefined && typeof cRaw[key] !== 'string')) {
+    return res.status(400).json({ error: 'Некорректные данные покупателя' });
+  }
   const customer = {
-    fio: String(cRaw.fio || '').slice(0, 100).trim(),
-    phone: String(cRaw.phone || '').slice(0, 30).trim(),
-    email: String(cRaw.email || '').slice(0, 100).trim(),
-    address: String(cRaw.address || '').slice(0, 300).trim(),
+    fio: (cRaw.fio || '').slice(0, 100).trim(),
+    phone: (cRaw.phone || '').slice(0, 30).trim(),
+    email: (cRaw.email || '').slice(0, 100).trim(),
+    address: (cRaw.address || '').slice(0, 300).trim(),
     delivery: ['СДЭК', 'Почта России', 'Boxberry'].includes(cRaw.delivery) ? cRaw.delivery : 'СДЭК'
   };
   if (!customer.fio || !customer.phone) return res.status(400).json({ error: 'Укажите ФИО и телефон' });
@@ -247,9 +253,10 @@ async function handleApiOrder(req, res) {
   // Цены и названия берем только из своей БД — значениям от клиента не доверяем.
   const cleanItems = [];
   for (const it of items) {
-    const id = Number(it?.id);
-    const qty = Math.min(Math.max(parseInt(it?.qty, 10) || 1, 1), 99);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: 'Bad item id' });
+    const id = it?.id;
+    const qty = it?.qty;
+    if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ error: 'Bad item id' });
+    if (!Number.isSafeInteger(qty) || qty < 1 || qty > 99) return res.status(400).json({ error: 'Bad item quantity' });
     const prod = db.prepare('SELECT id, name, price FROM products WHERE id = ?').get(id);
     if (!prod) return res.status(400).json({ error: 'Товар не найден' });
     cleanItems.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty });
@@ -925,6 +932,14 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
 }
 startMaxBotPolling();
 
-const PORT = process.env.PORT || 3000;
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = err.type === 'entity.too.large' ? 413 : err.status === 400 ? 400 : 500;
+  if (status === 500) console.error('HTTP error:', err.message);
+  res.status(status).json({ error: status === 413 ? 'Слишком большой запрос' : status === 400 ? 'Некорректный JSON' : 'Ошибка сервера' });
+});
+
+const PORT = Number(process.env.PORT || 3000);
+const HOST = process.env.HOST || '0.0.0.0';
 if (!isValidEnv(process.env.TG_ADMIN_ID)) console.log('NOTE: TG_ADMIN_ID пуст — напишите боту /id и впишите свой ID в .env, иначе админка недоступна.');
-app.listen(PORT, () => console.log(`Watchop running on http://localhost:${PORT}`));
+const server = app.listen(PORT, HOST, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`));

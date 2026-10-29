@@ -58,4 +58,38 @@ describe('verifyTelegramInitData (Mini App signature)', () => {
     const initData = sign('test-token-abc', { user: '{}' });
     assert.equal(verify(initData), null);
   });
+
+  it('rejects a non-hex hash', () => {
+    process.env.TG_BOT_TOKEN = 'test-token-abc';
+    const initData = sign('test-token-abc', { user: '{"id":1}' }).replace(/hash=[0-9a-f]+/, 'hash=zzzz');
+    assert.equal(verify(initData), null);
+  });
+
+  it('rejects a signature from the future', () => {
+    process.env.TG_BOT_TOKEN = 'test-token-abc';
+    const future = String(Math.floor(Date.now() / 1000) + 3600);
+    const params = { auth_date: future, user: '{"id":1}' };
+    const dcs = Object.entries(params).sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, v]) => `${k}=${v}`).join('\n');
+    const secret = crypto.createHmac('sha256', 'WebAppData').update('test-token-abc').digest();
+    const hash = crypto.createHmac('sha256', secret).update(dcs).digest('hex');
+    assert.equal(verify(new URLSearchParams({ ...params, hash }).toString()), null);
+  });
+
+  it('rejects duplicated parameters even with a hash valid for them', () => {
+    process.env.TG_BOT_TOKEN = 'test-token-abc';
+    // Без проверки на дубликаты два одинаковых query_id дали бы валиную подпись:
+    // dataCheckString строится по всем entries, а Telegram таких дублей не присылает.
+    const authDate = String(Math.floor(Date.now() / 1000));
+    const entries = [
+      ['auth_date', authDate],
+      ['query_id', 'q1'],
+      ['query_id', 'q1'],
+      ['user', '{"id":42}'],
+    ];
+    const dcs = [...entries].sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, v]) => `${k}=${v}`).join('\n');
+    const secret = crypto.createHmac('sha256', 'WebAppData').update('test-token-abc').digest();
+    const hash = crypto.createHmac('sha256', secret).update(dcs).digest('hex');
+    const body = entries.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&') + `&hash=${hash}`;
+    assert.equal(verify(body), null);
+  });
 });
