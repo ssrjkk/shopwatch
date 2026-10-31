@@ -16,10 +16,15 @@
 
 ## Демо на GitHub Pages (без сервера)
 
-Корневой `index.html` — та же витрина, работает автономно: на `*.github.io` она не зовёт `/api/*` (нет лишних 404 в консоли), каталог берёт из `products-data.js`, а заказ оформляет локально — номер `TG-2xxxx` и deep link с составом, по которому бот создаёт заявку на своей стороне.
+Один сайт — две точки входа с одинаковыми байтами. Канон — `public/`: сервер (`node server.js`,
+Docker) раздаёт `public/index.html` + `public/products-data.js`. Корневые `index.html` и
+`products-data.js` — зеркало для Pages (Settings → Pages → Deploy from a branch → `main` / `/ (root)`),
+сайт: `https://ssrjkk.github.io/shopwatch/`. Правило: правишь только `public/`, потом
+`npm run sync:pages` — он докопирует изменившееся в корень. Тест `tests/search.test.js`
+(«не расходятся») не даёт закоммитить разъехавшиеся копии, экспорт каталога из бота пишет
+сразу в обе (`products-data.js` + `public/products-data.js`).
 
-Включить: Settings → Pages → Deploy from a branch → `main` / `/ (root)`.
-Сайт: `https://ssrjkk.github.io/shopwatch/`
+Корневая витрина работает автономно: на `*.github.io` она не зовёт `/api/*` (нет лишних 404 в консоли), каталог берёт из `products-data.js`, а заказ оформляет локально — номер `TG-2xxxx` и deep link с составом, по которому бот создаёт заявку на своей стороне.
 
 ## Запуск с сервером и ботами
 
