@@ -6,6 +6,16 @@ const path = require('path');
 const DatabaseSync = require('node:sqlite').DatabaseSync;
 const { Telegraf, Markup, session } = require('telegraf');
 
+// Не даём токенам ботов попасть в логи: ошибки HTTP-клиентов содержат URL с токеном.
+function redactSecrets(value) {
+  let out = String(value == null ? '' : value);
+  for (const key of ['TG_BOT_TOKEN', 'MAX_BOT_TOKEN']) {
+    const token = process.env[key];
+    if (token && token.length >= 8) out = out.split(token).join('***');
+  }
+  return out.replace(/bot\d+:[A-Za-z0-9_-]{10,}/g, 'bot***');
+}
+
 const app = express();
 // --- Защита: лимит тела, security-заголовки, закрытый CORS по умолчанию ---
 app.use((req, res, next) => {
@@ -286,10 +296,10 @@ async function handleApiOrder(req, res) {
         [Markup.button.callback('В сборку', `st_${orderCode}_work`), Markup.button.callback('Оплачен', `st_${orderCode}_paid`)],
         [Markup.button.callback('Отменить', `st_${orderCode}_cancel`)]
       ])
-    }).catch((e) => console.error('TG Send Error:', e.message));
+    }).catch((e) => console.error('TG Send Error:', redactSecrets(e.message)));
   }
 
-  maxNotifyAdmin(notifyMsg, orderCode).catch((e) => console.error('MAX Send Error:', e.message));
+  maxNotifyAdmin(notifyMsg, orderCode).catch((e) => console.error('MAX Send Error:', redactSecrets(e.message)));
 
   res.json({ orderCode, total: serverTotal });
 }
@@ -450,7 +460,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       console.log(`TG photo saved: ${fileName} (${(buf.length / 1024).toFixed(0)} KB)`);
       finishAddingProductTg(ctx, `/uploads/${fileName}`);
     } catch (e) {
-      console.error('TG photo save failed:', e.message);
+      console.error('TG photo save failed:', redactSecrets(e.message));
       ctx.reply('Не удалось сохранить фото. Отправьте ссылку.');
     }
   });
@@ -615,8 +625,8 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
 
   tgBot.telegram.getMe()
     .then((me) => console.log(`Telegram bot @${me.username} polling started`))
-    .catch((e) => console.error('TG getMe failed:', e.description || e.message));
-  tgBot.launch().catch((e) => console.error('TG polling error:', e.description || e.message));
+    .catch((e) => console.error('TG getMe failed:', redactSecrets(e.description || e.message)));
+  tgBot.launch().catch((e) => console.error('TG polling error:', redactSecrets(e.description || e.message)));
   process.once('SIGINT', () => tgBot.stop('SIGINT'));
   process.once('SIGTERM', () => tgBot.stop('SIGTERM'));
 }
@@ -661,7 +671,7 @@ async function sendMaxMessage(userId, text, kbRows, extraButtons) {
     if (!res.ok) console.error(`MAX send failed: ${res.status} for user ${userId}`);
     return res.ok;
   } catch (e) {
-    console.error(`MAX send error for user ${userId}: ${e.message}`);
+    console.error(`MAX send error for user ${userId}: ${redactSecrets(e.message)}`);
     return false;
   }
 }
