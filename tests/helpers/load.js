@@ -4,7 +4,7 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..', '..');
 
 function serverSrc() {
-  return fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+  return fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8').replace(/\r\n/g, '\n');
 }
 
 function extractMaxBlock() {
