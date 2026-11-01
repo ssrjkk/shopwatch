@@ -1,7 +1,8 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
 const { DatabaseSync } = require('node:sqlite');
-const { extractMaxBlock } = require('./helpers/load');
+const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock } = require('./helpers/load');
+const { seedKey } = require('../catalog-export.js');
 
 describe('MAX bot (parity with Telegram)', () => {
   let api;
@@ -10,8 +11,8 @@ describe('MAX bot (parity with Telegram)', () => {
   before(() => {
     memdb = new DatabaseSync(':memory:');
     memdb.exec(`CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
-CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT);
-CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, owner_tg TEXT, owner_max TEXT);`);
+CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
+CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, owner_max TEXT);`);
     const seed = { payment_details: 'PAY', show_payment: '1', hero_title: 'H', phone: 'P', email: 'E', address: 'A', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I' };
     for (const [k, v] of Object.entries(seed)) memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(k, v);
     memdb.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('GARMIN', 'fēnix', 'Спортивные часы', 'Fenix 8', 60000, 'img', 's');
@@ -42,6 +43,9 @@ const sent = [];
 global.fetch = async (url, opts) => { sent.push({ url, body: opts?.body ? JSON.parse(opts.body) : null, auth: opts?.headers?.Authorization }); return { ok: true, json: async () => ({}) }; };
 process.env.MAX_BOT_TOKEN = 'fake-token';
 process.env.MAX_ADMIN_ID = '999';
+${extractDiscountFns()}
+${extractImportBlock()}
+${extractAdminBlock()}
 `;
     const driver = `
 ;return { handleMaxUpdate, maxNotifyAdmin, maxSessions, db, sent,
@@ -70,14 +74,80 @@ process.env.MAX_ADMIN_ID = '999';
     assert.ok(api.lastTo(999).body.text.includes('добавлены'));
   });
 
-  it('price change and delete work via buttons', async () => {
+  it('catalog browser: shelves -> page -> card -> field edit, delete asks confirm', async () => {
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Товары и цены'));
-    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Цена #1'));
+    const shelvesMsg = api.lastTo(999);
+    const totalProducts = api.db.prepare('SELECT COUNT(*) AS c FROM products').get().c;
+    assert.ok(shelvesMsg.body.text.includes(`Каталог: ${totalProducts} позиций`), shelvesMsg.body.text);
+    assert.ok(JSON.stringify(shelvesMsg.body.attachments).includes('Полка: Все товары'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Полка: Все товары'));
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Товар #1'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Товар #1'));
+    const card = JSON.stringify(api.lastTo(999).body.attachments);
+    for (const label of ['Цена #1', 'Название #1', 'Полка #1', 'Фото #1', 'Скидка #1', 'Удалить #1']) {
+      assert.ok(card.includes(label), `в карточке нет кнопки ${label}`);
+    }
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Цена #1'));
     await api.handleMaxUpdate(api.upd(999, 'Admin', '62000'));
     assert.equal(api.db.prepare('SELECT price FROM products WHERE id=1').get().price, 62000);
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Товар #1'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Название #1'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Fenix 8 переименован'));
+    assert.equal(api.db.prepare('SELECT name FROM products WHERE id=1').get().name, 'Fenix 8 переименован');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Полка #1'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Квадрокоптеры'));
+    assert.match(api.lastTo(999).body.text, /полки нет/i);
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'В хиты #1'));
+    assert.equal(api.db.prepare('SELECT is_hit FROM products WHERE id=1').get().is_hit, 1);
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Скидка #1'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '20'));
+    const discounted = api.db.prepare('SELECT price, old_price FROM products WHERE id=1').get();
+    assert.equal(discounted.old_price, 62000);
+    assert.equal(discounted.price, 49600);
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Удалить #2'));
+    assert.ok(api.lastTo(999).body.text.includes('Удалить #2'), 'спрашивает подтверждение');
+    assert.ok(api.db.prepare('SELECT * FROM products WHERE id=2').get(), 'до подтверждения товар на месте');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Да, удалить #2'));
     assert.equal(api.db.prepare('SELECT * FROM products WHERE id=2').get(), undefined);
+  });
+
+  it('orders browser: filter, card, status change, search, summary', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Последние заказы'));
+    const list = api.lastTo(999);
+    assert.ok(list.body.text.includes('Заявок: 1'), list.body.text);
+    assert.ok(JSON.stringify(list.body.attachments).includes('Заявка TG-9000'));
+    assert.ok(JSON.stringify(list.body.attachments).includes('Заказы: Все'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Заявка TG-9000'));
+    const card = String(api.lastTo(999).body.text).replace(/[  ]/g, ' ');
+    assert.match(card, /ЗАЯВКА TG-9000/);
+    assert.match(card, /Fenix 8 × 1 = 60 000 ₽/s);
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Оплачен TG-9000'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Оплачен TG-9000'));
+    assert.equal(api.db.prepare("SELECT status FROM orders WHERE order_code='TG-9000'").get().status, 'Оплачен');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Заказы: Оплачен'));
+    assert.ok(api.lastTo(999).body.text.includes('со статусом «Оплачен»'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Заказы: Все'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Найти заявку'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'tg-9000'));
+    assert.ok(api.lastTo(999).body.text.includes('поиск «tg-9000»'), api.lastTo(999).body.text);
+    assert.ok(api.lastTo(999).body.text.includes('Заявок: 1'), 'найден по номеру независимо от регистра');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Найти заявку'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'нет такого'));
+    assert.match(api.lastTo(999).body.text, /Заявок: 0/);
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Сводка сайта'));
+    assert.match(api.lastTo(999).body.text, /Товаров: \d+ · хитов: \d+/);
+    assert.match(api.lastTo(999).body.text, /Заявок: 1/);
+  });
+
+  it('bulk import: preview first, writes only after the confirm button', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Импорт товаров'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'COROS;Pace;Спортивные часы;COROS Pace 11;24990\nDJI;;Квадрокоптеры;DJI Avata;40000'));
+    const preview = api.lastTo(999).body.text;
+    assert.match(preview, /Новых позиций: 1/);
+    assert.match(preview, /категории «Квадрокоптеры» нет/);
+    assert.equal(api.db.prepare("SELECT COUNT(*) AS c FROM products WHERE name='COROS Pace 11'").get().c, 0, 'до подтверждения не пишет');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Записать 1'));
+    assert.equal(api.db.prepare("SELECT COUNT(*) AS c FROM products WHERE name='COROS Pace 11'").get().c, 1);
   });
 
   it('payment requisites edit + visibility toggle', async () => {
