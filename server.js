@@ -822,7 +822,7 @@ function exportCatalog(force) {
 // Витрина без сервера читает каталог из products-data.js, поэтому правка админки
 // становится видимой покупателю только после коммита в репозиторий. Кнопка в
 // бота делает именно это: выгрузка, синхронизация зеркал, коммит и push.
-const PUBLISH_PATHS = ['products-data.js', 'public/products-data.js', 'index.html', 'public/index.html', 'uploads', 'public/uploads'];
+const PUBLISH_PATHS = ['products-data.js', 'public/products-data.js', 'index.html', 'public/index.html', 'manifest.json', 'public/manifest.json', 'uploads', 'public/uploads'];
 let publishInFlight = false;
 
 // Подсказка к ошибке push: её причина зависит от того, откуда берётся доступ.

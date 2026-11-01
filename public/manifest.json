@@ -1,0 +1,9 @@
+{
+  "name": "Watchop — Магазин Garmin и наручных смарт-часов",
+  "short_name": "Watchop",
+  "description": "Официальный каталог Garmin, Seiko, Tissot, Apple Watch и смарт-часов с доставкой по всей России",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F4F5F7",
+  "theme_color": "#141619"
+}

@@ -8,6 +8,7 @@ const path = require('path');
 const pairs = [
   ['public/index.html', 'index.html'],
   ['public/products-data.js', 'products-data.js'],
+  ['public/manifest.json', 'manifest.json'],
 ];
 
 let dirty = 0;

@@ -40,7 +40,7 @@ describe('Публикация каталога из бота', () => {
 
   it('в коммит попадают только файлы витрины: ни базы, ни .env, ни -A', () => {
     const { PUBLISH_PATHS } = loadPublish();
-    assert.deepEqual(PUBLISH_PATHS.slice().sort(), ['index.html', 'products-data.js', 'public/index.html', 'public/products-data.js', 'public/uploads', 'uploads'].sort());
+    assert.deepEqual(PUBLISH_PATHS.slice().sort(), ['index.html', 'products-data.js', 'manifest.json', 'public/index.html', 'public/products-data.js', 'public/manifest.json', 'public/uploads', 'uploads'].sort());
     for (const forbidden of ['.', '..', '-A', '.', 'watchop.db', '.env', 'server.js', 'node_modules']) {
       assert.equal(PUBLISH_PATHS.includes(forbidden), false, `в список публикации не должен попадать ${forbidden}`);
     }
