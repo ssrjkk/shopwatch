@@ -158,7 +158,10 @@ function compression(req, res, next) {
 }
 
 app.use(compression);
-app.use('/uploads', express.static(uploadsDir));
+// Файлы из админки называются watch_<миллисекунды>.jpg, то есть имя уникально
+// на каждое загруженное фото. Значит его можно отдавать как immutable: браузер
+// не делает лишнюю ревалидацию на каждый показ карточки.
+app.use('/uploads', express.static(uploadsDir, { maxAge: '365d', immutable: true }));
 app.use(express.static(publicDir));
 
 const { applySeed, commitCatalogFiles, normalizeRow, renderCatalogFile, readCatalogFile, diffCatalog, summarizeDiff, seedKey } = require('./catalog-export.js');
@@ -185,7 +188,7 @@ function tgAdminMenuKb() {
     ['Реквизиты оплаты', 'Тексты и контакты'],
     ['Последние заказы', 'Экспорт каталога'],
     ['Импорт товаров', 'Админы'],
-    ['Сводка сайта']
+    ['Сводка сайта', 'Фото на стоках']
   ]).resize();
 }
 
@@ -268,6 +271,13 @@ const defaultSettings = {
 
 const initSettingStmt = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
 for (const [k, v] of Object.entries(defaultSettings)) initSettingStmt.run(k, v);
+
+// Что админка имеет право переписывать. last_order_num — служебный счётчик
+// номеров заявок: его порча ломает выдачу кодов, поэтому его в списке нет.
+const EDITABLE_SETTINGS = Object.keys(defaultSettings).filter((k) => k !== 'last_order_num');
+function isEditableSetting(key) {
+  return EDITABLE_SETTINGS.indexOf(String(key || '')) >= 0;
+}
 
 const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?').get(k)?.value ?? '';
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
@@ -599,8 +609,46 @@ function setOrderStatus(conn, code, status) {
   return { ok: true, code: o.order_code, status };
 }
 
-function adminSummary(conn, settings) {
-  const shelves = catalogShelves(conn);
+// Отчёт о картинках: заказчик жалуется, что полку не узнать — на большинстве
+// позиций сток Unsplash, и одна и та же фотография повторяется десятки раз.
+function stockPhotoReport(conn) {
+  const rows = conn.prepare('SELECT id, name, image FROM products').all();
+  const byHost = {};
+  const repeats = new Map();
+  let own = 0;
+  for (const r of rows) {
+    const img = String(r.image || '');
+    if (!img) { byHost['без картинки'] = (byHost['без картинки'] || 0) + 1; continue; }
+    if (img.includes('/uploads/')) { own++; continue; }
+    let host = 'другое';
+    try { host = new URL(img).hostname; } catch (e) { host = 'битая ссылка'; }
+    byHost[host] = (byHost[host] || 0) + 1;
+    const key = img.split('?')[0];
+    const seen = repeats.get(key) || [];
+    seen.push(r);
+    repeats.set(key, seen);
+  }
+  const duplicated = [...repeats.entries()].filter(([, list]) => list.length > 1).sort((a, b) => b[1].length - a[1].length);
+  const lines = [
+    'Картинки каталога',
+    `Всего позиций: ${rows.length} · своих (загружено в админку): ${own}`,
+    ...Object.entries(byHost).sort((a, b) => b[1] - a[1]).map(([h, c]) => `  ${h} — ${c}`),
+    duplicated.length
+      ? `Повторов: ${duplicated.length} картинок используются на нескольких позициях, чаще всего:\n${duplicated.slice(0, 5).map(([url, list]) => `  ${list.length}× ${url.split('?')[0].split('/').pop()}`).join('\n')}`
+      : 'Повторов нет: каждая картинка уникальна.',
+    own === 0 ? 'Ни одного реального фото товара: витрина выглядит как макет. Фото грузится в боте — «Добавить часы» шагом 6 или «Фото» в карточке товара.' : '',
+  ].filter(Boolean);
+  return lines.join('\n');
+}
+
+function deleteOrderByCode(conn, code) {
+  const o = conn.prepare('SELECT order_code, total, status FROM orders WHERE order_code = ?').get(String(code || '').toUpperCase());
+  if (!o) return { ok: false, error: 'Заявка не найдена.' };
+  conn.prepare('DELETE FROM orders WHERE order_code = ?').run(o.order_code);
+  return { ok: true, code: o.order_code, status: o.status, total: Number(o.total) };
+}
+
+function adminSummary(conn, settings) {  const shelves = catalogShelves(conn);
   const products = shelves[0].count;
   const hits = Number(conn.prepare('SELECT COUNT(*) AS c FROM products WHERE is_hit > 0').get().c);
   const discounted = Number(conn.prepare('SELECT COUNT(*) AS c FROM products WHERE old_price > price').get().c);
@@ -1058,6 +1106,10 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     if (!isTgAdmin(ctx)) return;
     ctx.reply(adminSummary(db, { show_payment: getSetting('show_payment') }));
   });
+  tgBot.hears('Фото на стоках', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.reply(stockPhotoReport(db));
+  });
   tgBot.hears('Товары и цены', (ctx) => {
     if (!isTgAdmin(ctx)) return;
     showShelvesTg(ctx);
@@ -1204,11 +1256,12 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       [Markup.button.callback('Телефон', 'tg_cfg_phone'), Markup.button.callback('Email', 'tg_cfg_email')],
       [Markup.button.callback('Адрес', 'tg_cfg_address')],
       [Markup.button.callback('Ссылка ТГ', 'tg_cfg_tg_link'), Markup.button.callback('Ссылка MAX', 'tg_cfg_max_link')],
-      [Markup.button.callback('ИП ФИО', 'tg_cfg_legal_name'), Markup.button.callback('ИНН', 'tg_cfg_legal_inn')]
+      [Markup.button.callback('ИП ФИО', 'tg_cfg_legal_name'), Markup.button.callback('ИНН', 'tg_cfg_legal_inn'), Markup.button.callback('ОГРНИП', 'tg_cfg_legal_ogrnip')]
     ]));
   });
   tgBot.action(/^tg_cfg_(.+)$/, (ctx) => {
     if (!isTgAdmin(ctx)) return;
+    if (!isEditableSetting(ctx.match[1])) return ctx.answerCbQuery('Эта настройка из бота не меняется');
     ctx.session = { step: 'wait_cfg', key: ctx.match[1] };
     ctx.reply(`Текущее:\n${getSetting(ctx.match[1])}\n\nОтправьте новое значение:`);
   });
@@ -1247,10 +1300,28 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       text,
       Markup.inlineKeyboard([
         Object.keys(ORDER_STATUS_BUTTONS).map((k) => Markup.button.callback(ORDER_STATUS_BUTTONS[k], `ord_set_${code}_${k}`)),
-        [Markup.button.callback('К списку', 'ord_root')],
+        [Markup.button.callback('Удалить заявку', `ord_del_${code}`), Markup.button.callback('К списку', 'ord_root')],
       ])
     );
   }
+
+  tgBot.action(/^ord_del_(TG-\d+)$/, (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    const code = ctx.match[1];
+    ctx.answerCbQuery();
+    ctx.reply(
+      `Удалить заявку ${code} вместе с составом и данными покупателя?\nОтменить это можно только из резервной копии базы.`,
+      Markup.inlineKeyboard([[Markup.button.callback('Да, удалить', `ord_del_yes_${code}`), Markup.button.callback('Отмена', `ord_item_${code}`)]])
+    );
+  });
+  tgBot.action(/^ord_del_yes_(TG-\d+)$/, (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    const res = deleteOrderByCode(db, ctx.match[1]);
+    ctx.answerCbQuery(res.ok ? 'Удалено' : res.error);
+    if (!res.ok) return ctx.reply(res.error);
+    ctx.reply(`Заявка ${res.code} удалена (${Number(res.total).toLocaleString('ru-RU')} ₽, статус «${res.status}»).`);
+    showOrdersTg(ctx);
+  });
 
   tgBot.hears('Последние заказы', (ctx) => {
     if (!isTgAdmin(ctx)) return;
@@ -1413,7 +1484,11 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       return showTgAdminsPanel(ctx);
     }
     if (s.step === 'wait_pay') { setSetting('payment_details', txt); ctx.session = {}; return ctx.reply('Реквизиты обновлены!'); }
-    if (s.step === 'wait_cfg') { setSetting(s.key, txt); ctx.session = {}; return ctx.reply('Сохранено!'); }
+    if (s.step === 'wait_cfg') {
+      if (!isEditableSetting(s.key)) { ctx.session = {}; return ctx.reply('Эта настройка из бота не меняется.'); }
+      setSetting(s.key, cleanText(txt));
+      ctx.session = {};
+      return ctx.reply('Сохранено!'); }
     if (s.step === 'cat_find') {
       ctx.session = { ...(ctx.session || {}), step: 'cat', query: txt, page: 1 };
       return showCatalogPageTg(ctx);
@@ -1749,11 +1824,11 @@ function maxShopLinkButtons() {
   return [];
 }
 
-const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Сводка сайта']];
+const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Сводка сайта'], ['Фото на стоках']];
 const MAX_CANCEL = [['Отмена']];
 // Кнопки меню и навигации админки. Пока бот ждёт значение поля или шаг мастера,
 // нажатие такой кнопки обязано прервать ввод, а не уехать в него текстом.
-const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
+const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
 function maxIsMenuCommand(text) {
   const t = String(text || '').trim();
   return MAX_MENU_COMMANDS.has(t)
@@ -1764,6 +1839,8 @@ function maxIsMenuCommand(text) {
     || /^Каталог [←→]$/.test(t)
     || /^Заявки [←→]$/.test(t)
     || /^(?:В хиты|Снять с хитов|Скидка|Удалить|Да, удалить) #\d+$/i.test(t)
+    || /^(?:Удалить|Да, удалить) TG-\d+$/i.test(t)
+    || /^(?:В сборку|Оплачен|Отменить|Новый|Trade-In) TG-\d+$/i.test(t)
     || new RegExp(`^(${Object.values(PRODUCT_FIELD_LABELS).join('|')}) #\\d+$`, 'i').test(t);
 }
 
@@ -1884,7 +1961,7 @@ async function maxAdminMenu(userId, title) {
 
 const MAX_CFG_BUTTONS = {
   'Баннер': 'hero_title', 'Телефон': 'phone', 'Email': 'email', 'Адрес': 'address',
-  'Ссылка ТГ': 'tg_link', 'Ссылка MAX': 'max_link', 'ИП': 'legal_name', 'ИНН': 'legal_inn'
+  'Ссылка ТГ': 'tg_link', 'Ссылка MAX': 'max_link', 'ИП': 'legal_name', 'ИНН': 'legal_inn', 'ОГРНИП': 'legal_ogrnip'
 };
 async function handleMaxUpdate(upd) {
   if (upd.update_type === 'message_callback' && upd.callback) {
@@ -1965,7 +2042,22 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     const code = ordCardMatch[1].toUpperCase();
     const card = orderCardText(db, code);
     if (!card) return sendMaxMessage(senderId, `Заявка ${code} не найдена.`, MAX_MENU);
-    return sendMaxMessage(senderId, card, [...maxOrderStatusKb(code), ['К заявкам'], ...MAX_CANCEL]);
+    return sendMaxMessage(senderId, card, [...maxOrderStatusKb(code), [`Удалить ${code}`], ['К заявкам'], ...MAX_CANCEL]);
+  }
+  const ordDelMatch = text.match(/^Удалить (TG-\d+)$/i);
+  if (ordDelMatch) {
+    const code = ordDelMatch[1].toUpperCase();
+    if (!orderCardText(db, code)) return sendMaxMessage(senderId, `Заявка ${code} не найдена.`, MAX_MENU);
+    return sendMaxMessage(senderId, `Удалить заявку ${code} вместе с составом и данными покупателя?\nОтменить это можно только из резервной копии базы.`, [[`Да, удалить ${code}`], ['Отмена']]);
+  }
+  const ordDelYesMatch = text.match(/^Да, удалить (TG-\d+)$/i);
+  if (ordDelYesMatch) {
+    const res = deleteOrderByCode(db, ordDelYesMatch[1]);
+    if (!res.ok) return sendMaxMessage(senderId, res.error, MAX_MENU);
+    return sendMaxMessage(senderId, `Заявка ${res.code} удалена (${Number(res.total).toLocaleString('ru-RU')} ₽, статус «${res.status}»).`, MAX_MENU);
+  }
+  if (text === 'Фото на стоках') {
+    return sendMaxMessage(senderId, stockPhotoReport(db), MAX_MENU);
   }
 
   // Клиентский просмотр заказа по номеру не должен перекрывать админский ввод:
@@ -2021,7 +2113,11 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
       return sendMaxMessage(senderId, 'Реквизиты оплаты обновлены на сайте!', MAX_MENU);
     }
     if (sess.step === 'wait_cfg') {
-      setSetting(sess.key, text);
+      if (!isEditableSetting(sess.key)) {
+        maxSessions.delete(senderId);
+        return sendMaxMessage(senderId, 'Эта настройка из бота не меняется.', MAX_MENU);
+      }
+      setSetting(sess.key, cleanText(text));
       maxSessions.delete(senderId);
       return sendMaxMessage(senderId, 'Настройка сайта сохранена!', MAX_MENU);
     }

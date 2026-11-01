@@ -319,6 +319,17 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.doesNotMatch(card, /src="\/uploads/);
   });
 
+  it('картинки Unsplash просят webp нужной ширины, чужие хосты не трогаются', () => {
+    assert.equal(
+      g.imgUrl('https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80', 400),
+      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80&fm=webp'
+    );
+    assert.equal(g.imgUrl('https://images.unsplash.com/photo-x?w=600&q=80&fm=webp', 160), 'https://images.unsplash.com/photo-x?w=160&q=80&fm=webp', 'fm не дублируется');
+    assert.equal(g.imgUrl('https://upload.wikimedia.org/a/b.png', 400), 'https://upload.wikimedia.org/a/b.png', 'чужой хост без параметров ширины');
+    assert.equal(g.imgUrl('/uploads/watch_1.jpg', 400), 'uploads/watch_1.jpg', 'своё фото остаётся как есть');
+    assert.equal(g.imgUrl('', 400), '');
+  });
+
   it('пока человек ищет, «Хиты продаж» не встают над выдачей', () => {
     const sec = g.document.getElementById('hits-section');
     type('fenix');

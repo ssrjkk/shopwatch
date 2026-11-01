@@ -1,7 +1,7 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
 const { DatabaseSync } = require('node:sqlite');
-const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractEncodingBlock } = require('./helpers/load');
+const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractEncodingBlock, extractSettingsGuard } = require('./helpers/load');
 const { seedKey } = require('../catalog-export.js');
 
 describe('MAX bot (parity with Telegram)', () => {
@@ -21,6 +21,8 @@ CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQU
 
     const prelude = `
 const db = memdb;
+const defaultSettings = { hero_title: 'H', phone: 'P', email: 'E', address: 'A', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I', legal_ogrnip: 'O', payment_details: 'PAY', show_payment: '1', last_order_num: '1175' };
+${extractSettingsGuard()}
 const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?').get(k)?.value ?? '';
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
 function isValidEnv(val) { return val && typeof val === 'string' && val.trim() !== '' && !val.startsWith('ВСТАВЬ_'); }
@@ -140,6 +142,38 @@ ${extractAdminBlock()}
     assert.match(api.lastTo(999).body.text, /Заявок: 1/);
   });
 
+  it('MAX: отчёт по картинкам и удаление заявки с подтверждением', async () => {
+    api.db.prepare("INSERT INTO orders (order_code, items_json, total, status) VALUES (?,?,?,?)")
+      .run('TG-9111', JSON.stringify([{ name: 'Suunto Vyper', price: 38900, qty: 1 }]), 38900, 'Новый');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Фото на стоках'));
+    assert.match(api.lastTo(999).body.text, /Картинки каталога/);
+    assert.match(api.lastTo(999).body.text, /Всего позиций: \d+/);
+
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Заявка TG-9111'));
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Удалить TG-9111'), 'в карточке есть кнопка удаления');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Удалить TG-9111'));
+    assert.match(api.lastTo(999).body.text, /Удалить заявку TG-9111/);
+    assert.ok(api.db.prepare("SELECT * FROM orders WHERE order_code='TG-9111'").get(), 'до подтверждения заявка на месте');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Да, удалить TG-9111'));
+    assert.equal(api.db.prepare("SELECT * FROM orders WHERE order_code='TG-9111'").get(), undefined);
+    assert.ok(api.db.prepare("SELECT * FROM orders WHERE order_code='TG-9000'").get(), 'остальные заявки не тронуты');
+  });
+
+  it('настройка last_order_num из бота не перезаписывается', async () => {
+    const read = () => (api.db.prepare("SELECT value FROM settings WHERE key='last_order_num'").get() || {}).value ?? '';
+    const before = read();
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Тексты и контакты'));
+    const kb = JSON.stringify(api.lastTo(999).body.attachments);
+    assert.ok(!kb.includes('last_order_num'), 'служебного ключа нет среди кнопок');
+    // прямая попытка подменить служебный ключ через шаг wait_cfg отбивается
+    // ключ сессии — строка: MAX отдаёт user_id как текст, и Map различает 999 и '999'
+    api.maxSessions.set('999', { step: 'wait_cfg', key: 'last_order_num' });
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '999999'));
+    assert.match(api.lastTo(999).body.text, /не меняется/);
+    assert.equal(api.maxSessions.has('999'), false, 'шаг после отказа закрывается');
+    assert.equal(read(), before);
+  });
+
   it('bulk import: preview first, writes only after the confirm button', async () => {
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Импорт товаров'));
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'COROS;Pace;Спортивные часы;COROS Pace 11;24990\nDJI;;Квадрокоптеры;DJI Avata;40000'));
@@ -193,7 +227,7 @@ ${extractAdminBlock()}
   it('cancel resets the wizard session', async () => {
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Добавить часы'));
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Отмена'));
-    assert.ok(!api.maxSessions.has(999));
+    assert.ok(!api.maxSessions.has('999') && !api.maxSessions.has(999));
   });
 
   it('admin menu appends shop link button when SHOP_URL is set', async () => {

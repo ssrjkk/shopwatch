@@ -162,6 +162,13 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.ok((await r1.text()).includes('products-grid'));
     const r2 = await fetch(`${BASE}/uploads/nope.jpg`);
     assert.equal(r2.status, 404);
+    // имя файла уникально на каждую загрузку, поэтому кэш можно давать навсегда
+    const photo = await fetch(`${BASE}/uploads/watch_1793534071570.jpg`);
+    assert.equal(photo.status, 200);
+    assert.match(photo.headers.get('cache-control') || '', /max-age=31536000/);
+    assert.match(photo.headers.get('cache-control') || '', /immutable/);
+    const html = await fetch(`${BASE}/`);
+    assert.doesNotMatch(html.headers.get('cache-control') || '', /immutable/, 'витрина должна обновляться сразу');
   });
 
   it('тело в cp1251 доходит до базы нормальными буквами, а не «?????»', async () => {

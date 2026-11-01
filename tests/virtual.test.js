@@ -52,6 +52,24 @@ describe('catalog virtualization', () => {
     g.window.scrollY = 0;
   });
 
+  it('избранное сидит в том же окне, что и каталог', () => {
+    seed350();
+    g.state.favorites = g.state.filtered.map((p) => p.id);
+    g.window.scrollY = 0;
+    g.renderFavorites();
+    const fav = g.document.getElementById('favorites-grid');
+    assert.equal(fav.children.length, g.WINDOW_CARDS, `в избранном отрисовано ${fav.children.length}`);
+    assert.equal(g.document.getElementById('favorites-bottom').style.height !== '0px', true, 'нижняя заглушка держит высоту');
+    g.window.scrollY = 30000;
+    g.renderFavorites();
+    assert.equal(fav.children.length, g.WINDOW_CARDS, 'после прокрутки карточек не больше');
+    g.window.scrollY = 0;
+    g.state.favorites = [];
+    g.renderFavorites();
+    assert.match(g.document.getElementById('favorites-grid').innerHTML, /В избранном пока пусто/);
+    assert.equal(g.document.getElementById('favorites-bottom').style.height, '0px');
+  });
+
   it('короткий список рендерится целиком, без заглушек', () => {
     g.state.products = Array.from({ length: 12 }, (_, i) => ({ id: 2000 + i, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Tiny ' + i, price: 5000 + i, image: 'x.jpg', specs: 's' }));
     g.document.getElementById('search-input').value = '';

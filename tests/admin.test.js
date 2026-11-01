@@ -1,14 +1,14 @@
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { DatabaseSync } = require('node:sqlite');
-const { extractImportBlock, extractAdminBlock, extractEncodingBlock } = require('./helpers/load');
+const { extractImportBlock, extractAdminBlock, extractEncodingBlock, extractSettingsGuard } = require('./helpers/load');
 const { seedKey } = require('../catalog-export.js');
 
 // Админка сидит рядом с импортом и пользуется его проверкой полок, поэтому
 // в тесте поднимаем оба блока вместе — ровно как в server.js. Блок кодировки
 // нужен, потому что правка поля чистит текст тем же cleanText.
 const api = new Function('seedKey', `${extractEncodingBlock()}\n${extractImportBlock()}\n${extractAdminBlock()}
-return { ADMIN_PAGE, ADMIN_ORDER_PAGE, ORDER_STATUS_SET, catalogShelves, catalogPage, productById, productCardText, setProductField, toggleProductHit, deleteProductById, orderStatusBreakdown, ordersPage, orderCardText, setOrderStatus, adminSummary };`)(seedKey);
+return { ADMIN_PAGE, ADMIN_ORDER_PAGE, ORDER_STATUS_SET, catalogShelves, catalogPage, productById, productCardText, setProductField, toggleProductHit, deleteProductById, orderStatusBreakdown, ordersPage, orderCardText, setOrderStatus, adminSummary, stockPhotoReport, deleteOrderByCode };`)(seedKey);
 
 // toLocaleString('ru-RU') вставляет неразрывные пробелы — сравнения нормализуем
 const flat = (s) => String(s).replace(/[  ]/g, ' ');
@@ -18,10 +18,10 @@ function memdb() {  const db = new DatabaseSync(':memory:');
 CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT);`);
   const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?,?,?,?,?,?,?,?,?,?)');
   [
-    ['GARMIN', 'fenix', 'Спортивные часы', 'Garmin Fenix 8 43 мм', 58990, 0, 'https://img/1', 'AMOLED, титан', 1],
-    ['GARMIN', 'Forerunner', 'Спортивные часы', 'Garmin Forerunner 970', 41200, 49000, 'https://img/2', 'бег, карты', 0],
-    ['DEEPSON', 'STRIKER', 'Эхолоты', 'Deeper CHIRP 3', 34900, 0, '', 'эхолот с сети', 0],
-    ['SUUNTO', 'Suunto', 'Дайвинг компьютеры', 'Suunto Vyper', 38900, 0, 'https://img/4', 'ноиток', 0],
+    ['GARMIN', 'fenix', 'Спортивные часы', 'Garmin Fenix 8 43 мм', 58990, 0, 'https://images.unsplash.com/photo-A?w=600&q=80', 'AMOLED, титан', 1],
+    ['GARMIN', 'Forerunner', 'Спортивные часы', 'Garmin Forerunner 970', 41200, 49000, 'https://images.unsplash.com/photo-A?w=600&q=80', 'бег, карты', 0],
+    ['DEEPSON', 'STRIKER', 'Эхолоты', 'Deeper CHIRP 3', 34900, 0, 'https://upload.wikimedia.org/wikipedia/commons/deeper.jpg', 'эхолот с сети', 0],
+    ['SUUNTO', 'Suunto', 'Дайвинг компьютеры', 'Suunto Vyper', 38900, 0, 'https://images.unsplash.com/photo-B?w=600&q=80', 'ноиток', 0],
   ].forEach((r, i) => ins.run(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], seedKey({ brand: r[0], series: r[1], category: r[2], name: r[3] }) + i));
   db.prepare(`INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES
     ('TG-1001','[{"name":"Garmin Fenix 8 43 мм","price":58990,"qty":1}]',58990,'Новый','{"fio":"Иванов Иван","phone":"+7 900 111-22-33","delivery":"СДЭК"}'),
@@ -169,3 +169,53 @@ describe('Админка: сводка', () => {
     assert.match(flat(api.adminSummary(memdb(), { show_payment: '0' })), /Реквизиты на сайте: скрыты/);
   });
 });
+
+describe('Админка: картинки и удаление заявок', () => {
+  it('отчёт по фото считает хосты, повторы и свои снимки', () => {
+    const db = memdb();
+    db.prepare('INSERT INTO products (brand, category, name, price, image) VALUES (?,?,?,?,?)')
+      .run('APPLE', 'Спортивные часы', 'Своё фото', 9000, '/uploads/watch_1.jpg');
+    const text = api.stockPhotoReport(db);
+    assert.match(text, /Всего позиций: 5 · своих \(загружено в админку\): 1/);
+    assert.match(text, /images\.unsplash\.com — 3/);
+    assert.match(text, /upload\.wikimedia\.org — 1/);
+    assert.match(text, /Повторов: 1 картинок/);
+    assert.match(text, /2× photo-A/);
+  });
+
+  it('отчёт на каталоге без своих фото говорит это прямо', () => {
+    const text = api.stockPhotoReport(memdb());
+    assert.match(text, /своих \(загружено в админку\): 0/);
+    assert.match(text, /Ни одного реального фото товара/);
+  });
+
+  it('заявка удаляется по номеру, чужой номер не трогается', () => {
+    const db = memdb();
+    const res = api.deleteOrderByCode(db, 'tg-1002');
+    assert.equal(res.ok, true);
+    assert.equal(res.code, 'TG-1002');
+    assert.equal(res.status, 'Оплачен');
+    assert.equal(api.ordersPage(db, {}).total, 2);
+    assert.equal(api.deleteOrderByCode(db, 'TG-7777').ok, false);
+    assert.equal(api.orderCardText(db, 'TG-1002'), null);
+  });
+});
+
+describe('Админка: что можно переписывать в настройках', () => {
+  const guard = new Function('defaultSettings', `${extractSettingsGuard()}\nreturn { EDITABLE_SETTINGS, isEditableSetting };`)({
+    hero_title: 'h', phone: 'p', email: 'e', address: 'a', tg_link: 't', max_link: 'm',
+    legal_name: 'n', legal_inn: 'i', legal_ogrnip: 'o', payment_details: 'd', show_payment: '1',
+    last_order_num: '1175',
+  });
+
+  it('публичные настройки доступны, служебный счётчик номеров — нет', () => {
+    for (const k of ['hero_title', 'phone', 'email', 'address', 'tg_link', 'max_link', 'legal_name', 'legal_inn', 'legal_ogrnip', 'payment_details', 'show_payment']) {
+      assert.equal(guard.isEditableSetting(k), true, k);
+    }
+    assert.equal(guard.isEditableSetting('last_order_num'), false);
+    assert.equal(guard.isEditableSetting('whatever'), false);
+    assert.equal(guard.isEditableSetting(''), false);
+    assert.equal(guard.isEditableSetting(null), false);
+  });
+});
+

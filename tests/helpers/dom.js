@@ -30,12 +30,13 @@ function cardsIn(html) {
   return Array.from({ length: n }, () => ({ offsetHeight: 230 }));
 }
 function mkEl(id) {
+  const isGrid = id === 'products-grid' || id === 'favorites-grid';
   return {
     _html: '', textContent: '', href: '', style: {}, offsetHeight: 0, children: [],
     value: id === 'sort-select' ? 'popular' : '',
     get innerHTML() { return this._html; },
-    set innerHTML(v) { this._html = v; if (id === 'products-grid') { hearts.clear(); indexHearts(v); this.children = cardsIn(v); } },
-    insertAdjacentHTML(pos, html) { this._html += html; if (id === 'products-grid') { indexHearts(html); this.children = cardsIn(this._html); } },
+    set innerHTML(v) { this._html = v; if (isGrid) { if (id === 'products-grid') hearts.clear(); indexHearts(v); this.children = cardsIn(v); } },
+    insertAdjacentHTML(pos, html) { this._html += html; if (isGrid) { indexHearts(html); this.children = cardsIn(this._html); } },
     classList: makeClassList(),
     // rect.top во вьюпорте: документный верх сетки минус прокрутка страницы
     getBoundingClientRect: () => ({ top: (id === 'grid-window' ? 0 : 10000) - ((global.window && global.window.scrollY) || 0) }),
@@ -72,7 +73,7 @@ const EXPOSE = [
   'readStore', 'rememberOrder', 'lastOrder', 'showOrderSuccess', 'applyOrderToDom', 'suggestionCount', 'invalidateSugCounts', 'applySettingsToUI',
   'scrollToGrid', 'buildSugMap', 'sugMap', 'renderSuggestionsNow', 'scheduleSuggestions', 'sortedSug', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
   'catalogFp', 'syncCatalogFp',
-  'oldPriceHTML', 'productCardHTML', 'localOrders', 'pushLocalOrder', 'renderOrders', 'imgSrc', 'imgUrl', 'renderWindow', 'scheduleWindow', 'WINDOW_CARDS',
+  'oldPriceHTML', 'productCardHTML', 'localOrders', 'pushLocalOrder', 'renderOrders', 'imgSrc', 'imgUrl', 'renderWindow', 'scheduleWindow', 'WINDOW_CARDS', 'renderFavorites',
 ];
 
 // Монтирует фронтенд. seed — источник данных каталога (по PRODUCTS_DATA можно подменить файл).
