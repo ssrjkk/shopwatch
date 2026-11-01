@@ -359,4 +359,27 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.ok(m, 'в og:description заявлено число моделей');
     assert.equal(Number(m[1]), SEED.length, `витрина обещает ${m && m[1]} моделей, в каталоге ${SEED.length}`);
   });
+
+  // Размеров в доке касаться не хочется никому, но именно они уезжают первыми:
+  // HTML вырос на 10 КБ за один заход с фичами, а строка про сжатие осталась прежней.
+  it('размеры файлов витрины в README совпадают с фактическими (обе языки)', () => {
+    const zlib = require('zlib');
+    const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'));
+    const pd = fs.readFileSync(path.join(__dirname, '..', 'public', 'products-data.js'));
+    const expected = {
+      'index.html': [html.length, zlib.brotliCompressSync(html).length],
+      'products-data.js': [pd.length, zlib.brotliCompressSync(pd).length],
+    };
+    for (const file of ['README.md', 'README.ru.md']) {
+      const text = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+      const line = text.split('\n').find((l) => l.includes('**Сжатие') || l.includes('**Compression'));
+      assert.ok(line, `в ${file} есть строка про сжатие`);
+      for (const token of Object.keys(expected)) {
+        const at = line.indexOf('`' + token + '`');
+        assert.ok(at >= 0, `${file}: ${token} упомянут в строке про сжатие`);
+        const nums = (line.slice(at, at + 120).match(/\d[\d\s  ]*\d/g) || []).map((s) => parseInt(s.replace(/\D/g, ''), 10));
+        assert.deepEqual(nums.slice(0, 2), expected[token], `${file}: ${token} — сырой размер и brotli (${expected[token]}) должны совпадать с тем, что обещает док (${nums.slice(0, 2)})`);
+      }
+    }
+  });
 });
