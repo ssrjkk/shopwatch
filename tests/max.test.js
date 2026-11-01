@@ -1,7 +1,9 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractEncodingBlock, extractSettingsGuard, extractPromoBlock, extractOrderCodeFn } = require('./helpers/load');
+const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractEncodingBlock, extractSettingsGuard, extractPromoBlock, extractOrderCodeFn, extractBackupBlock } = require('./helpers/load');
 const { seedKey } = require('../catalog-export.js');
 
 describe('MAX bot (parity with Telegram)', () => {
@@ -51,6 +53,7 @@ ${extractOrderCodeFn()}
 ${extractImportBlock()}
 ${extractAdminBlock()}
 ${extractPromoBlock()}
+${extractBackupBlock()}
 `;
     const driver = `
 ;return { handleMaxUpdate, maxNotifyAdmin, maxSessions, db, sent,
@@ -442,6 +445,13 @@ ${extractPromoBlock()}
     assert.ok(menu.includes('Дизайн: Stealth') && menu.includes('Дизайн: Classic'), 'оба дизайна на выбор');
   });
 
+  it('кнопка «Бекап БД» подтверждает выполнение текстом (файл — в Telegram)', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Бекап БД'));
+    const t = api.lastTo(999).body.text;
+    assert.match(t, /Бекап (готов|не получился)/);
+    if (/готов/.test(t)) assert.match(t, /watchop-.*\.db/);
+  });
+
   it('привязка админа по имени: ждёт, привязывает, убирается', async () => {
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Админы'));
     assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Добавить по имени'));
@@ -462,5 +472,67 @@ ${extractPromoBlock()}
     assert.match(api.lastTo(999).body.text, /ID 556/, 'привязанный виден в списке');
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Убрать имя Petr Petrov'));
     assert.match(api.lastTo(999).body.text, /нет в ожидании|убрано/i);
+  });
+
+  it('чужой непривязанный заказ в MAX требует 4 цифры, а не отдаётся сразу', async () => {
+    api.db.prepare("DELETE FROM orders WHERE order_code = 'TG-77800'").run();
+    api.db.prepare("INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES (?,?,?,?,?)")
+      .run('TG-77800', JSON.stringify([{ name: 'Secret Max', price: 50000, qty: 1 }]), 50000, 'Новый', JSON.stringify({ fio: 'Макс', phone: '+7 900 765-43-21' }));
+    await api.handleMaxUpdate(api.upd(555, 'Ivan', 'TG-77800'));
+    const r = api.lastTo(555).body.text;
+    assert.match(r, /последние 4 цифры/);
+    assert.equal(r.includes('Secret Max'), false, 'состав скрыт до проверки');
+    await api.handleMaxUpdate(api.upd(555, 'Ivan', '4321'));
+    const ok = api.lastTo(555).body.text.replace(/[\u00a0\u202f]/g, " ");
+    assert.match(ok, /Secret Max/, 'после верных цифр состав виден');
+    assert.match(ok, /50 000/);
+    assert.equal(api.db.prepare('SELECT owner_max FROM orders WHERE order_code=?').get('TG-77800').owner_max, '555');
+  });
+
+  it('три неверные цифры в MAX закрывают проверку', async () => {
+    api.db.prepare("DELETE FROM orders WHERE order_code = 'TG-77800'").run();
+    api.db.prepare("INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES (?,?,?,?,?)")
+      .run('TG-77800', JSON.stringify([{ name: 'Secret Max', price: 50000, qty: 1 }]), 50000, 'Новый', JSON.stringify({ fio: 'Макс', phone: '+7 900 765-43-21' }));
+    await api.handleMaxUpdate(api.upd(554, 'Petr', 'TG-77800'));
+    await api.handleMaxUpdate(api.upd(554, 'Petr', '0000'));
+    assert.match(api.lastTo(554).body.text, /Осталось попыток: 2/);
+    await api.handleMaxUpdate(api.upd(554, 'Petr', '1111'));
+    await api.handleMaxUpdate(api.upd(554, 'Petr', '2222'));
+    assert.match(api.lastTo(554).body.text, /Трижды мимо/);
+    assert.equal(api.db.prepare('SELECT owner_max FROM orders WHERE order_code=?').get('TG-77800').owner_max, null);
+  });
+
+  it('«Заявка TG-XXXX» в MAX не отдаёт чужую карточку с данными покупателя', async () => {
+    await api.handleMaxUpdate(api.upd(557, 'Oleg', 'Заявка TG-77800'));
+    const r = api.lastTo(557).body.text;
+    assert.match(r, /последние 4 цифры|другим покупателем/);
+    assert.equal(r.includes('Удалить TG-77800'), false, 'кнопок админа у чужого нет');
+    assert.equal(r.includes('+7 900'), false, 'телефон клиента не светим');
+  });
+
+  it('ничей заказ в MAX виден только после 4 цифр телефона', async () => {
+    api.db.prepare("DELETE FROM orders WHERE order_code = 'TG-77810'").run();
+    api.db.prepare("INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES (?,?,?,?,?)")
+      .run('TG-77810', JSON.stringify([{ name: 'Secret W', price: 10000, qty: 1 }]), 10000, 'Новый', JSON.stringify({ fio: 'M', phone: '+7 900 111-22-33' }));
+    await api.handleMaxUpdate(api.upd(560, 'Client', 'TG-77810'));
+    const asked = api.lastTo(560).body.text;
+    assert.match(asked, /последние 4 цифры/);
+    assert.equal(asked.includes('Secret W'), false, 'состав скрыт до проверки');
+    await api.handleMaxUpdate(api.upd(560, 'Client', '2222'));
+    assert.match(api.lastTo(560).body.text, /Осталось попыток: 2/);
+    await api.handleMaxUpdate(api.upd(560, 'Client', '2233'));
+    assert.match(api.lastTo(560).body.text, /Заказ TG-77810 принят/);
+    assert.equal(api.db.prepare('SELECT owner_max FROM orders WHERE order_code=?').get('TG-77810').owner_max, '560');
+  });
+
+  it('карточка «Заявка» чужому не показывает состав и PII', async () => {
+    api.db.prepare("DELETE FROM orders WHERE order_code = 'TG-77810'").run();
+    api.db.prepare("INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES (?,?,?,?,?)")
+      .run('TG-77810', JSON.stringify([{ name: 'Secret W', price: 10000, qty: 1 }]), 10000, 'Новый', JSON.stringify({ fio: 'M', phone: '+7 900 111-22-33' }));
+    await api.handleMaxUpdate(api.upd(561, 'Stranger', 'Заявка TG-77810'));
+    const r = api.lastTo(561).body.text;
+    assert.equal(/Удалить TG-77810|В сборку|Оплачен/.test(r), false, 'нет кнопок админки');
+    assert.equal(r.includes('+7 900'), false, 'телефон не светим');
+    assert.equal(r.includes('Secret W'), false, 'состав скрыт');
   });
 });

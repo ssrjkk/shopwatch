@@ -182,6 +182,7 @@ function tgShopButtons() {
   return [];
 }
 
+
 function tgAdminMenuKb() {
   return Markup.keyboard([
     ['Добавить часы', 'Товары и цены'],
@@ -189,7 +190,8 @@ function tgAdminMenuKb() {
     ['Последние заказы', 'Экспорт каталога'],
     ['Импорт товаров', 'Админы'],
     ['Сводка сайта', 'Фото на стоках'],
-    ['Промокоды', 'Дизайн']
+    ['Промокоды', 'Дизайн'],
+    ['Бекап БД']
   ]).resize();
 }
 
@@ -256,6 +258,52 @@ function verifyTelegramInitData(initData) {
 
 // ---------- DB ----------
 const db = new DatabaseSync(process.env.DB_PATH || 'watchop.db');
+
+// ---------- Бекапы и целостность ----------
+// ---------- Backups & DB integrity ----------
+const BACKUP_DIR = process.env.BACKUP_DIR || (process.env.DB_PATH ? path.join(path.dirname(process.env.DB_PATH), 'backups') : path.join(__dirname, 'backups'));
+const BACKUP_KEEP = Math.max(1, parseInt(process.env.BACKUP_KEEP || '7', 10) || 7);
+function runBackup(reason, over) {
+  const o = over || {};
+  const conn = o.conn || db;
+  const dir = o.dir || BACKUP_DIR;
+  const saver = o.set || setSetting;
+  const keep = o.keep || BACKUP_KEEP;
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-") + "-" + String(process.pid);
+    const file = path.join(dir, "watchop-" + stamp + ".db");
+    conn.exec("VACUUM INTO '" + file.split("'").join("''") + "'");
+    try {
+      const files = fs.readdirSync(dir).filter((f) => /^watchop-.*\.db$/.test(f)).sort();
+      while (files.length > keep) fs.unlinkSync(path.join(dir, files.shift()));
+    } catch (e) {}
+    try { saver("last_backup_at", new Date().toISOString()); } catch (e) {}
+    console.log("Backup done (" + (reason || "manual") + "): " + file);
+    return { ok: true, file: file };
+  } catch (e) {
+    console.error("Backup FAILED:", e.message);
+    return { ok: false, error: e.message };
+  }
+}
+function checkDbIntegrity() {
+  try {
+    const r = db.prepare('PRAGMA integrity_check').get();
+    if (r && r.integrity_check === 'ok') return { ok: true };
+    console.error('DB integrity_check FAILED:', JSON.stringify(r));
+    return { ok: false, error: JSON.stringify(r) };
+  } catch (e) {
+    console.error('DB integrity_check error:', e.message);
+    return { ok: false, error: e.message };
+  }
+}
+function handleBackupRequest(ctx) {
+  const r = runBackup('Кнопка Бекап БД');
+  if (!r.ok) return ctx.reply('Бекап не получился: ' + r.error);
+  return ctx.replyWithDocument({ source: r.file }, { caption: 'Бекап базы' }).catch((e) => ctx.reply('Файл записан, но отправить не вышло: ' + redactSecrets(e.message)));
+}
+// ---------- /Backup ----------
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
   CREATE TABLE IF NOT EXISTS products (
@@ -1011,9 +1059,20 @@ async function publishCatalog(actorLabel) {
     if (!commit.ok) return { ok: false, error: `git commit: ${commit.err}` };
     const sha = ((commit.out.match(/\[[\w\/-]+ ([0-9a-f]{7,40})\]/) || [])[1] || '');
     const plan = publishPlan(process.env);
-    const push = await runGit(plan.args);
+    let push = await runGit(plan.args);
+    for (let attempt = 1; !push.ok && attempt <= 3; attempt++) {
+      const transient = /rate limit|temporarily|timeout|timed out|502|503|504|fetch first|non-fast-forward|stale info/i.test(push.err || '');
+      if (!transient) break;
+      if (/non-fast-forward|fetch first|stale info/i.test(push.err || '')) {
+        const pull = await runGit(['pull', '--rebase', 'origin', plan.branch]);
+        if (!pull.ok) { push = { ok: false, err: push.err + ' | rebase: ' + pull.err }; break; }
+      } else {
+        await new Promise((r) => setTimeout(r, 2000 * attempt));
+      }
+      push = await runGit(plan.args);
+    }
     if (!push.ok) {
-      return { ok: false, committed: sha, error: `Коммит ${sha.slice(0, 7)} создан локально, но push не прошёл: ${push.err}\nВ репозиторий ничего не ушло; разберись с доступом и нажми кнопку ещё раз.${pushFailureNote(plan.via)}` };
+      return { ok: false, committed: sha, error: `Коммит ${sha.slice(0, 7)} создан локально, но push не прошёл (3 попытки): ${push.err}\nВ репозиторий ничего не ушло; разберись с доступом и нажми кнопку ещё раз.${pushFailureNote(plan.via)}` };
     }
     return {
       ok: true,
@@ -1767,6 +1826,14 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
   tgBot.on('text', (ctx) => {
     const txt = ctx.message.text.trim();
     if (!isTgAdmin(ctx)) {
+      const whoId = String(ctx.from?.id || '');
+      if (pendingOrderAuth.has(whoId)) {
+        if (txt === 'Отмена') { pendingOrderAuth.delete(whoId); return ctx.reply('Отменено.'); }
+        if (/^\d{4}$/.test(txt)) return answerOrderAuth(ctx, txt);
+        const m2 = txt.match(/TG-\d+/i);
+        if (m2) return handleClientOrderLookupTg(ctx, m2[0].toUpperCase());
+        return ctx.reply('Жду 4 цифры телефона для заявки. Для отмены напишите «Отмена».');
+      }
       const m = txt.match(/TG-\d+/i);
       if (m) return handleClientOrderLookupTg(ctx, m[0].toUpperCase());
       const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
@@ -1791,6 +1858,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       return showTgAdminsPanel(ctx);
     }
     if (txt === 'Промокоды' || txt === '/promo') { ctx.session = {}; return showTgPromoPanel(ctx); }
+    if (txt === 'Бекап БД' || txt === '/backup') { ctx.session = {}; return handleBackupRequest(ctx); }
     if (s.step === 'wait_promo_add') {
       const r = upsertPromoRule(getSetting('promo_codes'), txt);
       ctx.session = {};
@@ -2006,22 +2074,71 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     return handleClientOrderLookupTg(ctx, order.order_code);
   }
 
-  function handleClientOrderLookupTg(ctx, code) {
-    const order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
-    if (!order) return ctx.reply(`Заказ ${code} не найден.`);
-    const requester = String(ctx.from?.id || '');
-    const admin = tgAdminIdList().includes(requester);
-    if (!order.owner_tg && !admin) {
-      db.prepare('UPDATE orders SET owner_tg = ? WHERE order_code = ?').run(requester, code);
-      order.owner_tg = requester;
-    } else if (!admin && order.owner_tg && String(order.owner_tg) !== requester) {
-      return ctx.reply(`Заказ ${code} оформлен другим покупателем. Состав и реквизиты пришлёт менеджер — напишите, если нужна помощь.`);
-    }
+  // Номера заявок идут по порядку — без проверки любой может перебирать TG-XXXX
+  // и читать чужие составы. Поэтому чужую непривязанную заявку показываем только
+  // за последними 4 цифрами телефона из заказа (как в /api/order-status).
+  const pendingOrderAuth = new Map();
+  function orderPhoneLast4(order) {
+    try {
+      const digits = String((JSON.parse(order.customer_json || '{}').phone) || '').replace(/\D/g, '');
+      return digits.length >= 4 ? digits.slice(-4) : '';
+    } catch (e) { return ''; }
+  }
+  function bindOrderOwner(code, tgId) {
+    db.prepare('UPDATE orders SET owner_tg = ? WHERE order_code = ?').run(String(tgId), String(code).toUpperCase());
+  }
+  function showOrderToRequester(ctx, order) {
+    const code = order.order_code;
     const items = JSON.parse(order.items_json || '[]');
     const list = items.map((i) => `• ${i.name} (${Number(i.price).toLocaleString('ru-RU')} ₽)`).join('\n');
     ctx.reply(`Ваш заказ ${code} найден!\n\n${list}\nИтого: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\nРеквизиты:\n${getSetting('payment_details')}`);
     const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
     notifyTgAdmins(`Клиент ${tag} обратился по заказу ${code}`);
+  }
+  // Ответ на 4 цифры телефона для непривязанной заявки. Возвращает true,
+  // если сообщение поглощено проверкой (тесты и on('text') используют это).
+  function answerOrderAuth(ctx, rawDigits) {
+    const requester = String(ctx.from?.id || '');
+    const pend = pendingOrderAuth.get(requester);
+    if (!pend) return false;
+    const digits = String(rawDigits || '').trim();
+    if (!/^\d{4}$/.test(digits)) {
+      ctx.reply('Нужны ровно 4 цифры — последние цифры телефона из заказа. Для отмены напишите «Отмена».');
+      return true;
+    }
+    pend.tries += 1;
+    const order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(pend.code);
+    if (!order) { pendingOrderAuth.delete(requester); return ctx.reply('Заявка ' + pend.code + ' не найдена.'); }
+    if (digits === orderPhoneLast4(order)) {
+      pendingOrderAuth.delete(requester);
+      bindOrderOwner(order.order_code, requester);
+      order.owner_tg = requester;
+      notifyTgAdmins('Клиент ' + (ctx.from.username ? '@' + ctx.from.username : ctx.from.first_name) + ' подтвердил телефон и привязался к заявке ' + order.order_code);
+      return showOrderToRequester(ctx, order);
+    }
+    if (pend.tries >= 3) {
+      pendingOrderAuth.delete(requester);
+      return ctx.reply('Трижды мимо — проверка сброшена. Напишите номер заявки заново или обратитесь к менеджеру.');
+    }
+    return ctx.reply('Не совпало с телефоном из заказа. Осталось попыток: ' + (3 - pend.tries) + '.');
+  }
+  function handleClientOrderLookupTg(ctx, code) {
+    const order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
+    if (!order) return ctx.reply(`Заказ ${code} не найден.`);
+    const requester = String(ctx.from?.id || '');
+    const admin = tgAdminIdList().includes(requester);
+    if (admin || String(order.owner_tg || '') === requester) return showOrderToRequester(ctx, order);
+    if (order.owner_tg && String(order.owner_tg) !== requester) {
+      return ctx.reply(`Заказ ${code} оформлен другим покупателем. Состав и реквизиты пришлёт менеджер — напишите, если нужна помощь.`);
+    }
+    if (!orderPhoneLast4(order)) {
+      bindOrderOwner(order.order_code, requester);
+      order.owner_tg = requester;
+      notifyTgAdmins('Клиент ' + (ctx.from.username ? '@' + ctx.from.username : ctx.from.first_name) + ' привязался к заявке ' + order.order_code + ' (в заказе нет телефона для проверки)');
+      return showOrderToRequester(ctx, order);
+    }
+    pendingOrderAuth.set(requester, { code: order.order_code, tries: 0 });
+    return ctx.reply('Заявка ' + order.order_code + ' ещё ни за кем не закреплена. В целях защиты номеров от перебора пришлите последние 4 цифры телефона, указанного при заказе (или «Отмена»).');
   }
 
   tgBot.hears('Импорт товаров', (ctx) => {
@@ -2298,11 +2415,11 @@ function maxPromoKb() {
   return [['Добавить промокод', 'Убрать промокод'], ['Отмена']];
 }
 
-const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках'], ['Промокоды', 'Дизайн']];
+const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках'], ['Промокоды', 'Дизайн'], ['Бекап БД', 'Отмена']];
 const MAX_CANCEL = [['Отмена']];
 // Кнопки меню и навигации админки. Пока бот ждёт значение поля или шаг мастера,
 // нажатие такой кнопки обязано прервать ввод, а не уехать в него текстом.
-const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Категории', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Дизайн', 'Дизайн: Stealth', 'Дизайн: Classic', 'Добавить промокод', 'Убрать промокод', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
+const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Категории', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Дизайн', 'Дизайн: Stealth', 'Дизайн: Classic', 'Бекап БД', 'Добавить промокод', 'Убрать промокод', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
 function maxIsMenuCommand(text) {
   const t = String(text || '').trim();
   return MAX_MENU_COMMANDS.has(t)
@@ -2437,6 +2554,78 @@ async function maxAdminMenu(userId, title) {
   await sendMaxMessage(userId, title || 'Админ-панель Watchop (MAX). Выберите действие:', [...MAX_MENU, ...MAX_CANCEL], maxShopLinkButtons());
 }
 
+// Номера заявок идут по порядку — без проверки любой может перебирать TG-XXXX
+// и читать чужие составы (а экран «Заявка TG-...» вообще отдавал полную карточку
+// с данными покупателя). Поэтому чужую непривязанную заявку показываем только
+// за последними 4 цифрами телефона из заказа.
+const pendingMaxOrderAuth = new Map();
+function maxOrderPhoneLast4(order) {
+  try {
+    const digits = String((JSON.parse(order.customer_json || '{}').phone) || '').replace(/\D/g, '');
+    return digits.length >= 4 ? digits.slice(-4) : '';
+  } catch (e) { return ''; }
+}
+function maxBindOrderOwner(code, senderId) {
+  db.prepare('UPDATE orders SET owner_max = ? WHERE order_code = ?').run(String(senderId), String(code).toUpperCase());
+}
+async function maxClientOrderView(senderId, senderName, rawCode, text) {
+  const code = String(rawCode || '').toUpperCase();
+  const order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
+  if (!order) { await sendMaxMessage(senderId, 'Заявка ' + code + ' не найдена.', MAX_MENU); return true; }
+  const isAdmin = isMaxAdminId(senderId);
+  if (isAdmin || String(order.owner_max || '') === String(senderId)) {
+    await maxShowClientOrder(senderId, senderName, code);
+    if (!isAdmin) await maxNotifyAdmin('Клиент ' + senderName + ' (' + senderId + ') в MAX по заказу ' + code);
+    return true;
+  }
+  if (order.owner_max && String(order.owner_max) !== String(senderId)) {
+    await sendMaxMessage(senderId, 'Заказ ' + code + ' оформлен другим покупателем. Состав и реквизиты пришлёт менеджер.');
+    return true;
+  }
+  if (!maxOrderPhoneLast4(order)) {
+    maxBindOrderOwner(code, senderId);
+    await maxNotifyAdmin('Клиент ' + senderName + ' (' + senderId + ') привязался к заявке ' + code + ' в MAX (в заказе нет телефона для проверки)');
+    await maxShowClientOrder(senderId, senderName, code);
+    await maxNotifyAdmin('Клиент ' + senderName + ' (' + senderId + ') в MAX по заказу ' + code + ':\n"' + (text || '') + '"');
+    return true;
+  }
+  pendingMaxOrderAuth.set(String(senderId), { code: order.order_code, tries: 0 });
+  await sendMaxMessage(senderId, 'Заявка ' + code + ' ещё ни за кем не закреплена. В целях защиты номеров от перебора пришлите последние 4 цифры телефона, указанного при заказе (или «Отмена»).', MAX_CANCEL);
+  return true;
+}
+
+async function maxShowClientOrder(senderId, senderName, code) {
+
+  const items = JSON.parse((db.prepare('SELECT items_json FROM orders WHERE order_code = ?').get(code) || {}).items_json || '[]');
+  const row = db.prepare('SELECT total FROM orders WHERE order_code = ?').get(code) || { total: 0 };
+  const list = items.map((i) => '• ' + i.name + ' (' + Number(i.price).toLocaleString('ru-RU') + ' ₽)').join('\n');
+  await sendMaxMessage(senderId, 'Заказ ' + code + ' принят!\n\n' + list + '\nК оплате: ' + Number(row.total).toLocaleString('ru-RU') + ' ₽\n\nРеквизиты:\n' + getSetting('payment_details'));
+}
+async function answerMaxOrderAuth(senderId, senderName, digits) {
+  const pend = pendingMaxOrderAuth.get(String(senderId));
+  if (!pend) return false;
+  if (!/^\d{4}$/.test(String(digits || '').trim())) {
+    await sendMaxMessage(senderId, 'Нужны ровно 4 цифры — последние цифры телефона из заказа. Для отмены напишите «Отмена».');
+    return true;
+  }
+  pend.tries += 1;
+  const order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(pend.code);
+  if (!order) { pendingMaxOrderAuth.delete(String(senderId)); await sendMaxMessage(senderId, 'Заявка ' + pend.code + ' не найдена.', MAX_MENU); return true; }
+  if (String(digits).trim() === maxOrderPhoneLast4(order)) {
+    pendingMaxOrderAuth.delete(String(senderId));
+    maxBindOrderOwner(order.order_code, senderId);
+    await maxNotifyAdmin('Клиент ' + senderName + ' (' + senderId + ') подтвердил телефон и привязался к заявке ' + order.order_code + ' в MAX');
+    await maxShowClientOrder(senderId, senderName, order.order_code);
+    return true;
+  }
+  if (pend.tries >= 3) {
+    pendingMaxOrderAuth.delete(String(senderId));
+    await sendMaxMessage(senderId, 'Трижды мимо — проверка сброшена. Напишите номер заявки заново или обратитесь к менеджеру.', MAX_MENU);
+    return true;
+  }
+  await sendMaxMessage(senderId, 'Не совпало с телефоном из заказа. Осталось попыток: ' + (3 - pend.tries) + '.');
+  return true;
+}
 const MAX_CFG_BUTTONS = {
   'Баннер': 'hero_title', 'Телефон': 'phone', 'Email': 'email', 'Адрес': 'address',
   'Доставка': 'delivery_methods', 'Категории': 'extra_categories',
@@ -2507,6 +2696,15 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
 
   if (text === '/id') return sendMaxMessage(senderId, `Ваш MAX ID: ${senderId}`);
 
+  if (!isMaxAdmin) {
+    const pa = pendingMaxOrderAuth.get(String(senderId));
+    if (pa) {
+      if (text === 'Отмена') { pendingMaxOrderAuth.delete(String(senderId)); return sendMaxMessage(senderId, 'Отменено.', MAX_MENU); }
+      if (/^\d{4}$/.test(text.trim())) return await answerMaxOrderAuth(senderId, senderName, text.trim());
+      pendingMaxOrderAuth.delete(String(senderId));
+    }
+  }
+
   // Привязка админа по имени — до любых проверок: первое сообщение человека
   // с ожидаемым именем делает его админом и уходит из списка ожидания.
   const boundName = bindMaxAdminByName(senderId, senderName);
@@ -2524,6 +2722,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   const ordCardMatch = text.match(/^Заявка (TG-\d+)$/i);
   if (ordCardMatch) {
     const code = ordCardMatch[1].toUpperCase();
+    if (!isMaxAdmin) return await maxClientOrderView(senderId, senderName, code, text);
     const card = orderCardText(db, code);
     if (!card) return sendMaxMessage(senderId, `Заявка ${code} не найдена.`, MAX_MENU);
     return sendMaxMessage(senderId, card, [...maxOrderStatusKb(code), [`Удалить ${code}`], ['К заявкам'], ...MAX_CANCEL]);
@@ -2551,23 +2750,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   const orderMatch = text.match(/TG-\d+/i);
   if (orderMatch && !text.startsWith('/') && !maxAwaitingInput) {
     const code = orderMatch[0].toUpperCase();
-    const order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
-    if (order) {
-      if (!order.owner_max && !isMaxAdmin) {
-        db.prepare('UPDATE orders SET owner_max = ? WHERE order_code = ?').run(senderId, code);
-        order.owner_max = senderId;
-      } else if (!isMaxAdmin && order.owner_max && String(order.owner_max) !== String(senderId)) {
-        await sendMaxMessage(senderId, `Заказ ${code} оформлен другим покупателем. Состав и реквизиты пришлёт менеджер.`);
-        return;
-      }
-      const items = JSON.parse(order.items_json || '[]');
-      const list = items.map((i) => `• ${i.name} (${Number(i.price).toLocaleString('ru-RU')} ₽)`).join('\n');
-      await sendMaxMessage(senderId, `Заказ ${code} принят!\n\n${list}\nК оплате: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\nРеквизиты:\n${getSetting('payment_details')}`);
-      if (!isMaxAdmin) {
-        await maxNotifyAdmin(`Клиент ${senderName} (${senderId}) в MAX по заказу ${code}:\n"${text}"`);
-      }
-      return;
-    }
+    if (await maxClientOrderView(senderId, senderName, code)) return;
   }
 
   if (!isMaxAdmin) {
@@ -2876,6 +3059,10 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     maxSessions.set(senderId, { step: 'wait_cfg', key });
     return sendMaxMessage(senderId, `Текущее:\n${getSetting(key)}\n\nОтправьте новое значение:`, MAX_CANCEL);
   }
+  if (text === 'Бекап БД') {
+    const r = runBackup('кнопка Бекап БД (MAX)');
+    return sendMaxMessage(senderId, r.ok ? ('Бекап готов: ' + r.file.split(/[\\/]/).pop() + '. Файл могу прислать в Telegram — напиши мне там «Бекап БД».') : ('Бекап не получился: ' + r.error), MAX_MENU);
+  }
   if (text === 'Экспорт каталога' || text === '/export') {
     const preview = summarizeDiff(diffCatalog(fileCatalog(), catalogFromDb()));
     return sendMaxMessage(senderId, `Выгрузка каталога из рабочей базы в products-data.js\n\n${preview}\n\nФайл перезапишется целиком, текущая копия уйдёт в products-data.js.bak.`, [['Подтвердить экспорт', 'Выгрузить и опубликовать'], ['Отмена']]);
@@ -2967,4 +3154,10 @@ const HOST = process.env.HOST || '0.0.0.0';
 loadTgAdminExtras();
 loadMaxAdminExtras();
 if (!tgAdminIdList().length && !tgAdminUsernameList().length) console.log('NOTE: TG_ADMIN_ID и TG_ADMIN_USERNAMES пусты — напишите боту /id и впишите свой ID в .env, иначе админка недоступна.');
+checkDbIntegrity();
+try {
+  const last = getSetting('last_backup_at');
+  if (!last || Date.now() - Date.parse(last) > 24 * 3600 * 1000) runBackup('startup: старше суток');
+} catch (e) { console.error('Backup check failed:', e.message); }
+setInterval(() => runBackup('scheduled: раз в сутки'), 24 * 3600 * 1000);
 const server = app.listen(PORT, HOST, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`));

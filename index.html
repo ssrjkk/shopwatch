@@ -3,10 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta property="og:title" content="Watchop — магазин оригинальной продукции Garmin и смарт-часов" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1200&q=80" />
 <meta property="og:description" content="347 моделей в каталоге: туристические часы, эхолоты, велокомпьютеры, навигаторы. Подбор по задачам, доставка по всей России, гарантия 12 месяцев." />
 <title>WATCHOP — Haute Horlogerie &amp; Garmin MARQ Flagship Boutique</title>
 <meta name="theme-color" content="#0B0F17" />
 <link rel="manifest" href="manifest.json" />
+<link rel="canonical" href="https://ssrjkk.github.io/shopwatch/" />
+<meta name="description" content="Watchop — магазин оригинальной продукции Garmin и смарт-часов с доставкой по всей России. 347 моделей: спортивные часы, эхолоты, велокомпьютеры, навигаторы." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
@@ -3098,7 +3103,11 @@ async function applyPromoCode(){
   const items=state.cart.map(l=>({id:l.id,qty:l.qty}));
   if(!IS_STATIC_DEMO&&typeof fetch==='function'&&items.length){
     try{
-      const res=await fetch(API_PREFIX+'/promo-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,items})});
+      const ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+      const pto=ctl?setTimeout(function(){try{ctl.abort();}catch(e){}},8000):null;
+      let res;
+      try{res=await fetch(API_PREFIX+'/promo-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,items}),signal:ctl?ctl.signal:undefined});}
+      finally{if(pto)clearTimeout(pto);}
       const d=await res.json().catch(()=>({}));
       if(res.ok){state.promoCode=d.code||code;state.promoDiscount=Number(d.percent)||0;state.promoDiscountRub=Number(d.discount)||0;show(`✓ Промокод ${state.promoCode} активирован (−${Number(state.promoDiscountRub).toLocaleString('ru-RU')} ₽)!`,true);renderCart();return;}
       clearPromo();show(d.error||'Промокод не найден',false);renderCart();return;

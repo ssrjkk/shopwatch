@@ -140,6 +140,10 @@ describe('TG admins: несколько админов по ID и юзерней
       ["design_stealth", "кнопка дизайна stealth"],
       ["design_classic", "кнопка дизайна classic"],
       ["setStoreDesign(__dirname", "применение дизайна пишет файлы"],
+      ["Бекап БД", "кнопка бекапа в админ-меню"],
+      ["handleBackupRequest(ctx)", "обработчик бекапа отдаёт файл"],
+      ["pendingOrderAuth", "защита номеров от перебора"],
+      ["orderPhoneLast4", "проверка по 4 цифрам телефона"],
     ];
     for (const [sub, what] of checks) assert.ok(src.includes(sub), what);
   });

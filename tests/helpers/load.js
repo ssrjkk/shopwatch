@@ -117,4 +117,12 @@ function extractSettingsGuard() {
   return src.slice(start, end);
 }
 
-module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractPublishBlock, extractRedactFn, extractEncodingBlock, extractSettingsGuard, extractPromoBlock };
+function extractBackupBlock() {
+  const src = serverSrc();
+  const start = src.indexOf('// ---------- Backups & DB integrity ----------');
+  const end = src.indexOf('// ---------- /Backup ----------');
+  if (start < 0 || end < 0) throw new Error('Backup block markers not found in server.js');
+  return src.slice(start, end);
+}
+
+module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractPublishBlock, extractRedactFn, extractEncodingBlock, extractSettingsGuard, extractPromoBlock, extractBackupBlock };

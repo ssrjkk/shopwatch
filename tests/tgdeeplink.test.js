@@ -37,7 +37,7 @@ const mkCtx = (id) => ({ from: { username: 'ivan', first_name: 'Ivan', id: id ||
     const end = src.indexOf('tgBot.telegram.getMe()');
     const block = src.slice(start, end);
     const driver = `
-;return { handleSiteOrderPayload, handleClientOrderLookupTg, parseOrderPayload, allocateOrderCode, mkCtx, db,
+;return { handleSiteOrderPayload, handleClientOrderLookupTg, parseOrderPayload, allocateOrderCode, answerOrderAuth, orderPhoneLast4, pendingOrderAuth, mkCtx, db,
   sent: () => sent, replies: () => replies, clear: () => { sent.length = 0; replies.length = 0; } };
 `;
     const factory = eval(`(function(memdb){ ${prelude}\n${block}\n${driver} })`);
@@ -185,5 +185,72 @@ const mkCtx = (id) => ({ from: { username: 'ivan', first_name: 'Ivan', id: id ||
   it('кириллица и пустой хвост не разбираются как промокод', () => {
     assert.equal(api.parseOrderPayload('TG-1_1x1x60000_PROMOСКИДКА').promo, '', 'кириллица в коде не проходит');
     assert.equal(api.parseOrderPayload('TG-1_1x1x60000_PROMO').promo, '', 'пустой хвост — не код');
+  });
+
+  describe('защита номеров от перебора (последние 4 цифры телефона)', () => {
+    before(() => {
+      api.db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('payment_details', 'PAY')").run();
+      api.db.prepare("INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES (?,?,?,?,?)")
+        .run('TG-77700', JSON.stringify([{ name: 'Secret Watch', price: 99999, qty: 1 }]), 99999, 'Новый', JSON.stringify({ fio: 'Иван', phone: '+7 900 123-45-67' }));
+      api.db.prepare("INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES (?,?,?,?,?)")
+        .run('TG-77701', JSON.stringify([{ name: 'Old Watch', price: 1000, qty: 1 }]), 1000, 'Новый', '{}');
+    });
+
+    it('чужой непривязанный заказ не показывают, а просят 4 цифры', () => {
+      api.clear();
+      api.handleClientOrderLookupTg(api.mkCtx(999), 'TG-77700');
+      const r = flat();
+      assert.match(r, /последние 4 цифры/, 'просим подтверждение');
+      assert.equal(r.includes('Secret Watch'), false, 'состав скрыт');
+      assert.equal(r.includes('PAY'), false, 'реквизиты скрыты');
+      assert.equal(api.db.prepare('SELECT owner_tg FROM orders WHERE order_code=?').get('TG-77700').owner_tg, null, 'никого не привязали');
+    });
+
+    it('верные 4 цифры привязывают и показывают заказ', () => {
+      api.clear();
+      api.handleClientOrderLookupTg(api.mkCtx(999), 'TG-77700');
+      api.clear();
+      assert.equal(api.answerOrderAuth(api.mkCtx(999), '4567'), undefined);
+      assert.match(flat(), /Secret Watch/, 'после проверки состав виден');
+      assert.match(flat(), /99 999/, 'и сумма видна');
+      assert.equal(api.db.prepare('SELECT owner_tg FROM orders WHERE order_code=?').get('TG-77700').owner_tg, '999', 'владелец записан');
+      assert.match(sentFlat(), /привязался/, 'админ уведомлён о привязке');
+    });
+
+    it('три неверные попытки закрывают проверку', () => {
+      api.db.prepare('UPDATE orders SET owner_tg = NULL WHERE order_code = ?').run('TG-77700');
+      api.clear();
+      api.handleClientOrderLookupTg(api.mkCtx(998), 'TG-77700');
+      api.clear();
+      api.answerOrderAuth(api.mkCtx(998), '0000');
+      assert.match(flat(), /Осталось попыток: 2/);
+      api.clear();
+      api.answerOrderAuth(api.mkCtx(998), '1111');
+      assert.match(flat(), /Осталось попыток: 1/);
+      api.clear();
+      api.answerOrderAuth(api.mkCtx(998), '2222');
+      assert.match(flat(), /Трижды мимо/);
+      assert.equal(api.db.prepare('SELECT owner_tg FROM orders WHERE order_code=?').get('TG-77700').owner_tg, null, 'никого не привязали');
+      assert.equal(api.answerOrderAuth(api.mkCtx(998), '4567'), false, 'после сброса отвечать не на что');
+    });
+
+    it('заказ без телефона в карточке идёт по-старому, без проверки', () => {
+      api.clear();
+      api.handleClientOrderLookupTg(api.mkCtx(997), 'TG-77701');
+      assert.match(flat(), /Old Watch/, 'легаси-заказ виден сразу');
+      assert.equal(api.db.prepare('SELECT owner_tg FROM orders WHERE order_code=?').get('TG-77701').owner_tg, '997');
+    });
+
+    it('владелец и админ смотрят без проверки', () => {
+      api.clear();
+      api.handleClientOrderLookupTg(api.mkCtx(999), 'TG-77700');
+      api.answerOrderAuth(api.mkCtx(999), '4567');
+      api.clear();
+      api.handleClientOrderLookupTg(api.mkCtx(999), 'TG-77700');
+      assert.match(flat(), /99 999/, 'владелец видит без цифр');
+      api.clear();
+      api.handleClientOrderLookupTg(api.mkCtx(1), 'TG-77700');
+      assert.match(sentFlat(), /TG-77700/, 'админ видит заказ');
+    });
   });
 });

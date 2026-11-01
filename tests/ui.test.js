@@ -238,6 +238,10 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.ok(HTML.includes('id="toast"'), 'тосты есть');
     assert.ok(HTML.includes('id="ui-float-tg"') && HTML.includes('id="ui-float-max"'), 'ссылки на мессенджеры на месте');
     assert.ok(HTML.includes('id="to-top-btn"'), 'кнопка наверх есть');
+    assert.ok(HTML.includes('property="og:title"'), 'Open Graph заголовок для шаринга');
+    assert.ok(HTML.includes('property="og:image"'), 'Open Graph картинка для шаринга');
+    assert.ok(HTML.includes('rel="canonical"'), 'канонический URL');
+    assert.ok(HTML.includes('name="description"'), 'meta description');
     const hits = HTML.slice(HTML.indexOf('id="hits-section"'), HTML.indexOf('id="hits-section"') + 700);
     assert.match(hits, /Вся коллекция →/, 'у хитов есть переход ко всей коллекции');
     g.setCategory('Эхолоты');
@@ -347,6 +351,11 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     delete gg.state.settings.delivery_methods;
     gg.renderDeliveryOptions();
     assert.ok(gg.document.getElementById('f-delivery').innerHTML.includes('value="СДЭК"'), 'без ключа — дефолт');
+  });
+
+  it('промокод не виснет на мёртвом API: есть AbortSignal-таймаут', () => {
+    assert.ok(HTML.includes('AbortController'), 'fetch обёрнут в AbortController');
+    assert.ok(/aborted|aborted/i.test(HTML) || HTML.includes('8000'), 'таймаут задан');
   });
 
   it('скидка видна сразу: старая цена зачёркнута, новая — красная', () => {
