@@ -1,7 +1,7 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
 const { DatabaseSync } = require('node:sqlite');
-const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock } = require('./helpers/load');
+const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractEncodingBlock } = require('./helpers/load');
 const { seedKey } = require('../catalog-export.js');
 
 describe('MAX bot (parity with Telegram)', () => {
@@ -43,6 +43,7 @@ const sent = [];
 global.fetch = async (url, opts) => { sent.push({ url, body: opts?.body ? JSON.parse(opts.body) : null, auth: opts?.headers?.Authorization }); return { ok: true, json: async () => ({}) }; };
 process.env.MAX_BOT_TOKEN = 'fake-token';
 process.env.MAX_ADMIN_ID = '999';
+${extractEncodingBlock()}
 ${extractDiscountFns()}
 ${extractImportBlock()}
 ${extractAdminBlock()}

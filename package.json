@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "sync:pages": "node sync-pages.js",
-    "test": "node --test tests/api.test.js tests/initdata.test.js tests/max.test.js tests/tgdeeplink.test.js tests/virtual.test.js tests/search.test.js tests/catalog-export.test.js tests/ui.test.js tests/tgadmin.test.js tests/discount.test.js tests/import.test.js tests/admin.test.js tests/publish.test.js"
+    "test": "node --test tests/api.test.js tests/initdata.test.js tests/max.test.js tests/tgdeeplink.test.js tests/virtual.test.js tests/search.test.js tests/catalog-export.test.js tests/ui.test.js tests/tgadmin.test.js tests/discount.test.js tests/import.test.js tests/admin.test.js tests/publish.test.js tests/encoding.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

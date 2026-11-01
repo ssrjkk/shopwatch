@@ -93,4 +93,12 @@ function extractRedactFn() {
   return tail.slice(0, m.index + 2);
 }
 
-module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractPublishBlock, extractRedactFn };
+function extractEncodingBlock() {
+  const src = serverSrc();
+  const start = src.indexOf('// ---------- Кодировка входящих данных ----------');
+  const end = src.indexOf('// ---------- /Кодировка ----------');
+  if (start < 0 || end < 0) throw new Error('Кодировка block markers not found in server.js');
+  return src.slice(start, end).replace(/app\.use\([\s\S]*$/, '');
+}
+
+module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractPublishBlock, extractRedactFn, extractEncodingBlock };

@@ -1,12 +1,13 @@
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { DatabaseSync } = require('node:sqlite');
-const { extractImportBlock, extractAdminBlock } = require('./helpers/load');
+const { extractImportBlock, extractAdminBlock, extractEncodingBlock } = require('./helpers/load');
 const { seedKey } = require('../catalog-export.js');
 
 // Админка сидит рядом с импортом и пользуется его проверкой полок, поэтому
-// в тесте поднимаем оба блока вместе — ровно как в server.js.
-const api = new Function('seedKey', `${extractImportBlock()}\n${extractAdminBlock()}
+// в тесте поднимаем оба блока вместе — ровно как в server.js. Блок кодировки
+// нужен, потому что правка поля чистит текст тем же cleanText.
+const api = new Function('seedKey', `${extractEncodingBlock()}\n${extractImportBlock()}\n${extractAdminBlock()}
 return { ADMIN_PAGE, ADMIN_ORDER_PAGE, ORDER_STATUS_SET, catalogShelves, catalogPage, productById, productCardText, setProductField, toggleProductHit, deleteProductById, orderStatusBreakdown, ordersPage, orderCardText, setOrderStatus, adminSummary };`)(seedKey);
 
 // toLocaleString('ru-RU') вставляет неразрывные пробелы — сравнения нормализуем

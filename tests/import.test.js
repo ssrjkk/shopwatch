@@ -3,13 +3,13 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const { extractImportBlock } = require('./helpers/load');
+const { extractImportBlock, extractEncodingBlock } = require('./helpers/load');
 const { seedKey } = require('../catalog-export.js');
 
-// Импорт исполняется из исходника server.js: тест проверяет тот же парсер,
-// по которому админка пишет позиции в базу.
+// Импорт исполняется из исходника server.js вместе с блоком кодировки:
+// splitImportLine опирается на cleanText, как и в боевом коде.
 function loadImport() {
-  const src = extractImportBlock();
+  const src = `${extractEncodingBlock()}\n${extractImportBlock()}`;
   const factory = new Function('seedKey', `${src}\nreturn { IMPORT_CATEGORIES, IMPORT_MAX_ROWS, normalizeCategory, parsePriceNumber, parseImportTable, classifyImportRows, importPreviewText, insertImportedRows };`);
   return factory(seedKey);
 }

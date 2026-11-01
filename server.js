@@ -26,7 +26,66 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   next();
 });
-app.use(express.json({ limit: '100kb' }));
+// ---------- Кодировка входящих данных ----------
+// Клиент может прислать тело не в UTF-8: CSV из Excel в cp1251, кривой curl,
+// старый терминал. Стандартный парсер декодирует всё как UTF-8 и молча ставит
+// U+FFFD — данные теряются безвозвратно, и менеджер видит «?????» вместо имени.
+// Поэтому: строгий UTF-8, а если байты ему не подошли — windows-1251 (для
+// русскоязычного магазина это и есть та «старая» кодировка; в ней определены
+// все 256 байт, так что третьей попытки не нужно).
+function decodeTextBytes(buf) {
+  try {
+    return { text: new TextDecoder('utf-8', { fatal: true }).decode(buf), encoding: 'utf-8' };
+  } catch (e) { /* пробуем windows-1251 */ }
+  try {
+    return { text: new TextDecoder('windows-1251', { fatal: true }).decode(buf), encoding: 'windows-1251' };
+  } catch (e) {
+    return { text: '', encoding: '' };
+  }
+}
+
+// NFC склеивает разложенные буквы («е» + диакритика → «ё»), иначе поиск и
+// дедупликация видят две разные строки. Управляющие символы вырезаем, \r\n
+// приводим к \n.
+function cleanText(value) {
+  return String(value == null ? '' : value)
+    .replace(/\r\n?/g, '\n')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '')
+    .normalize('NFC')
+    .trim();
+}
+
+function hasReplacement(value) {
+  return String(value == null ? '' : value).includes('\uFFFD');
+}
+
+function hasGarbageDeep(node) {
+  if (typeof node === 'string') return hasReplacement(node);
+  if (Array.isArray(node)) return node.some(hasGarbageDeep);
+  if (node && typeof node === 'object') return Object.values(node).some(hasGarbageDeep);
+  return false;
+}
+
+// Если после штатного разбора в теле остались U+FFFD, пробуем расшифровать
+// исходные байты в другой кодировке. Обычный UTF-8 запрос сюда не заходит.
+function repairRequestEncoding(req, res, next) {
+  if (!req.rawBody || !req.body || typeof req.body !== 'object' || !hasGarbageDeep(req.body)) return next();
+  const dec = decodeTextBytes(req.rawBody);
+  if (dec.text && dec.encoding !== 'utf-8') {
+    try {
+      const fixed = JSON.parse(dec.text);
+      if (fixed && typeof fixed === 'object') {
+        req.body = fixed;
+        req.bodyEncoding = dec.encoding;
+      }
+    } catch (e) { /* JSON битый — пусть отвечает стандартный парсер */ }
+  }
+  return next();
+}
+
+app.use(express.json({ limit: '100kb', verify: (req, res, buf) => { req.rawBody = buf; } }));
+app.use(repairRequestEncoding);
+// ---------- /Кодировка ----------
 const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map((s) => s.trim()).filter(Boolean);
 app.use(cors(corsOrigins.length ? { origin: corsOrigins } : { origin: false }));
 
@@ -294,7 +353,7 @@ function parsePriceNumber(raw) {
 
 function splitImportLine(line) {
   const delim = line.includes(';') ? ';' : line.includes('\t') ? '\t' : ',';
-  return line.split(delim).map((c) => String(c).trim().replace(/^"(.*)"$/, '$1'));
+  return line.split(delim).map((c) => cleanText(c.replace(/^"(.*)"$/, '$1')));
 }
 
 // Столбцы: бренд;серия;категория;название;цена;описание;фото. Лишние хвосты
@@ -444,7 +503,8 @@ function productCardText(p) {
 function setProductField(conn, id, field, raw) {
   const p = productById(conn, id);
   if (!p) return { ok: false, error: 'Товар не найден — обнови список.' };
-  const value = String(raw == null ? '' : raw).trim();
+  const value = cleanText(raw);
+  if (hasReplacement(value)) return { ok: false, error: 'Символы не читаются — пришли значение в UTF-8.' };
   if (field === 'price') {
     const n = Math.trunc(Number(value.replace(/\D/g, '')));
     if (!n) return { ok: false, error: 'Цена — число, например 58990.' };
@@ -858,8 +918,8 @@ async function handleApiOrder(req, res) {
   const tiRaw = req.body.tradein;
   const ti = tiRaw && typeof tiRaw === 'object' && !Array.isArray(tiRaw)
     ? {
-        model: String(tiRaw.model || '').slice(0, 100).trim(),
-        year: String(tiRaw.year || '').slice(0, 40).trim(),
+        model: cleanText(tiRaw.model).slice(0, 100),
+        year: cleanText(tiRaw.year).slice(0, 40),
         cond: TI_COND_TEXT[String(tiRaw.cond)] ? String(tiRaw.cond) : '',
         productId: Number.isSafeInteger(Number(tiRaw.productId)) && Number(tiRaw.productId) > 0 ? Number(tiRaw.productId) : null,
       }
@@ -873,12 +933,16 @@ async function handleApiOrder(req, res) {
     return res.status(400).json({ error: 'Некорректные данные покупателя' });
   }
   const customer = {
-    fio: (cRaw.fio || '').slice(0, 100).trim(),
-    phone: (cRaw.phone || '').slice(0, 30).trim(),
-    email: (cRaw.email || '').slice(0, 100).trim(),
-    address: (cRaw.address || '').slice(0, 300).trim(),
-    delivery: ['СДЭК', 'Почта России', 'Boxberry'].includes(cRaw.delivery) ? cRaw.delivery : 'СДЭК'
+    fio: cleanText(cRaw.fio).slice(0, 100),
+    phone: cleanText(cRaw.phone).slice(0, 30),
+    email: cleanText(cRaw.email).slice(0, 100),
+    address: cleanText(cRaw.address).slice(0, 300),
+    delivery: ['СДЭК', 'Почта России', 'Boxberry'].includes(cleanText(cRaw.delivery)) ? cleanText(cRaw.delivery) : 'СДЭК'
   };
+  // Перекодировать не удалось (байты ни UTF-8, ни cp1251/1252) — не храним «?????»
+  if (hasGarbageDeep(customer)) {
+    return res.status(400).json({ error: 'Часть символов не читается: отправьте данные в кодировке UTF-8 или windows-1251.' });
+  }
   if (!customer.fio || !customer.phone) return res.status(400).json({ error: 'Укажите ФИО и телефон' });
   if (customer.phone.replace(/\D/g, '').length < 10) return res.status(400).json({ error: 'Телефон нужно указать полностью — минимум 10 цифр' });
 
@@ -1606,8 +1670,11 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       const link = await ctx.telegram.getFileLink(doc.file_id);
       const r = await fetch(String(link), { signal: AbortSignal.timeout(30000) });
       if (!r.ok) return ctx.reply('Не удалось скачать файл из Telegram — попробуй ещё раз.');
+      const dec = decodeTextBytes(Buffer.from(await r.arrayBuffer()));
+      if (!dec.text) return ctx.reply('Файл не читается ни как UTF-8, ни как windows-1251. Пересохраните его в UTF-8 или CSV.');
       ctx.session = { step: 'wait_import' };
-      return runImportPreview(ctx, await r.text());
+      if (dec.encoding !== 'utf-8') ctx.reply(`Файл пришёл в ${dec.encoding} — перекодирую сам.`);
+      return runImportPreview(ctx, dec.text);
     } catch (e) {
       ctx.session = {};
       return ctx.reply(`Файл не разобрался: ${redactSecrets(e.message)}`);

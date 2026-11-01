@@ -164,6 +164,42 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.equal(r2.status, 404);
   });
 
+  it('тело в cp1251 доходит до базы нормальными буквами, а не «?????»', async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    const http = require('node:http');
+    const path = require('node:path');
+    const { DatabaseSync } = require('node:sqlite');
+    // 'Иванов Пётр' и 'Москва' в cp1251 — как их прислал бы старый терминал или Excel
+    const fio = Buffer.from([0xC8, 0xE2, 0xE0, 0xED, 0xEE, 0xE2, 0x20, 0xCF, 0xB8, 0xF2, 0xF0]);
+    const city = Buffer.from([0xCC, 0xEE, 0xF1, 0xEA, 0xE2, 0xE0]);
+    const body = Buffer.concat([
+      Buffer.from('{"items":[{"id":1,"qty":1}],"customer":{"fio":"', 'utf8'),
+      fio,
+      Buffer.from('","phone":"+7 900 000-04-32","address":"', 'utf8'),
+      city,
+      Buffer.from('","delivery":"СДЭК"}}', 'utf8'),
+    ]);
+    const res = await new Promise((resolve, reject) => {
+      const req = http.request(`${BASE}/api/order`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': body.length } }, (r) => {
+        const chunks = [];
+        r.on('data', (c) => chunks.push(c));
+        r.on('end', () => resolve({ status: r.statusCode, text: Buffer.concat(chunks).toString('utf8') }));
+      });
+      req.on('error', reject);
+      req.end(body);
+    });
+    assert.equal(res.status, 200, res.text);
+    const { orderCode } = JSON.parse(res.text);
+    const readDb = new DatabaseSync(path.join(tmp, 'watchop.db'));
+    readDb.exec('PRAGMA busy_timeout = 5000');
+    const row = readDb.prepare('SELECT customer_json FROM orders WHERE order_code = ?').get(orderCode);
+    readDb.close();
+    const cust = JSON.parse(row.customer_json || '{}');
+    assert.equal(cust.fio, 'Иванов Пётр', JSON.stringify(cust));
+    assert.equal(cust.address, 'Москва', JSON.stringify(cust));
+    assert.equal(cust.delivery, 'СДЭК');
+  });
+
   it('сжимает текст (brotli/gzip) и не трогает картинки', async () => {
     const http = require('node:http');
     const zlib = require('node:zlib');
