@@ -13,7 +13,8 @@ order — `Быстрый заказ` hands the cart straight to the bot, `Пе�
 that checks the contents before submitting. Bottom right: a support badge that expands into
 Telegram and MAX, and a scroll-to-top arrow that appears after scrolling. Navigation uses real
 links with hash routes (`#/catalog`, `#/c/Эхолоты`, `#/s/fēnix`, `#/p/123`, search as
-`#/catalog?q=fenix`), so every view opens in a new tab and can be shared. The deep link
+`#/catalog?q=fenix`, a chosen preset and price window as
+`#/catalog?preset=hits&min=20000&max=60000`), so every view opens in a new tab and can be shared. The deep link
 `?start=TG-XXXX_IDxQTYxPRICE...` goes to `@wwwatchshop_bot`, which creates the order even when
 the page came from GitHub Pages. Payment requisites exist only in the bot, never on the site.
 Delivery across Russia (CDEK, Russian Post, Boxberry).
@@ -43,6 +44,25 @@ name prefixes up to four words, model lines, brand+model line, categories, each 
 product count, and `Показать все N` at the end. An empty field shows categories ordered by product
 count. Arrow keys navigate, tap or Enter selects, the first Escape closes suggestions, the second
 clears the query.
+
+## Quick pick, price range and product-page extras
+
+At the top of the filter sheet there are preset chips — `Хиты`, `Премиум от 60 000`, `До 35 000` —
+plus `От`/`До` price fields. Every chip carries a count computed from the same catalog the result
+list reads, so a chip cannot promise 28 products and then show 347; `tests/presets.test.js` compares
+those two numbers. The three sources of a price bound — a typed query («до 65000»), the preset and
+the fields — intersect instead of overriding each other, so a query and a preset together give a
+window rather than cancelling out. A swapped range (`70000` in `От`, `20000` in `До`) is read as a
+window, not as an empty result.
+
+The selection lives in the URL: `#/catalog?preset=hits&min=20000&max=60000` reproduces it in a new
+tab, after a reload or on the receiving end of a share, and `Сбросить` clears the preset and both
+fields. The `Фильтры · N` counter counts a preset and a filled price window as active filters, and
+the sheet summary names them.
+
+- **Photo lightbox.** The image on the product page opens full-size — a `w=1200` request instead of the card's `w=700` — with the product name as the accessible label; Escape or a tap on the backdrop closes it. An image address starting with `javascript:`, `data:` or `vbscript:` never reaches the lightbox.
+- **Recently viewed.** The last 12 products (6 shown) above the catalog, no duplicates, stored by id. A catalog rebuild drops the list together with cart and favorites: an id from the previous numbering is a different watch.
+- **`Product` schema for search engines.** The product page writes a JSON-LD block built from real catalog fields — name, brand, category, description, absolute image, price in RUB and an absolute product URL. `availability` is left out on purpose: the database holds no stock quantities, and inventing one is how a shop earns a manual review. Product text is escaped as it is written, so a name containing `</script>` cannot close the script tag.
 
 ## Demo on GitHub Pages (no server)
 
@@ -202,7 +222,7 @@ younger than 24 hours, otherwise `403`).
 
 ## Tests
 
-`npm test` — 166 tests in 20 suites, the built-in Node runner (nothing to install):
+`npm test` — 179 tests in 21 suites, the built-in Node runner (nothing to install):
 
 - `tests/api.test.js` — a live server on a temporary port with an empty database: state (300+ products), order `TG-XXXX`, anti-spam `429`, `400`/`403`, price recalculation, customer data, `healthz`, static files, compression and `immutable` caching of uploads
 - `tests/initdata.test.js` — Mini App signature: valid / broken / empty / without a token
@@ -218,6 +238,7 @@ younger than 24 hours, otherwise `403`).
 - `tests/search.test.js` — search and flow: `Найдено: 0` instead of the previous query's numbers plus a reset button, search across specs / transliteration / case endings, relevance ordering («корос пейс» → Pace before VERTIX Space, «эхолот» → products of that category rather than a battery for it, «эпл вотч» and «суунто рейс» are found) and a chosen sorter overriding it, price filters (`до`, `от`, `40000-50000`, a bare number ±5%), the query in the hash and restored from a link, a dangling query cleared when navigating by category, «back to catalog» returning where you came from, ordering on GitHub Pages without a backend (success + deep link, `/api/*` is not called), a real backend error shown to the user, quick order, and `index.html` identical to `public/index.html`
 - `tests/catalog-export.test.js` — exporting the database into the source file: database row normalization, generated output readable both in Node and in a browser (quotes and newlines inside names), ids do not shift, the shipped file carries unique positive ids and is identical in both copies, re-exporting produces the same file, the diff of «what lives only in the database», the real `applySeed` (empty database, second run, a deleted product not resurrected, a new row appended), atomic writing with rollback and keeping `.bak`
 - `tests/ui.test.js` — suggestions (built from the catalog, counters matching the result set and the active filter, Escape in two steps, the index rebuilt when the catalog changes, a digit in the query narrowing results), the filter sheet (heading `Все товары` / active filter, counter on the button, reset, dialog semantics for a screen reader), scroll-to-top appearing on scroll, the `Заказ принят` screen without an order, a phone typed from letters, broken `localStorage`, cart and favorites reset when the catalog is rebuilt (and kept when it is not), brand suggestions in one inflected form («Garmin», not «GARMIN Descent» next to it), the hidden MAX link, markup: tabs ending with the cart, the cart icon, Telegram/MAX logos in the support badge, and the product count in `og:description` matching the catalog length
+- `tests/presets.test.js` — quick pick and product-page extras: the count on the `Хиты` chip equals the length of the result it produces, preset bounds and the price fields intersect with a typed query, a swapped range is read as a window, the selection survives through the hash link and is cleared by reset, the `Фильтры · N` counter sees it, the lightbox requests `w=1200` and labels the image, `javascript:`/`data:`/`vbscript:` never becomes an image source, recently-viewed dedupes and is capped, a catalog rebuild wipes it like cart and favorites, and JSON-LD carries real product fields with no `availability` while a `</script>` in a product name cannot break out
 - `tests/helpers/dom.js` — shared harness: mounts the inline storefront script on fake elements
 
 ---

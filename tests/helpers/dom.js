@@ -74,6 +74,9 @@ const EXPOSE = [
   'scrollToGrid', 'buildSugMap', 'sugMap', 'renderSuggestionsNow', 'scheduleSuggestions', 'sortedSug', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
   'catalogFp', 'syncCatalogFp',
   'oldPriceHTML', 'productCardHTML', 'localOrders', 'pushLocalOrder', 'renderOrders', 'imgSrc', 'imgUrl', 'renderWindow', 'scheduleWindow', 'WINDOW_CARDS', 'renderFavorites',
+  'PRESETS', 'presetOf', 'presetBounds', 'presetCount', 'applyPreset', 'applyPriceRange', 'priceRangeFromInputs', 'priceRangeLabel',
+  'effectivePriceRange', 'applyPresetTo', 'renderPresets', 'openLightbox', 'closeLightbox', 'safeImageSrc', 'absoluteUrl',
+  'recordRecent', 'clearRecentViewed', 'recentItems', 'renderRecent', 'RECENT_MAX', 'productJsonLd', 'setProductJsonLd', 'applyHashFilters',
 ];
 
 // Монтирует фронтенд. seed — источник данных каталога (по PRODUCTS_DATA можно подменить файл).
