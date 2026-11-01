@@ -308,6 +308,17 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.ok(g.state.filtered.some((p) => /Fenix 8 47 мм AMOLED Black/.test(p.name)), 'изменённая цена учитывается');
   });
 
+  it('фото из админки отдаётся относительным путём — иначе Pages в подпапке его не найдёт', () => {
+    assert.equal(g.imgSrc('/uploads/watch_1.jpg'), 'uploads/watch_1.jpg');
+    assert.equal(g.imgSrc('https://img.example/a.jpg'), 'https://img.example/a.jpg');
+    assert.equal(g.imgSrc('uploads/keep.jpg'), 'uploads/keep.jpg');
+    assert.equal(g.imgSrc(''), '');
+    assert.equal(g.imgSrc(null), '');
+    const card = g.productCardHTML({ id: 90002, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Fenix 9 Pro тест', price: 147200, image: '/uploads/watch_1.jpg', specs: '' });
+    assert.match(card, /src="uploads\/watch_1\.jpg"/);
+    assert.doesNotMatch(card, /src="\/uploads/);
+  });
+
   it('пока человек ищет, «Хиты продаж» не встают над выдачей', () => {
     const sec = g.document.getElementById('hits-section');
     type('fenix');
