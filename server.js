@@ -60,8 +60,28 @@ function tgAdminMenuKb() {
   return Markup.keyboard([
     ['Добавить часы', 'Товары и цены'],
     ['Реквизиты оплаты', 'Тексты и контакты'],
-    ['Последние заказы', 'Экспорт каталога']
+    ['Последние заказы', 'Экспорт каталога'],
+    ['Админы']
   ]).resize();
+}
+
+function tgAdminsPanelKb() {
+  const rows = [];
+  for (const r of tgAdminRoster()) {
+    if (r.source !== 'бот') continue;
+    rows.push([Markup.button.callback(`Убрать ${r.kind === 'id' ? 'ID ' + r.value : '@' + r.value}`, r.kind === 'id' ? `adm_rm_id_${r.value}` : `adm_rm_u_${r.value}`)]);
+  }
+  rows.push([Markup.button.callback('Добавить по ID', 'adm_add_id'), Markup.button.callback('Добавить по юзернейму', 'adm_add_u')]);
+  rows.push([Markup.button.callback('Обновить список', 'adm_list'), Markup.button.callback('Назад', 'adm_back')]);
+  return Markup.inlineKeyboard(rows);
+}
+
+function showTgAdminsPanel(ctx) {
+  const lines = tgAdminRoster().map((r) => `• ${r.kind === 'id' ? 'ID ' + r.value : '@' + r.value} — ${r.source === '.env' ? 'из .env, убрать можно только правкой .env' : 'добавлен через бота'}`);
+  ctx.reply(
+    `Админы бота (${lines.length}):\n${lines.join('\n')}\n\nАдмин видит админ-меню и получает все уведомления о заявках. Добавленный по юзернейму становится полным админом при первом сообщении боту.`,
+    tgAdminsPanelKb()
+  );
 }
 
 function verifyTelegramInitData(initData) {
@@ -189,6 +209,104 @@ function exportCatalog(force) {
 // ---------- API ----------
 let tgBot = null;
 
+// ---------- TG admins ----------
+// Админов может быть несколько: ID через запятую в TG_ADMIN_ID плюс юзернеймы в
+// TG_ADMIN_USERNAMES. Юзернейм превращается в ID при первом сообщении админа,
+// поэтому числовой ID заказчика знать заранее не нужно.
+const tgExtraAdminIds = new Set();
+const tgExtraAdminUsernames = new Set();
+function tgAdminEnvIds() {
+  return String(process.env.TG_ADMIN_ID || '').split(',').map((s) => s.trim()).filter(Boolean);
+}
+function tgAdminEnvUsernames() {
+  return String(process.env.TG_ADMIN_USERNAMES || '')
+    .split(',')
+    .map((s) => s.trim().replace(/^@/, '').toLowerCase())
+    .filter(Boolean);
+}
+function tgAdminIdList() {
+  return [...new Set([...tgAdminEnvIds(), ...tgExtraAdminIds])];
+}
+function tgAdminUsernameList() {
+  return [...new Set([...tgAdminEnvUsernames(), ...tgExtraAdminUsernames])];
+}
+function loadTgAdminExtras() {
+  for (const part of String(getSetting('tg_extra_admin_ids') || '').split(',')) {
+    const v = part.trim();
+    if (v) tgExtraAdminIds.add(v);
+  }
+  for (const part of String(getSetting('tg_extra_admin_usernames') || '').split(',')) {
+    const v = part.trim().replace(/^@/, '').toLowerCase();
+    if (v) tgExtraAdminUsernames.add(v);
+  }
+}
+function saveTgAdminExtras() {
+  setSetting('tg_extra_admin_ids', [...tgExtraAdminIds].join(','));
+  setSetting('tg_extra_admin_usernames', [...tgExtraAdminUsernames].join(','));
+}
+function normalizeTgUsername(raw) {
+  return String(raw || '').trim().replace(/^@/, '').toLowerCase();
+}
+// 'ok' | 'bad' | 'env': админов из .env убрать из бота нельзя, они база доступа
+function addTgAdminId(raw) {
+  const v = String(raw || '').trim();
+  if (!/^\d{3,15}$/.test(v)) return 'bad';
+  if (tgAdminEnvIds().includes(v)) return 'env';
+  tgExtraAdminIds.add(v);
+  saveTgAdminExtras();
+  return 'ok';
+}
+function removeTgAdminId(raw) {
+  const v = String(raw || '').trim();
+  if (tgAdminEnvIds().includes(v)) return 'env';
+  if (!tgExtraAdminIds.delete(v)) return 'none';
+  saveTgAdminExtras();
+  return 'ok';
+}
+function addTgAdminUsername(raw) {
+  const v = normalizeTgUsername(raw);
+  if (!/^[a-z0-9_]{3,32}$/.test(v)) return 'bad';
+  if (tgAdminEnvUsernames().includes(v)) return 'env';
+  tgExtraAdminUsernames.add(v);
+  saveTgAdminExtras();
+  return 'ok';
+}
+function removeTgAdminUsername(raw) {
+  const v = normalizeTgUsername(raw);
+  if (tgAdminEnvUsernames().includes(v)) return 'env';
+  if (!tgExtraAdminUsernames.delete(v)) return 'none';
+  saveTgAdminExtras();
+  return 'ok';
+}
+function tgAdminRoster() {
+  const rows = [];
+  for (const id of tgAdminEnvIds()) rows.push({ source: '.env', kind: 'id', value: id });
+  for (const u of tgAdminEnvUsernames()) rows.push({ source: '.env', kind: 'username', value: u });
+  for (const id of tgExtraAdminIds) rows.push({ source: 'бот', kind: 'id', value: id });
+  for (const u of tgExtraAdminUsernames) rows.push({ source: 'бот', kind: 'username', value: u });
+  return rows;
+}
+function isTgAdminCtx(ctx) {
+  const id = String(ctx?.from?.id || '');
+  if (!id) return false;
+  if (tgAdminIdList().includes(id)) return true;
+  const username = normalizeTgUsername(ctx.from?.username);
+  if (username && tgAdminUsernameList().includes(username)) {
+    // Запоминаем числовой ID, чтобы админ работал и после смены юзернейма
+    tgExtraAdminIds.add(id);
+    saveTgAdminExtras();
+    return true;
+  }
+  return false;
+}
+function notifyTgAdmins(text, options) {
+  const ids = tgAdminIdList();
+  if (!tgBot || !ids.length) return;
+  for (const id of ids) {
+    tgBot.telegram.sendMessage(id, text, options).catch((e) => console.error('TG Send Error:', redactSecrets(e.message)));
+  }
+}
+
 app.get('/api/state', (req, res) => {
   const settings = Object.fromEntries(db.prepare('SELECT key, value FROM settings').all().map((r) => [r.key, r.value]));
   const products = db.prepare('SELECT * FROM products ORDER BY id DESC').all();
@@ -197,6 +315,24 @@ app.get('/api/state', (req, res) => {
   // иначе покупатель уходит в 404.
   if (!isValidEnv(process.env.MAX_BOT_TOKEN) || !isValidEnv(settings.max_link)) clean.max_link = '';
   res.json({ settings: clean, products });
+});
+
+// Состояния старых часов для Trade-In; ключи совпадают с селектом на витрине
+const TI_COND_TEXT = { 1: 'новые, не носились', 2: 'отличное состояние', 3: 'рабочие, есть следы использования', 4: 'неисправны, на запчасти' };
+
+// Статус заявки для кабинета «Мои заказы». Без кода заявки и последних 4 цифр
+// телефона покупателя ничего не отдаём: номера TG-XXXX идут подряд, перебирать
+// их без второго фактора не нужно давать никому.
+app.get('/api/order-status', (req, res) => {
+  const code = String(req.query.code || '').trim().toUpperCase();
+  const pt = String(req.query.pt || '').replace(/\D/g, '');
+  if (!/^TG-\d+$/.test(code) || pt.length < 4) return res.status(400).json({ error: 'Нужны код заявки и последние 4 цифры телефона' });
+  const order = db.prepare('SELECT status, created_at, customer_json FROM orders WHERE order_code = ?').get(code);
+  if (!order) return res.status(404).json({ error: 'Заявка не найдена' });
+  let phone = '';
+  try { phone = String(JSON.parse(order.customer_json || '{}').phone || ''); } catch (e) { phone = ''; }
+  if (phone.replace(/\D/g, '').slice(-4) !== pt.slice(-4)) return res.status(404).json({ error: 'Заявка не найдена' });
+  res.json({ code, status: order.status, createdAt: order.created_at });
 });
 
 app.get('/healthz', (req, res) => {
@@ -243,7 +379,17 @@ async function handleApiOrder(req, res) {
   orderRateLimit.set(ip, now);
 
   const { items, initData } = req.body;
-  if (!Array.isArray(items) || !items.length || items.length > 50) return res.status(400).json({ error: 'Пустой заказ' });
+  const tiRaw = req.body.tradein;
+  const ti = tiRaw && typeof tiRaw === 'object' && !Array.isArray(tiRaw)
+    ? {
+        model: String(tiRaw.model || '').slice(0, 100).trim(),
+        year: String(tiRaw.year || '').slice(0, 40).trim(),
+        cond: TI_COND_TEXT[String(tiRaw.cond)] ? String(tiRaw.cond) : '',
+        productId: Number.isSafeInteger(Number(tiRaw.productId)) && Number(tiRaw.productId) > 0 ? Number(tiRaw.productId) : null,
+      }
+    : null;
+  if (tiRaw && (!ti || !ti.model || !ti.cond)) return res.status(400).json({ error: 'Trade-In: укажите модель и состояние часов' });
+  if (!Array.isArray(items) || (!items.length && !ti) || items.length > 50) return res.status(400).json({ error: 'Пустой заказ' });
 
   const cRaw = req.body.customer || {};
   if (typeof cRaw !== 'object' || Array.isArray(cRaw) ||
@@ -271,6 +417,16 @@ async function handleApiOrder(req, res) {
     if (!prod) return res.status(400).json({ error: 'Товар не найден' });
     cleanItems.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty });
   }
+  if (ti) {
+    const target = ti.productId ? db.prepare('SELECT name FROM products WHERE id = ?').get(ti.productId) : null;
+    cleanItems.push({
+      id: 0,
+      name: `Trade-In: ${ti.model}${ti.year ? ', ' + ti.year : ''} — ${TI_COND_TEXT[ti.cond]}${target ? '; обмен на ' + String(target.name).slice(0, 120) : ''}`,
+      price: 0,
+      qty: 1,
+      ti: 1,
+    });
+  }
   if (!cleanItems.length) return res.status(400).json({ error: 'Пустой заказ' });
   const serverTotal = cleanItems.reduce((s, i) => s + i.price * i.qty, 0);
 
@@ -282,22 +438,20 @@ async function handleApiOrder(req, res) {
   }
 
   const orderCode = allocateOrderCode();
-  db.prepare('INSERT INTO orders (order_code, items_json, total, customer_json, owner_tg) VALUES (?, ?, ?, ?, ?)')
-    .run(orderCode, JSON.stringify(cleanItems), serverTotal, JSON.stringify(customer), tgUser ? String(tgUser.id) : null);
+  db.prepare('INSERT INTO orders (order_code, items_json, total, status, customer_json, owner_tg) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(orderCode, JSON.stringify(cleanItems), serverTotal, ti ? 'Trade-In' : 'Новый', JSON.stringify(customer), tgUser ? String(tgUser.id) : null);
 
   const itemsText = cleanItems.map((i, idx) => `${idx + 1}. ${i.name} — ${i.qty} шт. x ${Number(i.price).toLocaleString('ru-RU')} ₽`).join('\n');
   const clientTag = tgUser ? `\nКлиент TG: @${tgUser.username || tgUser.first_name} (id ${tgUser.id})` : '';
   const custLine = `\n👤 ${customer.fio}\n📞 ${customer.phone}${customer.email ? `\n✉️ ${customer.email}` : ''}\n📍 ${customer.address || '—'}\n🚚 ${customer.delivery}`;
   const notifyMsg = `НОВАЯ ЗАЯВКА ${orderCode}\n\nСостав:\n${itemsText}\n\nИтого: ${Number(serverTotal).toLocaleString('ru-RU')} ₽${clientTag}${custLine}\nРеквизиты:\n${getSetting('payment_details')}`;
 
-  if (tgBot && isValidEnv(process.env.TG_ADMIN_ID)) {
-    tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID, notifyMsg, {
-      ...Markup.inlineKeyboard([
-        [Markup.button.callback('В сборку', `st_${orderCode}_work`), Markup.button.callback('Оплачен', `st_${orderCode}_paid`)],
-        [Markup.button.callback('Отменить', `st_${orderCode}_cancel`)]
-      ])
-    }).catch((e) => console.error('TG Send Error:', redactSecrets(e.message)));
-  }
+  notifyTgAdmins(notifyMsg, {
+    ...Markup.inlineKeyboard([
+      [Markup.button.callback('В сборку', `st_${orderCode}_work`), Markup.button.callback('Оплачен', `st_${orderCode}_paid`)],
+      [Markup.button.callback('Отменить', `st_${orderCode}_cancel`)]
+    ])
+  });
 
   maxNotifyAdmin(notifyMsg, orderCode).catch((e) => console.error('MAX Send Error:', redactSecrets(e.message)));
 
@@ -308,7 +462,7 @@ async function handleApiOrder(req, res) {
 if (isValidEnv(process.env.TG_BOT_TOKEN)) {
   tgBot = new Telegraf(process.env.TG_BOT_TOKEN);
   tgBot.use(session());
-  const isTgAdmin = (ctx) => String(ctx.from?.id) === String(process.env.TG_ADMIN_ID);
+  const isTgAdmin = isTgAdminCtx;
 
   tgBot.command('id', (ctx) => ctx.reply(`Ваш Telegram ID: ${ctx.from.id}`));
 
@@ -470,14 +624,27 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     if (!isTgAdmin(ctx)) {
       const m = txt.match(/TG-\d+/i);
       if (m) return handleClientOrderLookupTg(ctx, m[0].toUpperCase());
-      if (isValidEnv(process.env.TG_ADMIN_ID)) {
-        const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
-        tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID, `Сообщение от клиента (${tag}, ID ${ctx.from.id}):\n${txt}`).catch(() => {});
-      }
+      const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
+      notifyTgAdmins(`Сообщение от клиента (${tag}, ID ${ctx.from.id}):\n${txt}`);
       return ctx.reply('Спасибо! Менеджер получил сообщение и скоро ответит.');
     }
     const s = ctx.session || {};
     if (txt === 'Отмена') { ctx.session = {}; return ctx.reply('Отменено. Выберите действие:', tgAdminMenuKb()); }
+    if (txt === 'Админы') { ctx.session = {}; return showTgAdminsPanel(ctx); }
+    if (s.step === 'wait_admin_id') {
+      const r = addTgAdminId(txt);
+      ctx.session = {};
+      if (r === 'bad') return ctx.reply('Похоже, это не Telegram ID: нужно число, например 397602448. Сам человек узнаёт свой командой /id.', tgAdminsPanelKb());
+      if (r === 'env') return ctx.reply('Этот ID уже админ из .env.', tgAdminsPanelKb());
+      return showTgAdminsPanel(ctx);
+    }
+    if (s.step === 'wait_admin_username') {
+      const r = addTgAdminUsername(txt);
+      ctx.session = {};
+      if (r === 'bad') return ctx.reply('Юзернейм выглядит неправильно: латиница, цифры и подчёркивание, 3-32 знака, без @.', tgAdminsPanelKb());
+      if (r === 'env') return ctx.reply('Этот юзернейм уже админ из .env.', tgAdminsPanelKb());
+      return showTgAdminsPanel(ctx);
+    }
     if (s.step === 'wait_pay') { setSetting('payment_details', txt); ctx.session = {}; return ctx.reply('Реквизиты обновлены!'); }
     if (s.step === 'wait_cfg') { setSetting(s.key, txt); ctx.session = {}; return ctx.reply('Сохранено!'); }
     if (s.step === 'wait_price') {
@@ -516,6 +683,17 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const stale = [];
     const byId = (id) => db.prepare('SELECT id, name, price FROM products WHERE id = ?').get(id);
     for (const part of rest) {
+      const tiPart = part.match(/^TI(\d+)x(\d+)x(.+)$/);
+      if (tiPart) {
+        const cond = TI_COND_TEXT[tiPart[1]] ? tiPart[1] : '3';
+        const pid = Number(tiPart[2]);
+        let model = String(tiPart[3]);
+        try { model = decodeURIComponent(model); } catch (e) { /* процент-последовательность битая — берём как есть */ }
+        model = model.slice(0, 100);
+        const target = pid ? db.prepare('SELECT name FROM products WHERE id = ?').get(pid) : null;
+        items.push({ id: 0, name: `Trade-In: ${model} — ${TI_COND_TEXT[cond]}${target ? '; обмен на ' + String(target.name).slice(0, 120) : ''}`, price: 0, qty: 1, ti: 1 });
+        continue;
+      }
       let m = part.match(/^(\d+)x(\d+)x(\d+)$/);
       if (m) {
         const prod = byId(Number(m[1]));
@@ -562,13 +740,11 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     // на Pages): под теми же id там другие товары. Оформлять такое по базе —
     // значит прислать клиенту не то, что он выбирал.
     if (parsed.stale.length) {
-      if (tgBot && isValidEnv(process.env.TG_ADMIN_ID)) {
-        const clientTag = ctx.from.username ? `@${ctx.from.username}` : (ctx.from.first_name || 'Клиент');
-        const detail = parsed.stale.map((s) => `id ${s.id}: сайт ${s.site} ₽ / база ${s.db} ₽`).join('\n');
-        tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID,
-          `⚠️ ЗАКАЗ ${code} НЕ СОЗДАН: каталог на витрине расходится с базой\n👤 ${clientTag} (ID: ${ctx.from.id})\n${detail}\nНужно обновить файл: кнопка «Экспорт каталога» в админке, затем коммит products-data.js.`
-        ).catch(() => {});
-      }
+      const clientTag = ctx.from.username ? `@${ctx.from.username}` : (ctx.from.first_name || 'Клиент');
+      const detail = parsed.stale.map((s) => `id ${s.id}: сайт ${s.site} ₽ / база ${s.db} ₽`).join('\n');
+      notifyTgAdmins(
+        `⚠️ ЗАКАЗ ${code} НЕ СОЗДАН: каталог на витрине расходится с базой\n👤 ${clientTag} (ID: ${ctx.from.id})\n${detail}\nНужно обновить файл: кнопка «Экспорт каталога» в админке, затем коммит products-data.js.`
+      );
       return ctx.reply(`Каталог на сайте сейчас расходится с нашей базой, поэтому заявку по этим позициям не создали, чтобы не перепутать товар. Напишите менеджеру — подтвердим наличие и цену вручную.`);
     }
     // Одинаковый номер у двух покупателей статической витрины — не их вина: счётчик
@@ -579,21 +755,22 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       const total = parsed.items.reduce((s, i) => s + i.price * i.qty, 0);
       const taken = (c) => !!db.prepare('SELECT 1 AS x FROM orders WHERE order_code = ?').get(c);
       let wanted = taken(code) ? allocateOrderCode() : code;
+      const siteStatus = parsed.items.some((i) => i.ti) ? 'Trade-In (сайт)' : 'Новый (сайт)';
       try {
         db.prepare('INSERT INTO orders (order_code, items_json, total, status, owner_tg) VALUES (?, ?, ?, ?, ?)')
-          .run(wanted, JSON.stringify(parsed.items), total, 'Новый (сайт)', String(ctx.from.id));
+          .run(wanted, JSON.stringify(parsed.items), total, siteStatus, String(ctx.from.id));
       } catch (e) {
         wanted = allocateOrderCode();
         db.prepare('INSERT INTO orders (order_code, items_json, total, status, owner_tg) VALUES (?, ?, ?, ?, ?)')
-          .run(wanted, JSON.stringify(parsed.items), total, 'Новый (сайт)', String(ctx.from.id));
+          .run(wanted, JSON.stringify(parsed.items), total, siteStatus, String(ctx.from.id));
       }
       order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(wanted);
-      if (order && tgBot && isValidEnv(process.env.TG_ADMIN_ID)) {
+      if (order) {
         const clientTag = ctx.from.username ? `@${ctx.from.username}` : (ctx.from.first_name || 'Клиент');
         const list = parsed.items.map((i) => `• ${i.name} × ${i.qty}`).join('\n');
-        tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID,
+        notifyTgAdmins(
           `🔔 НОВАЯ ЗАЯВКА С САЙТА ${wanted}${wanted === code ? '' : ' (витрина предложила занятый номер ' + code + ')'}\n👤 Клиент: ${clientTag} (ID: ${ctx.from.id})\n📦\n${list}\n💰 ${Number(order.total).toLocaleString('ru-RU')} ₽`
-        ).catch(() => {});
+        );
       }
     }
     if (!order) {
@@ -607,7 +784,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
     if (!order) return ctx.reply(`Заказ ${code} не найден.`);
     const requester = String(ctx.from?.id || '');
-    const admin = isValidEnv(process.env.TG_ADMIN_ID) && requester === String(process.env.TG_ADMIN_ID);
+    const admin = tgAdminIdList().includes(requester);
     if (!order.owner_tg && !admin) {
       db.prepare('UPDATE orders SET owner_tg = ? WHERE order_code = ?').run(requester, code);
       order.owner_tg = requester;
@@ -617,11 +794,45 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const items = JSON.parse(order.items_json || '[]');
     const list = items.map((i) => `• ${i.name} (${Number(i.price).toLocaleString('ru-RU')} ₽)`).join('\n');
     ctx.reply(`Ваш заказ ${code} найден!\n\n${list}\nИтого: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\nРеквизиты:\n${getSetting('payment_details')}`);
-    if (isValidEnv(process.env.TG_ADMIN_ID)) {
-      const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
-      tgBot.telegram.sendMessage(process.env.TG_ADMIN_ID, `Клиент ${tag} обратился по заказу ${code}`).catch(() => {});
-    }
+    const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
+    notifyTgAdmins(`Клиент ${tag} обратился по заказу ${code}`);
   }
+
+  tgBot.action('adm_add_id', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    ctx.session = { step: 'wait_admin_id' };
+    ctx.reply('Пришлите Telegram ID числа. Сам человек узнаёт свой командой /id.');
+  });
+  tgBot.action('adm_add_u', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    ctx.session = { step: 'wait_admin_username' };
+    ctx.reply('Пришлите юзернейм без @ (например sheferochekgle). Полный доступ появится при первом сообщении этого человека боту.');
+  });
+  tgBot.action('adm_list', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    showTgAdminsPanel(ctx);
+  });
+  tgBot.action('adm_back', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    ctx.session = {};
+    ctx.reply('Выберите действие:', tgAdminMenuKb());
+  });
+  tgBot.action(/^adm_rm_id_(.+)$/, (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    const r = removeTgAdminId(ctx.match[1]);
+    ctx.answerCbQuery(r === 'ok' ? 'Убран' : 'Не вышло');
+    showTgAdminsPanel(ctx);
+  });
+  tgBot.action(/^adm_rm_u_(.+)$/, (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    const r = removeTgAdminUsername(ctx.match[1]);
+    ctx.answerCbQuery(r === 'ok' ? 'Убран' : 'Не вышло');
+    showTgAdminsPanel(ctx);
+  });
 
   tgBot.telegram.getMe()
     .then((me) => console.log(`Telegram bot @${me.username} polling started`))
@@ -951,5 +1162,6 @@ app.use((err, req, res, next) => {
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
-if (!isValidEnv(process.env.TG_ADMIN_ID)) console.log('NOTE: TG_ADMIN_ID пуст — напишите боту /id и впишите свой ID в .env, иначе админка недоступна.');
+loadTgAdminExtras();
+if (!tgAdminIdList().length && !tgAdminUsernameList().length) console.log('NOTE: TG_ADMIN_ID и TG_ADMIN_USERNAMES пусты — напишите боту /id и впишите свой ID в .env, иначе админка недоступна.');
 const server = app.listen(PORT, HOST, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`));

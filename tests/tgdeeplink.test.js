@@ -1,7 +1,7 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
 const { DatabaseSync } = require('node:sqlite');
-const { serverSrc, extractOrderCodeFn } = require('./helpers/load');
+const { serverSrc, extractOrderCodeFn, extractTgAdminBlock } = require('./helpers/load');
 
 describe('TG deep-link orders (Pages without backend)', () => {
   let api;
@@ -23,8 +23,10 @@ const db = memdb;
 const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?').get(k)?.value ?? '';
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
 function isValidEnv(val) { return val && typeof val === 'string' && val.trim() !== '' && !val.startsWith('ВСТАВЬ_'); }
-const tgBot = { telegram: { sendMessage: async (id, text) => { sent.push({ id, text }); } } };
+const tgBot = { telegram: { sendMessage: async (id, text) => { sent.push({ id, text }); } }, action: () => {} };
 process.env.TG_ADMIN_ID = '1';
+const TI_COND_TEXT = { 1: 'новые, не носились', 2: 'отличное состояние', 3: 'рабочие, есть следы использования', 4: 'неисправны, на запчасти' };
+${extractTgAdminBlock()}
 ${extractOrderCodeFn()}
 const mkCtx = (id) => ({ from: { username: 'ivan', first_name: 'Ivan', id: id || 555 }, reply: (t) => { replies.push(t); return t; } });
 `;
@@ -126,6 +128,20 @@ const mkCtx = (id) => ({ from: { username: 'ivan', first_name: 'Ivan', id: id ||
     api.handleSiteOrderPayload(api.mkCtx(), 'TG-20003', 'TG-20003_1_60000');
     const order = api.db.prepare('SELECT * FROM orders WHERE order_code = ?').get('TG-20003');
     assert.ok(order && order.total === 60000);
+  });
+
+  it('parses a Trade-In part of a deep link into a zero-price request', () => {
+    api.clear();
+    api.handleSiteOrderPayload(api.mkCtx(), 'TG-20040', 'TG-20040_TI3x1x' + encodeURIComponent('Garmin Fenix 5, 2018'));
+    const order = api.db.prepare('SELECT * FROM orders WHERE order_code = ?').get('TG-20040');
+    assert.ok(order);
+    assert.equal(order.status, 'Trade-In (сайт)');
+    const items = JSON.parse(order.items_json);
+    assert.equal(items.length, 1);
+    assert.match(items[0].name, /^Trade-In: Garmin Fenix 5, 2018 — рабочие, есть следы использования/);
+    assert.equal(items[0].price, 0);
+    assert.equal(order.total, 0);
+    assert.match(sentFlat(), /НОВАЯ ЗАЯВКА С САЙТА TG-20040/);
   });
 
   it('allocates unique numbers instead of colliding with existing orders', () => {

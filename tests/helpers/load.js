@@ -43,4 +43,12 @@ function extractFrontendScript() {
   return m[1];
 }
 
-module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript };
+function extractTgAdminBlock() {
+  const src = serverSrc();
+  const start = src.indexOf('// ---------- TG admins ----------');
+  const end = src.indexOf("app.get('/api/state'");
+  if (start < 0 || end < 0) throw new Error('TG admins block markers not found in server.js');
+  return src.slice(start, end);
+}
+
+module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock };

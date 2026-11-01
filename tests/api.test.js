@@ -163,4 +163,26 @@ describe('HTTP API (real server, temp DB)', () => {
     const r2 = await fetch(`${BASE}/uploads/nope.jpg`);
     assert.equal(r2.status, 404);
   });
+
+  it('Trade-In: заявка без товаров, статус только по коду и телефону', async () => {
+    const post = (body) => fetch(`${BASE}/api/order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    await new Promise((r) => setTimeout(r, 600));
+    const bad = await post({ items: [], tradein: { model: '  ', cond: '2' }, customer: { fio: 'Иван', phone: '+7 900 000-00-14' } });
+    assert.equal(bad.status, 400);
+    await new Promise((r) => setTimeout(r, 600));
+    const r = await post({ items: [], tradein: { model: 'Garmin Fenix 5', year: '2018', cond: '3', productId: 1 }, customer: { fio: 'Иван', phone: '+7 900 000-00-14' } });
+    const created = await r.json();
+    assert.equal(r.status, 200, JSON.stringify(created));
+    const { orderCode } = created;
+    assert.match(orderCode, /^TG-\d+$/);
+    const st = await fetch(`${BASE}/api/order-status?code=${orderCode}&pt=0014`);
+    assert.equal(st.status, 200);
+    assert.equal((await st.json()).status, 'Trade-In');
+    const stranger = await fetch(`${BASE}/api/order-status?code=${orderCode}&pt=9999`);
+    assert.equal(stranger.status, 404);
+    const noPhone = await fetch(`${BASE}/api/order-status?code=${orderCode}`);
+    assert.equal(noPhone.status, 400);
+    const missing = await fetch(`${BASE}/api/order-status?code=TG-999999&pt=0014`);
+    assert.equal(missing.status, 404);
+  });
 });
