@@ -280,6 +280,7 @@ const defaultSettings = {
   legal_name: 'ИП Жукова Татьяна Юрьевна',
   legal_inn: '362703988401',
   legal_ogrnip: '304362725400110',
+  delivery_methods: 'СДЭК,Почта России,Boxberry',
   payment_details: 'СБП / Т-Банк / Сбер: +7 (900) 000-00-00 (Татьяна Ю.)\nВ комментарии к переводу укажите номер заказа.',
   show_payment: '1',
   last_order_num: '1175'
@@ -315,6 +316,7 @@ db.exec('CREATE TABLE IF NOT EXISTS seed_marks (seed_key TEXT PRIMARY KEY, marke
 // заявки по статусу и дате — без индексов это полный проход по каталогу.
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_hit ON products(is_hit)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)');
 db.exec('CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at)');
 
@@ -576,10 +578,24 @@ function insertImportedRows(conn, rows) {
 // работа с базой проверяется тестами один раз, а не дважды.
 const ADMIN_PAGE = 8;
 const ADMIN_ORDER_PAGE = 6;
-const PRODUCT_FIELD_LABELS = { name: 'Название', series: 'Серия', category: 'Полка', price: 'Цена', specs: 'Описание', image: 'Фото' };
+const PRODUCT_FIELD_LABELS = { name: 'Название', brand: 'Бренд', series: 'Серия', category: 'Полка', price: 'Цена', specs: 'Описание', image: 'Фото' };
 const ORDER_STATUS_SET = ['Новый', 'Новый (сайт)', 'Trade-In', 'Trade-In (сайт)', 'В сборке', 'Оплачен', 'Отменен'];
 // Кнопки статусов в обоих ботах: короткий ключ -> значение в базе
 const ORDER_STATUS_BUTTONS = { neu: 'Новый', trade: 'Trade-In', work: 'В сборке', paid: 'Оплачен', cancel: 'Отменен' };
+
+// Способы доставки — тоже настройка сайта: витрина рисует select из неё,
+// API принимает только значение из неё. Формат: через запятую, 1–10 штук.
+function deliveryMethods(conn) {
+  const c = conn || db;
+  const raw = String(c.prepare('SELECT value FROM settings WHERE key = ?').get('delivery_methods')?.value || '').trim();
+  const list = raw.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 10);
+  return list.length ? list : ['СДЭК', 'Почта России', 'Boxberry'];
+}
+function normalizeDelivery(conn, raw) {
+  const list = deliveryMethods(conn);
+  const v = String(raw || '').trim();
+  return list.includes(v) ? v : list[0];
+}
 
 function catalogShelves(conn) {
   const rows = conn.prepare('SELECT category, COUNT(*) AS c FROM products GROUP BY category ORDER BY c DESC').all();
@@ -594,13 +610,19 @@ function catalogPage(conn, opts) {
   const args = [];
   if (category && category !== 'Все товары') { where.push('category = ?'); args.push(category); }
   const sqlWhere = where.length ? ` WHERE ${where.join(' AND ')}` : '';
-  let rows = conn.prepare(`SELECT id, brand, series, category, name, price, old_price, image, specs, is_hit FROM products${sqlWhere} ORDER BY id DESC`).all(...args);
+  // Без поиска считаем и режем в SQL — 347 строк через JS гонять незачем.
+  if (!query) {
+    const total = Number(conn.prepare(`SELECT COUNT(*) AS c FROM products${sqlWhere}`).get(...args).c);
+    const pages = Math.max(1, Math.ceil(total / ADMIN_PAGE));
+    const page = Math.min(Math.max(1, Math.trunc(Number(opts && opts.page)) || 1), pages);
+    const items = conn.prepare(`SELECT id, brand, series, category, name, price, old_price, image, specs, is_hit FROM products${sqlWhere} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...args, ADMIN_PAGE, (page - 1) * ADMIN_PAGE);
+    return { items, total, pages, page, category, query };
+  }
   // Поиск нормализуем в JS: и LOWER(), и UPPER() в SQLite различают регистр
   // только у латиницы, а «Феникс» ищут и строчными, и прописными по-русски.
-  if (query) {
-    const q = query.toUpperCase();
-    rows = rows.filter((r) => [r.name, r.brand, r.series, r.specs].some((v) => String(v || '').toUpperCase().includes(q)));
-  }
+  const q = query.toUpperCase();
+  const rows = conn.prepare(`SELECT id, brand, series, category, name, price, old_price, image, specs, is_hit FROM products${sqlWhere} ORDER BY id DESC`).all(...args)
+    .filter((r) => [r.name, r.brand, r.series, r.specs].some((v) => String(v || '').toUpperCase().includes(q)));
   const total = rows.length;
   const pages = Math.max(1, Math.ceil(total / ADMIN_PAGE));
   const page = Math.min(Math.max(1, Math.trunc(Number(opts && opts.page)) || 1), pages);
@@ -643,6 +665,9 @@ function setProductField(conn, id, field, raw) {
   } else if (field === 'image') {
     if (value && !/^https?:\/\//i.test(value)) return { ok: false, error: 'Фото — ссылка http(s)://…, или пусто, чтобы убрать картинку.' };
     conn.prepare('UPDATE products SET image = ? WHERE id = ?').run(value.slice(0, 500), p.id);
+  } else if (field === 'brand') {
+    if (value.length < 2) return { ok: false, error: 'Бренд короче двух знаков.' };
+    conn.prepare('UPDATE products SET brand = ? WHERE id = ?').run(value.slice(0, 40), p.id);
   } else if (field === 'name' || field === 'series' || field === 'specs') {
     if (field === 'name' && value.length < 3) return { ok: false, error: 'Название короче трёх знаков.' };
     const cap = field === 'name' ? 200 : field === 'specs' ? 500 : 80;
@@ -680,16 +705,21 @@ function ordersPage(conn, opts) {
   const args = [];
   if (status && status !== 'Все') { where.push('status = ?'); args.push(status); }
   const sqlWhere = where.length ? ` WHERE ${where.join(' AND ')}` : '';
-  let rows = conn.prepare(`SELECT id, order_code, total, status, created_at FROM orders${sqlWhere} ORDER BY id DESC`)
-    .all(...args);
-  // Тот же регистр по-русски, что и в каталоге: нормализуем в JS, а не в SQL.
-  if (query) {
-    const q = query.toUpperCase();
-    const full = conn.prepare(`SELECT order_code, customer_json, items_json FROM orders${sqlWhere}`).all(...args);
-    const hit = new Set(full.filter((r) => [r.order_code, r.customer_json, r.items_json].some((v) => String(v || '').toUpperCase().includes(q)))
-      .map((r) => r.order_code));
-    rows = rows.filter((r) => hit.has(r.order_code));
+  // Без поиска — COUNT + LIMIT/OFFSET в SQL, без поиска по JSON в JS.
+  if (!query) {
+    const total = Number(conn.prepare(`SELECT COUNT(*) AS c FROM orders${sqlWhere}`).get(...args).c);
+    const pages = Math.max(1, Math.ceil(total / ADMIN_ORDER_PAGE));
+    const page = Math.min(Math.max(1, Math.trunc(Number(opts && opts.page)) || 1), pages);
+    const items = conn.prepare(`SELECT id, order_code, total, status, created_at FROM orders${sqlWhere} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...args, ADMIN_ORDER_PAGE, (page - 1) * ADMIN_ORDER_PAGE);
+    return { items, total, pages, page, status, query };
   }
+  // Тот же регистр по-русски, что и в каталоге: нормализуем в JS, а не в SQL.
+  const q = query.toUpperCase();
+  const full = conn.prepare(`SELECT order_code, customer_json, items_json FROM orders${sqlWhere}`).all(...args);
+  const hit = new Set(full.filter((r) => [r.order_code, r.customer_json, r.items_json].some((v) => String(v || '').toUpperCase().includes(q)))
+    .map((r) => r.order_code));
+  const rows = conn.prepare(`SELECT id, order_code, total, status, created_at FROM orders${sqlWhere} ORDER BY id DESC`).all(...args)
+    .filter((r) => hit.has(r.order_code));
   const total = rows.length;
   const pages = Math.max(1, Math.ceil(total / ADMIN_ORDER_PAGE));
   const page = Math.min(Math.max(1, Math.trunc(Number(opts && opts.page)) || 1), pages);
@@ -764,6 +794,44 @@ function deleteOrderByCode(conn, code) {
   if (!o) return { ok: false, error: 'Заявка не найдена.' };
   conn.prepare('DELETE FROM orders WHERE order_code = ?').run(o.order_code);
   return { ok: true, code: o.order_code, status: o.status, total: Number(o.total) };
+}
+
+// Ручная заявка из бота: те же правила, что у /api/order — цены только из базы,
+// ФИО и телефон обязательны. items: [{id, qty}].
+function parseManualItems(raw) {
+  const parts = String(raw || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const items = [];
+  for (const part of parts) {
+    const m = part.match(/^(\d+)(?:[xх×*]\s*(\d+))?$/i);
+    if (!m) return { ok: false, error: `Не понял «${part}» — формат: ID или IDxкол-во через запятую, например 12x2, 45.` };
+    const qty = m[2] ? Math.trunc(Number(m[2])) : 1;
+    if (!Number.isSafeInteger(qty) || qty < 1 || qty > 99) return { ok: false, error: `Количество у «${part}»: 1–99.` };
+    items.push({ id: Number(m[1]), qty });
+  }
+  if (!items.length) return { ok: false, error: 'Пусто: пришли ID товаров через запятую, например 12x2, 45.' };
+  if (items.length > 50) return { ok: false, error: 'Больше 50 позиций за раз нельзя.' };
+  return { ok: true, items };
+}
+function createManualOrder(conn, { items, fio, phone, delivery }) {
+  const customer = {
+    fio: String(fio || '').trim().slice(0, 100),
+    phone: String(phone || '').trim().slice(0, 30),
+  };
+  if (!customer.fio) return { ok: false, error: 'Нужно ФИО покупателя.' };
+  if (customer.phone.replace(/\D/g, '').length < 10) return { ok: false, error: 'Телефон короче 10 цифр.' };
+  const cleanItems = [];
+  for (const it of items || []) {
+    const prod = conn.prepare('SELECT id, name, price FROM products WHERE id = ?').get(Number(it.id));
+    if (!prod) return { ok: false, error: `Товара #${it.id} нет в базе.` };
+    const qty = Math.trunc(Number(it.qty)) || 1;
+    cleanItems.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty });
+  }
+  if (!cleanItems.length) return { ok: false, error: 'Пустой состав.' };
+  const total = cleanItems.reduce((s, i) => s + i.price * i.qty, 0);
+  const code = allocateOrderCode();
+  conn.prepare('INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES (?, ?, ?, ?, ?)')
+    .run(code, JSON.stringify(cleanItems), total, 'Новый', JSON.stringify({ ...customer, delivery: normalizeDelivery(conn, delivery) }));
+  return { ok: true, code, total };
 }
 
 function adminSummary(conn, settings) {  const shelves = catalogShelves(conn);
@@ -1134,7 +1202,7 @@ async function handleApiOrder(req, res) {
     phone: cleanText(cRaw.phone).slice(0, 30),
     email: cleanText(cRaw.email).slice(0, 100),
     address: cleanText(cRaw.address).slice(0, 300),
-    delivery: ['СДЭК', 'Почта России', 'Boxberry'].includes(cleanText(cRaw.delivery)) ? cleanText(cRaw.delivery) : 'СДЭК'
+    delivery: normalizeDelivery(db, cleanText(cRaw.delivery))
   };
   // Перекодировать не удалось (байты ни UTF-8, ни cp1251/1252) — не храним «?????»
   if (hasGarbageDeep(customer)) {
@@ -1375,7 +1443,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     ctx.answerCbQuery();
     ctx.reply(adminSummary(db, { show_payment: getSetting('show_payment') }));
   });
-  tgBot.action(/^pf_(name|series|category|price|specs|image)_(\d+)$/, (ctx) => {
+  tgBot.action(/^pf_(name|brand|series|category|price|specs|image)_(\d+)$/, (ctx) => {
     if (!isTgAdmin(ctx)) return;
     const field = ctx.match[1];
     const p = productById(db, Number(ctx.match[2]));
@@ -1419,6 +1487,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       [Markup.button.callback('Заголовок баннера', 'tg_cfg_hero_title')],
       [Markup.button.callback('Телефон', 'tg_cfg_phone'), Markup.button.callback('Email', 'tg_cfg_email')],
       [Markup.button.callback('Адрес', 'tg_cfg_address')],
+      [Markup.button.callback('Доставка', 'tg_cfg_delivery_methods')],
       [Markup.button.callback('Ссылка ТГ', 'tg_cfg_tg_link'), Markup.button.callback('Ссылка MAX', 'tg_cfg_max_link')],
       [Markup.button.callback('ИП ФИО', 'tg_cfg_legal_name'), Markup.button.callback('ИНН', 'tg_cfg_legal_inn'), Markup.button.callback('ОГРНИП', 'tg_cfg_legal_ogrnip')]
     ]));
@@ -1449,7 +1518,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     for (let i = 0; i < present.length; i += 3) {
       rows.push(present.slice(i, i + 3).map(([st, c], j) => Markup.button.callback(`${st} (${c})`, `ord_st_${i + j}`)));
     }
-    rows.push([Markup.button.callback('Найти', 'ord_find'), Markup.button.callback('Сводка сайта', 'cat_summary')]);
+    rows.push([Markup.button.callback('Найти', 'ord_find'), Markup.button.callback('Новая заявка', 'ord_new'), Markup.button.callback('Сводка сайта', 'cat_summary')]);
     ctx.reply(
       `Заявок: ${res.total}${res.status !== 'Все' ? ` со статусом «${res.status}»` : ''}${res.query ? `, поиск «${res.query}»` : ''}`,
       Markup.inlineKeyboard(rows)
@@ -1510,6 +1579,12 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     ctx.answerCbQuery();
     ctx.session = { ...(ctx.session || {}), step: 'ord_find' };
     ctx.reply('Поиск по заявкам: номер (TG-1176), фамилия, телефон или название товара:');
+  });
+  tgBot.action('ord_new', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    ctx.session = { ...(ctx.session || {}), step: 'ord_new_items' };
+    ctx.reply('Новая заявка вручную.\nШаг 1/3. Состав: ID товаров через запятую, количество — через x. Например: 12x2, 45');
   });
   tgBot.action(/^ord_item_(TG-\d+)$/, (ctx) => {
     if (!isTgAdmin(ctx)) return;
@@ -1676,6 +1751,25 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     if (s.step === 'ord_find') {
       ctx.session = { ...(ctx.session || {}), step: 'ord', ordQuery: txt, ordPage: 1 };
       return showOrdersTg(ctx);
+    }
+    if (s.step === 'ord_new_items') {
+      const r = parseManualItems(txt);
+      if (!r.ok) return ctx.reply(`${r.error}\nПришли состав ещё раз или «Отмена».`);
+      ctx.session = { ...(ctx.session || {}), step: 'ord_new_fio', ordItems: r.items };
+      return ctx.reply('Шаг 2/3. ФИО покупателя:');
+    }
+    if (s.step === 'ord_new_fio') {
+      ctx.session = { ...(ctx.session || {}), step: 'ord_new_phone', ordFio: txt };
+      return ctx.reply('Шаг 3/3. Телефон покупателя:');
+    }
+    if (s.step === 'ord_new_phone') {
+      const res = createManualOrder(db, { items: s.ordItems, fio: s.ordFio, phone: txt });
+      ctx.session = { ...(ctx.session || {}), step: 'ord' };
+      if (!res.ok) {
+        ctx.session.step = 'ord_new_items';
+        return ctx.reply(`${res.error}\nНачни заново: пришли состав (ID через запятую).`);
+      }
+      return showOrderTg(ctx, res.code);
     }
     if (s.step === 'pf_wait') {
       const res = setProductField(db, s.prodId, s.field, txt);
@@ -2041,20 +2135,57 @@ function maxShopLinkButtons() {
 // плюс добавленные из бота. MAX в updates не отдаёт юзернейм, поэтому список собран
 // по числовым ID — свой ID клиент узнаёт командой /id.
 const maxExtraAdminIds = new Set();
-function maxAdminEnvIds() {
-  return String(process.env.MAX_ADMIN_ID || '').split(',').map((s) => s.trim()).filter(Boolean);
-}
-function maxAdminIdList() {
-  return [...new Set([...maxAdminEnvIds(), ...maxExtraAdminIds])];
-}
+// Привязка по имени: MAX в updates не отдаёт юзернейм, только отображаемое имя.
+// Админ вводит ожидаемое имя, первый написавший с таким именем привязывается по ID.
+const maxPendingAdminNames = new Set();
 function loadMaxAdminExtras() {
   for (const part of String(getSetting('max_extra_admin_ids') || '').split(',')) {
     const v = part.trim();
     if (v) maxExtraAdminIds.add(v);
   }
+  for (const part of String(getSetting('max_pending_admin_names') || '').split('\n')) {
+    const v = part.trim();
+    if (v) maxPendingAdminNames.add(v);
+  }
 }
 function saveMaxAdminExtras() {
   setSetting('max_extra_admin_ids', [...maxExtraAdminIds].join(','));
+  setSetting('max_pending_admin_names', [...maxPendingAdminNames].join('\n'));
+}
+function addMaxAdminName(raw) {
+  const v = String(raw || '').trim().replace(/\s+/g, ' ').slice(0, 64);
+  if (v.length < 2) return 'bad';
+  maxPendingAdminNames.add(v);
+  saveMaxAdminExtras();
+  return 'ok';
+}
+function removeMaxAdminName(raw) {
+  const v = String(raw || '').trim();
+  for (const n of maxPendingAdminNames) {
+    if (n.toLowerCase() === v.toLowerCase()) { maxPendingAdminNames.delete(n); saveMaxAdminExtras(); return 'ok'; }
+  }
+  return 'none';
+}
+// Возвращает имя, по которому привязали, или null. Вызывать до админской проверки.
+function bindMaxAdminByName(senderId, senderName) {
+  if (isMaxAdminId(senderId) || !maxPendingAdminNames.size) return null;
+  const name = String(senderName || '').trim();
+  if (!name) return null;
+  for (const n of maxPendingAdminNames) {
+    if (n.toLowerCase() === name.toLowerCase()) {
+      maxExtraAdminIds.add(String(senderId));
+      maxPendingAdminNames.delete(n);
+      saveMaxAdminExtras();
+      return n;
+    }
+  }
+  return null;
+}
+function maxAdminEnvIds() {
+  return String(process.env.MAX_ADMIN_ID || '').split(',').map((s) => s.trim()).filter(Boolean);
+}
+function maxAdminIdList() {
+  return [...new Set([...maxAdminEnvIds(), ...maxExtraAdminIds])];
 }
 // 'ok' | 'bad' | 'env' | 'none': админа из .env убрать нельзя, он база доступа
 function addMaxAdminId(raw) {
@@ -2081,13 +2212,16 @@ function maxAdminsText(selfId) {
   const rows = [];
   for (const id of maxAdminEnvIds()) rows.push(`• ID ${id} — из .env, убрать можно только правкой .env${id === me ? ' (это ты)' : ''}`);
   for (const id of maxExtraAdminIds) rows.push(`• ID ${id} — добавлен через бота${id === me ? ' (это ты)' : ''}`);
-  return `Админы MAX (${rows.length}):\n${rows.join('\n') || '— пока никого —'}\n\nАдмин видит админ-меню и получает уведомления о заявках. Свой ID клиент узнаёт командой /id.`;
+  for (const n of maxPendingAdminNames) rows.push(`• имя «${n}» — ждёт первого сообщения`);
+  return `Админы MAX (${rows.length}):\n${rows.join('\n') || '— пока никого —'}\n\nАдмин видит админ-меню и получает уведомления о заявках. Свой ID клиент узнаёт командой /id. Имя привязывается к первому написавшему с таким именем.`;
 }
 function maxAdminsKb() {
   const removable = [...maxExtraAdminIds];
   const rows = [];
   for (let i = 0; i < removable.length; i += 2) rows.push(removable.slice(i, i + 2).map((id) => `Убрать ID ${id}`));
-  rows.push(['Добавить по ID']);
+  rows.push(['Добавить по ID', 'Добавить по имени']);
+  const removableNames = [...maxPendingAdminNames];
+  for (let i = 0; i < removableNames.length; i += 2) rows.push(removableNames.slice(i, i + 2).map((n) => `Убрать имя ${n}`));
   rows.push(['Отмена']);
   return rows;
 }
@@ -2100,11 +2234,12 @@ const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['�
 const MAX_CANCEL = [['Отмена']];
 // Кнопки меню и навигации админки. Пока бот ждёт значение поля или шаг мастера,
 // нажатие такой кнопки обязано прервать ввод, а не уехать в него текстом.
-const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Админы', 'Добавить по ID', 'Промокоды', 'Добавить промокод', 'Убрать промокод', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
+const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Добавить промокод', 'Убрать промокод', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
 function maxIsMenuCommand(text) {
   const t = String(text || '').trim();
   return MAX_MENU_COMMANDS.has(t)
     || /^(?:Убрать ID \d+)$/.test(t)
+  || /^Убрать имя .+$/.test(t)
     || /^Полка: .+$/.test(t)
     || /^Заказы: .+$/.test(t)
     || /^Товар #\d+$/i.test(t)
@@ -2219,7 +2354,7 @@ function maxOrdersKb(res, breakdown) {
   }
   const present = [['Все', breakdown.reduce((n, x) => n + x.count, 0)], ...breakdown.map((x) => [x.status, x.count])];
   for (let i = 0; i < present.length; i += 2) rows.push(present.slice(i, i + 2).map(([st]) => `Заказы: ${st}`));
-  rows.push(['Найти заявку', 'Сводка сайта']);
+  rows.push(['Найти заявку', 'Новая заявка', 'Сводка сайта']);
   return rows;
 }
 
@@ -2236,6 +2371,7 @@ async function maxAdminMenu(userId, title) {
 
 const MAX_CFG_BUTTONS = {
   'Баннер': 'hero_title', 'Телефон': 'phone', 'Email': 'email', 'Адрес': 'address',
+  'Доставка': 'delivery_methods',
   'Ссылка ТГ': 'tg_link', 'Ссылка MAX': 'max_link', 'ИП': 'legal_name', 'ИНН': 'legal_inn', 'ОГРНИП': 'legal_ogrnip'
 };
 async function handleMaxUpdate(upd) {
@@ -2299,9 +2435,14 @@ function finishAddingProductMax(d, imageUrl) {
 }
 
 async function handleMaxMessage(senderId, senderName, text, upd) {
-  const isMaxAdmin = isMaxAdminId(senderId);
+  let isMaxAdmin = isMaxAdminId(senderId);
 
   if (text === '/id') return sendMaxMessage(senderId, `Ваш MAX ID: ${senderId}`);
+
+  // Привязка админа по имени — до любых проверок: первое сообщение человека
+  // с ожидаемым именем делает его админом и уходит из списка ожидания.
+  const boundName = bindMaxAdminByName(senderId, senderName);
+  if (boundName) { isMaxAdmin = true; await maxNotifyAdmin(`Новый админ MAX: ${senderName} (${senderId}) — привязан по имени «${boundName}».`); }
 
   const stMatch = text.match(/^(В сборку|Оплачен|Отменить|Новый|Trade-In)\s+(TG-\d+)$/i);
   if (stMatch) {
@@ -2401,6 +2542,12 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
       if (r === 'env') return sendMaxMessage(senderId, `ID ${cleanText(text)} и так админ из .env.\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
       return sendMaxMessage(senderId, `Добавили.\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
     }
+    if (sess.step === 'max_add_admin_name') {
+      const r = addMaxAdminName(cleanText(text));
+      maxSessions.delete(senderId);
+      if (r === 'bad') return sendMaxMessage(senderId, 'Нужно имя из 2+ знаков — так, как оно показано в MAX у человека.', MAX_MENU);
+      return sendMaxMessage(senderId, `Жду первое сообщение от «${cleanText(text)}» — он станет админом.\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
+    }
     if (sess.step === 'max_promo_add') {
       const r = upsertPromoRule(getSetting('promo_codes'), cleanText(text));
       maxSessions.delete(senderId);
@@ -2465,6 +2612,26 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     if (sess.step === 'max_ord_find') {
       maxSessions.set(senderId, { ...(maxSessions.get(senderId) || {}), step: 'max_ord', ordQuery: text, ordPage: 1 });
       return maxShowOrders();
+    }
+    if (sess.step === 'max_ord_new_items') {
+      const r = parseManualItems(text);
+      if (!r.ok) return sendMaxMessage(senderId, `${r.error}\nПришли состав ещё раз или «Отмена».`, MAX_CANCEL);
+      maxSessions.set(senderId, { ...(maxSessions.get(senderId) || {}), step: 'max_ord_new_fio', ordItems: r.items });
+      return sendMaxMessage(senderId, 'Шаг 2/3. ФИО покупателя:', MAX_CANCEL);
+    }
+    if (sess.step === 'max_ord_new_fio') {
+      maxSessions.set(senderId, { ...(maxSessions.get(senderId) || {}), step: 'max_ord_new_phone', ordFio: text });
+      return sendMaxMessage(senderId, 'Шаг 3/3. Телефон покупателя:', MAX_CANCEL);
+    }
+    if (sess.step === 'max_ord_new_phone') {
+      const res = createManualOrder(db, { items: sess.ordItems, fio: sess.ordFio, phone: text });
+      maxSessions.set(senderId, { ...(maxSessions.get(senderId) || {}), step: 'max_ord' });
+      if (!res.ok) {
+        maxSessions.set(senderId, { ...(maxSessions.get(senderId) || {}), step: 'max_ord_new_items' });
+        return sendMaxMessage(senderId, `${res.error}\nНачни заново: пришли состав (ID через запятую).`, MAX_CANCEL);
+      }
+      const card = orderCardText(db, res.code);
+      return sendMaxMessage(senderId, card || `Заявка ${res.code} создана.`, [...maxOrderStatusKb(res.code), [`Удалить ${res.code}`], ['К заявкам'], ...MAX_CANCEL]);
     }
     if (sess.step === 'add_brand') { sess.draft.brand = text.toUpperCase(); sess.step = 'add_series'; maxSessions.set(senderId, sess); return sendMaxMessage(senderId, 'Шаг 2/6. Серия для фильтра (fēnix, Forerunner, Apple Watch, Galaxy Watch, Suunto...):'); }
     if (sess.step === 'add_series') { sess.draft.series = text; sess.step = 'add_cat'; maxSessions.set(senderId, sess); return sendMaxMessage(senderId, 'Шаг 3/6. Категория (Спортивные часы / Дайвинг компьютеры / Фитнес-трекеры):'); }
@@ -2577,6 +2744,16 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     maxSessions.set(senderId, { step: 'max_add_admin' });
     return sendMaxMessage(senderId, 'Пришли числовой ID клиента — он узнаёт его командой /id:', MAX_CANCEL);
   }
+  if (text === 'Добавить по имени') {
+    maxSessions.set(senderId, { step: 'max_add_admin_name' });
+    return sendMaxMessage(senderId, 'Пришли отображаемое имя человека в MAX — первый написавший с таким именем станет админом:', MAX_CANCEL);
+  }
+  const admRmName = text.match(/^Убрать имя (.+)$/);
+  if (admRmName) {
+    const r = removeMaxAdminName(admRmName[1]);
+    const note = r === 'none' ? `Имени «${admRmName[1]}» нет в ожидании.` : `Имя «${admRmName[1]}» убрано из ожидания.`;
+    return sendMaxMessage(senderId, `${note}\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
+  }
   const admRm = text.match(/^Убрать ID (\d+)$/);
   if (admRm) {
     const r = removeMaxAdminId(admRm[1]);
@@ -2613,7 +2790,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     return sendMaxMessage(senderId, `Показ реквизитов: ${next === '1' ? 'Включен' : 'Выключен'}`, MAX_MENU);
   }
   if (text === 'Тексты и контакты') {
-    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН'], ['ОГРНИП', 'Отмена']]);
+    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес', 'Доставка'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН'], ['ОГРНИП', 'Отмена']]);
   }
   if (MAX_CFG_BUTTONS[text]) {
     const key = MAX_CFG_BUTTONS[text];
@@ -2675,6 +2852,10 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   if (text === 'Найти заявку') {
     maxSessions.set(senderId, { ...(maxSessions.get(senderId) || {}), step: 'max_ord_find' });
     return sendMaxMessage(senderId, 'Поиск по заявкам: номер (TG-1176), фамилия, телефон или название товара:', MAX_CANCEL);
+  }
+  if (text === 'Новая заявка') {
+    maxSessions.set(senderId, { ...(maxSessions.get(senderId) || {}), step: 'max_ord_new_items' });
+    return sendMaxMessage(senderId, 'Новая заявка вручную.\nШаг 1/3. Состав: ID товаров через запятую, количество — через x. Например: 12x2, 45', MAX_CANCEL);
   }
 
   if (text.startsWith('/pay ')) {

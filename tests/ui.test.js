@@ -382,4 +382,20 @@ describe('витрина: подсказки, шторка фильтров и �
       }
     }
   });
+
+  it('доставки в оформлении — из настроек, мусор — в дефолт', () => {
+    const g = mountFrontend();
+    g.state.settings = { ...g.state.settings, delivery_methods: 'СДЭК, Boxberry' };
+    g.renderDeliveryOptions();
+    const sel = g.document.getElementById('f-delivery');
+    assert.ok(sel.innerHTML.includes('value="Boxberry"'), sel.innerHTML.slice(0, 200));
+    assert.ok(!sel.innerHTML.includes('Почта России'));
+    g.state.settings = { ...g.state.settings, delivery_methods: '' };
+    g.renderDeliveryOptions();
+    assert.ok(g.document.getElementById('f-delivery').innerHTML.includes('Почта России'), 'пустая настройка — дефолтные три');
+    g.state.settings = { ...g.state.settings };
+    delete g.state.settings.delivery_methods;
+    g.renderDeliveryOptions();
+    assert.ok(g.document.getElementById('f-delivery').innerHTML.includes('value="СДЭК"'), 'без ключа — дефолт');
+  });
 });

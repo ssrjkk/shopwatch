@@ -46,7 +46,19 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.ok(Array.isArray(d.products) && d.products.length >= 300);
   });
 
+  it('доставка нормализуется по настройке delivery_methods', async () => {
+    const st = await (await fetch(BASE + '/api/state')).json();
+    assert.ok(typeof st.settings.delivery_methods === 'string' && st.settings.delivery_methods.includes('СДЭК'), 'настройка видна витрине');
+    await new Promise((r) => setTimeout(r, 600));
+    const bad = await fetch(BASE + '/api/order', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: [{ id: 1, qty: 1 }], customer: { fio: 'Тест', phone: '+7 900 000-00-00', delivery: 'Дроном' } }),
+    });
+    assert.equal(bad.status, 200);
+  });
+
   it('POST /api/order creates TG-XXXX without payment details', async () => {
+    await new Promise((r) => setTimeout(r, 600)); // после заказа из теста доставок
     const r = await fetch(`${BASE}/api/order`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items: [{ id: 1, name: 'Test', price: 1000, qty: 1 }], total: 1000, customer: { fio: 'Test', phone: '+7 900 000-00-00' } }),

@@ -1,7 +1,7 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
 const { DatabaseSync } = require('node:sqlite');
-const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractEncodingBlock, extractSettingsGuard, extractPromoBlock } = require('./helpers/load');
+const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractEncodingBlock, extractSettingsGuard, extractPromoBlock, extractOrderCodeFn } = require('./helpers/load');
 const { seedKey } = require('../catalog-export.js');
 
 describe('MAX bot (parity with Telegram)', () => {
@@ -13,7 +13,7 @@ describe('MAX bot (parity with Telegram)', () => {
     memdb.exec(`CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
 CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, owner_max TEXT, promo_code TEXT, discount INTEGER DEFAULT 0);`);
-    const seed = { payment_details: 'PAY', show_payment: '1', hero_title: 'H', phone: 'P', email: 'E', address: 'A', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I' };
+    const seed = { payment_details: 'PAY', show_payment: '1', hero_title: 'H', phone: 'P', email: 'E', address: 'A', delivery_methods: 'СДЭК,Почта России,Boxberry', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I' };
     for (const [k, v] of Object.entries(seed)) memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(k, v);
     memdb.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('GARMIN', 'fēnix', 'Спортивные часы', 'Fenix 8', 60000, 'img', 's');
     memdb.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('APPLE', 'Apple Watch', 'Спортивные часы', 'Ultra 2', 70000, 'img', 's');
@@ -21,7 +21,7 @@ CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQU
 
     const prelude = `
 const db = memdb;
-const defaultSettings = { hero_title: 'H', phone: 'P', email: 'E', address: 'A', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I', legal_ogrnip: 'O', payment_details: 'PAY', show_payment: '1', last_order_num: '1175' };
+const defaultSettings = { hero_title: 'H', phone: 'P', email: 'E', address: 'A', delivery_methods: 'СДЭК,Почта России,Boxberry', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I', legal_ogrnip: 'O', payment_details: 'PAY', show_payment: '1', last_order_num: '1175' };
 ${extractSettingsGuard()}
 const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?').get(k)?.value ?? '';
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
@@ -47,6 +47,7 @@ process.env.MAX_BOT_TOKEN = 'fake-token';
 process.env.MAX_ADMIN_ID = '999';
 ${extractEncodingBlock()}
 ${extractDiscountFns()}
+${extractOrderCodeFn()}
 ${extractImportBlock()}
 ${extractAdminBlock()}
 ${extractPromoBlock()}
@@ -380,5 +381,65 @@ ${extractPromoBlock()}
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Промокоды'));
     assert.match(api.lastTo(999).body.text, /Промокоды витрины/);
     assert.ok(!api.maxSessions.has('999') && !api.maxSessions.has(999), 'шаг закрыт');
+  });
+  it('бренд правится кнопкой, доставка — из настроек', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Товары и цены'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Полка: Все товары'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Товар #1'));
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Бренд #1'), 'кнопка бренда в карточке');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Бренд #1'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'COROS'));
+    assert.equal(api.db.prepare('SELECT brand FROM products WHERE id=1').get().brand, 'COROS');
+
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Тексты и контакты'));
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Доставка'), 'доставка в панели текстов');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Доставка'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'СДЭК, Boxberry'));
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='delivery_methods'").get().value, 'СДЭК, Boxberry');
+  });
+
+  it('новая заявка вручную: состав, ФИО, телефон', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Последние заказы'));
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Новая заявка'), 'кнопка в списке заявок');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Новая заявка'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'абырвалг'));
+    assert.match(api.lastTo(999).body.text, /формат/i);
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '1x2, 3'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Иван Тестов'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '123'));
+    assert.match(api.lastTo(999).body.text, /10 цифр/);
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '1x2, 3'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Иван Тестов'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '+7 900 111-22-33'));
+    const card = String(api.lastTo(999).body.text).replace(/[  ]/g, ' ');
+    assert.match(card, /ЗАЯВКА TG-/);
+    const code = card.match(/TG-\d+/)[0];
+    const row = api.db.prepare('SELECT * FROM orders WHERE order_code = ?').get(code);
+    assert.equal(row.status, 'Новый');
+    const p1 = api.db.prepare('SELECT price FROM products WHERE id=1').get().price;
+    const p3 = api.db.prepare('SELECT price FROM products WHERE id=3').get().price;
+    assert.equal(row.total, p1 * 2 + p3, 'итог пересчитан по ценам базы');
+  });
+
+  it('привязка админа по имени: ждёт, привязывает, убирается', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Админы'));
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Добавить по имени'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Добавить по имени'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'X'));
+    assert.match(api.lastTo(999).body.text, /2\+ знаков/, 'короткое имя не берут');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Добавить по имени'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Petr Petrov'));
+    assert.match(api.lastTo(999).body.text, /Жду первое сообщение/);
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='max_pending_admin_names'").get().value, 'Petr Petrov');
+    await api.handleMaxUpdate(api.upd(555, 'Ivan', 'здравствуйте'));
+    assert.match(api.lastTo(555).body.text, /Здравствуйте|менеджер/i, 'чужой не привязался');
+    await api.handleMaxUpdate(api.upd(556, 'petr petrov', 'я тут'));
+    assert.match(JSON.stringify(api.lastTo(556).body.attachments), /Добавить часы/, 'привязанный получает админ-меню');
+    await api.handleMaxUpdate(api.upd(556, 'petr petrov', '/start'));
+    assert.match(api.lastTo(556).body.text, /Админ-панель/, 'имя совпало без учёта регистра');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Админы'));
+    assert.match(api.lastTo(999).body.text, /ID 556/, 'привязанный виден в списке');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Убрать имя Petr Petrov'));
+    assert.match(api.lastTo(999).body.text, /нет в ожидании|убрано/i);
   });
 });
