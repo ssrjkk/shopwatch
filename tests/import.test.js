@@ -16,7 +16,7 @@ function loadImport() {
 
 function memdb() {
   const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);`);
+  db.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4, seed_key TEXT);`);
   return db;
 }
 
@@ -62,7 +62,7 @@ describe('Импорт каталога: разбор таблицы', () => {
     assert.equal(normalizeCategory(''), null);
     const bad = loadImport().parseImportTable('DJI;;Квадрокоптеры;DJI Avata;40000');
     assert.equal(bad.rows.length, 0);
-    assert.match(bad.errors[0].reason, /нет на витрине/);
+    assert.match(bad.errors[0].reason, /нет среди полок/);
     for (const c of IMPORT_CATEGORIES) assert.match(bad.errors[0].reason, new RegExp(c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   });
 

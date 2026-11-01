@@ -9,7 +9,7 @@ const { seedKey } = require('../catalog-export.js');
 function loadCore() {
   const memdb = new DatabaseSync(':memory:');
   memdb.exec(`CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
-CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
+CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4, seed_key TEXT);
 CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, owner_max TEXT, promo_code TEXT, discount INTEGER DEFAULT 0);
 CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
   memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('last_order_num', '1175');
@@ -19,9 +19,9 @@ CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT C
   ins.run('DEEPER', 'Chirp', 'Эхолоты', 'Chirp 3', 35000, 'img', 's');
   const getSetting = (k) => memdb.prepare('SELECT value FROM settings WHERE key = ?').get(k)?.value ?? '';
   const setSetting = (k, v) => memdb.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
-  const api = new Function('seedKey', 'db', 'getSetting', 'setSetting',
-    `${extractEncodingBlock()}\n${extractImportBlock()}\n${extractAdminBlock()}\n${extractOrderCodeFn()}\nreturn { PRODUCT_FIELD_LABELS, setProductField, parseManualItems, createManualOrder, deliveryMethods, normalizeDelivery, catalogPage, ordersPage, productById, ADMIN_PAGE, ADMIN_ORDER_PAGE };`
-  )(seedKey, memdb, getSetting, setSetting);
+  const api = new Function('seedKey', 'db', 'getSetting', 'setSetting', 'fs', 'path',
+    `${extractEncodingBlock()}\n${extractImportBlock()}\n${extractAdminBlock()}\n${extractOrderCodeFn()}\nreturn { PRODUCT_FIELD_LABELS, setProductField, parseManualItems, createManualOrder, deliveryMethods, normalizeDelivery, catalogPage, ordersPage, productById, ADMIN_PAGE, ADMIN_ORDER_PAGE, extraCategories, allStoreCategories, normalizeCategory, STORE_DESIGNS, storeDesignName, setStoreDesign };`
+  )(seedKey, memdb, getSetting, setSetting, require('fs'), require('path'));
   return { api, db: memdb, getSetting, setSetting };
 }
 
@@ -36,6 +36,45 @@ describe('ручная заявка и доставки (ядро для TG и M
     assert.equal(r.ok, true);
     assert.equal(r.row.brand, 'suunto');
     assert.equal(api.setProductField(core.db, 1, 'brand', 'x').ok, false);
+  });
+
+  it('наличие правится числом, 0 — под заказ', () => {
+    assert.ok(api.PRODUCT_FIELD_LABELS.stock, 'Наличие есть в подписях кнопок');
+    assert.equal(api.setProductField(core.db, 1, 'stock', '7').row.stock, 7);
+    assert.equal(api.setProductField(core.db, 1, 'stock', '0').row.stock, 0);
+    assert.equal(api.setProductField(core.db, 1, 'stock', 'много').ok, false);
+    assert.equal(api.setProductField(core.db, 1, 'stock', '-1').ok, false);
+  });
+
+  it('категории расширяются настройкой extra_categories', () => {
+    assert.equal(api.normalizeCategory('Квадрокоптеры', core.db), null, 'без настройки чужой полки нет');
+    core.setSetting('extra_categories', 'Квадрокоптеры, Оптика');
+    assert.deepEqual(api.extraCategories(core.db), ['Квадрокоптеры', 'Оптика']);
+    assert.ok(api.allStoreCategories(core.db).includes('Квадрокоптеры'));
+    assert.equal(api.normalizeCategory('квадрокоптеры', core.db), 'Квадрокоптеры', 'регистр не важен');
+    const r = api.setProductField(core.db, 1, 'category', 'Квадрокоптеры');
+    assert.equal(r.ok, true);
+    assert.equal(r.row.category, 'Квадрокоптеры');
+    core.setSetting('extra_categories', '');
+    assert.equal(api.normalizeCategory('Квадрокоптеры', core.db), null, 'убрали из настройки — полка закрыта');
+  });
+
+  it('смена дизайна пишет оба файла и запоминается', () => {
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'watchop-design-'));
+    fs.mkdirSync(path.join(dir, 'public'));
+    fs.writeFileSync(path.join(dir, 'public', 'index-stealth.html'), '<html>STEALTH products-data.js</html>');
+    fs.writeFileSync(path.join(dir, 'public', 'index-classic.html'), '<html>CLASSIC products-data.js</html>');
+    assert.equal(api.setStoreDesign(dir, 'classic').ok, true);
+    assert.ok(fs.readFileSync(path.join(dir, 'public', 'index.html'), 'utf8').includes('CLASSIC'));
+    assert.ok(fs.readFileSync(path.join(dir, 'index.html'), 'utf8').includes('CLASSIC'));
+    assert.equal(api.storeDesignName(core.db), 'classic');
+    assert.equal(api.setStoreDesign(dir, 'nope').ok, false, 'неизвестный дизайн отклонён');
+    fs.writeFileSync(path.join(dir, 'public', 'index-classic.html'), 'мусор без каталога');
+    assert.equal(api.setStoreDesign(dir, 'classic').ok, false, 'файл без каталога не ставим');
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 
   it('parseManualItems понимает "12x2, 45" и бракует мусор', () => {

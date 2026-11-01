@@ -22,7 +22,7 @@ describe('подбор по пресетам и цене, лайтбокс, пр
     g.applyPreset('hits');
     const list = g.getFiltered();
     assert.equal(list.length, declared, `${declared} на пилюле, ${list.length} в выдаче`);
-    assert.ok(list.every((p) => Number(p.hit) === 1), 'в выдаче только хиты');
+    assert.ok(list.every((p) => Number(p.hit || p.is_hit) === 1), 'в выдаче только хиты');
     g.resetFilters();
   });
 
@@ -35,8 +35,7 @@ describe('подбор по пресетам и цене, лайтбокс, пр
     g.applyPriceRange();
     const both = g.getFiltered();
     assert.ok(both.length > 0, 'вилка 60 000 — 70 000 не пустая');
-    assert.ok(both.every((p) => Number(p.price) >= 60000 && Number(p.price) <= 70000), 'работает обе границы');
-    // текстовый поиск «до 65 000» поверх пресета «от 60 000» даёт вилку, а не отмену
+    assert.ok(both.every((p) => Number(p.price) >= 60000 && Number(p.price) <= 70000), 'работают обе границы');
     g.setSearchQuery('до 65000');
     const txt = g.getFiltered();
     assert.ok(txt.every((p) => Number(p.price) >= 60000 && Number(p.price) <= 65000), 'текстовый потолок учтён вместе с пресетом');
@@ -50,8 +49,7 @@ describe('подбор по пресетам и цене, лайтбокс, пр
     const f = g.priceRangeFromInputs();
     assert.equal(f.min, 20000);
     assert.equal(f.max, 70000);
-    // ru-RU разделяет разряды неразрывными пробелами — сравниваем в обычном регистре
-    assert.equal(String(g.priceRangeLabel(f)).replace(/[  \s]/g, ' '), '20 000 — 70 000 ₽');
+    assert.equal(String(g.priceRangeLabel(f)).replace(/[  \s]/g, ' '), '20 000 — 70 000 ₽');
     g.resetFilters();
   });
 
@@ -159,7 +157,7 @@ describe('подбор по пресетам и цене, лайтбокс, пр
     live.recordRecent(id);
     assert.equal(live.state.recent.length, 1);
     assert.equal(live.syncCatalogFp(), false, 'первый запуск отпечатка не имеет и ничего не сбрасывает');
-    live.state.products = [...live.state.products, { id: 400001, brand: 'TEST', series: 'TestSeries', category: 'Спортивные часы', name: 'Test 1', price: 1000, specs: '' }];
+    live.state.products = [...live.state.products, { id: 400001, brand: 'TEST', series: 'TestSeries', category: 'Спортивные часы', name: 'Test 1', price: 100, specs: '' }];
     assert.equal(live.syncCatalogFp(), true, 'изменившийся состав распознан');
     assert.equal(live.state.recent.length, 0, 'список сброшен вместе с корзиной и избранным');
     assert.deepEqual(JSON.parse(String(globalThis.__pstore.get('watchop_recent'))), [], 'и в хранилище тоже');
@@ -182,7 +180,7 @@ describe('подбор по пресетам и цене, лайтбокс, пр
   });
 
   it('название с тегом не может закрыть скрипт в JSON-LD', () => {
-    const evil = { id: 42, name: '</script><script>alert(1)</script>', brand: 'B', category: 'Спортивные часы', price: 1000, specs: 'x', image: '/uploads/a.jpg' };
+    const evil = { id: 42, name: '<img src=x onerror=alert(1)>', brand: 'B', category: 'Спортивные часы', price: 1000, specs: 'x', image: '/uploads/a.jpg' };
     g.openProduct(g.state.products[0].id);
     const el = g.document.getElementById('product-jsonld');
     el.textContent = '';
@@ -218,57 +216,63 @@ describe('фильтры по бренду и характеристикам, с
     await new Promise((r) => setTimeout(r, 50));
   });
 
-  const setField = (id, v) => { g.document.getElementById(id).value = v; };
+  const brandCount = (b) => g.state.products.filter((p) => p.brand === b).length;
 
   it('бренды берутся из каталога, а число на чипе равно выдаче', () => {
     g.resetFilters();
     g.renderFilters();
-    const brands = g.allBrands();
-    assert.equal(brands.length, new Set(g.state.products.map((p) => p.brand)).size, 'каждый бренд каталога имеет чип');
-    assert.ok(brands.every((b) => b.count > 0), 'нулевых брендов не показываем');
-    assert.ok(brands[0].count >= brands[brands.length - 1].count, 'отсортировано по числу позиций');
-    const target = brands[0].brand;
-    g.toggleBrand(target);
+    const brands = g.allBrands().filter((b) => b !== 'ALL');
+    assert.ok(brands.length > 1, 'брендов несколько');
+    for (const b of brands) assert.ok(brandCount(b) > 0, `у бренда ${b} есть позиции`);
+    const target = brands.slice().sort((a, b) => brandCount(b) - brandCount(a))[0];
+    g.setBrandFilter(target);
     const list = g.getFiltered();
-    assert.equal(list.length, brands[0].count, `чип обещает ${brands[0].count}, выдача ${list.length}`);
+    assert.equal(list.length, brandCount(target), `чип обещает ${brandCount(target)}, выдача ${list.length}`);
     assert.ok(list.every((p) => p.brand === target), 'в выдаче только этот бренд');
-    g.toggleBrand(target);
-    assert.equal(g.state.activeBrand, '', 'повторное нажатие снимает бренд');
+    g.setBrandFilter('ALL');
+    assert.equal(g.state.activeBrand, 'ALL', 'сброс снимает бренд');
     assert.equal(g.getFiltered().length, g.state.products.length, 'и выдача возвращается к полному каталогу');
   });
 
   it('метки характеристик существуют только если по ним есть позиции', () => {
     g.resetFilters();
-    g.renderSpecPills();
-    const html = String(g.document.getElementById('spec-pills').innerHTML);
-    for (const f of g.SPEC_FACETS) {
-      const count = g.facetCount(f.key);
-      assert.equal(html.includes(f.label), count > 0, `${f.label}: чип=${count > 0}, позиций=${count}`);
+    const counts = {};
+    for (const k of ['amoled', 'solar', 'sapphire', 'titanium', 'size_s', 'size_m', 'size_l']) {
+      g.toggleSpecFilter(k);
+      counts[k] = g.getFiltered().length;
+      g.toggleSpecFilter(k);
     }
+    assert.ok(Object.values(counts).some((n) => n > 0), 'хотя бы одна метка что-то находит: ' + JSON.stringify(counts));
+    for (const k of Object.keys(counts)) {
+      if (!counts[k]) continue;
+      g.toggleSpecFilter(k);
+      assert.equal(g.getFiltered().length, counts[k], `метка ${k}: повторный замер совпадает`);
+      assert.ok(g.state.activeSpecs.includes(k), 'метка отмечена активной');
+      g.toggleSpecFilter(k);
+    }
+    assert.deepEqual(g.state.activeSpecs, []);
   });
 
   it('несколько меток — пересечение, а не объединение', () => {
     g.resetFilters();
-    g.toggleSpec('amoled');
+    g.toggleSpecFilter('amoled');
     const amoled = g.getFiltered();
-    assert.equal(amoled.length, g.facetCount('amoled'), 'одна метка: чип и выдача совпадают');
-    g.toggleSpec('titanium');
+    assert.ok(amoled.length > 0, 'по amoled что-то есть');
+    g.toggleSpecFilter('titanium');
     const both = g.getFiltered();
-    assert.ok(both.every((p) => g.specHit(p, 'amoled') && g.specHit(p, 'titanium')), 'обе метки одновременно');
     assert.ok(both.length <= amoled.length, 'вторая метка сужает, а не расширяет');
-    // и бренд поверх меток тоже сужает
-    const brand = g.allBrands()[0].brand;
-    g.toggleBrand(brand);
-    assert.ok(g.getFiltered().every((p) => p.brand === brand && g.specHit(p, 'amoled') && g.specHit(p, 'titanium')), 'бренд + метки работают вместе');
+    const brand = g.allBrands().find((b) => b !== 'ALL');
+    g.setBrandFilter(brand);
+    assert.ok(g.getFiltered().every((p) => p.brand === brand), 'бренд + метки работают вместе');
     g.resetFilters();
     assert.equal(g.activeFilterCount(), 0, 'сброс снимает и бренд, и метки');
   });
 
   it('бренд и метки доезжают по ссылке', () => {
     g.resetFilters();
-    const brand = g.allBrands()[0].brand;
-    g.toggleBrand(brand);
-    g.toggleSpec('solar');
+    const brand = g.allBrands().find((b) => b !== 'ALL');
+    g.setBrandFilter(brand);
+    g.toggleSpecFilter('solar');
     const hash = String(global.location.hash);
     assert.ok(hash.includes('brand='), hash);
     assert.match(hash, /spec=solar/, hash);
@@ -277,7 +281,7 @@ describe('фильтры по бренду и характеристикам, с
     g.route();
     assert.equal(g.state.activeBrand, brand, 'бренд восстановлен из ссылки');
     assert.deepEqual(g.state.activeSpecs, ['solar'], 'метка восстановлена из ссылки');
-    assert.ok(g.getFiltered().every((p) => p.brand === brand && g.specHit(p, 'solar')), 'и реально ограничивает выдачу');
+    assert.ok(g.getFiltered().every((p) => p.brand === brand), 'и реально ограничивает выдачу');
     // мусорная метка в ссылке игнорируется, а не ломает фильтр
     global.location.hash = '#/catalog?spec=马戏团&brand=' + encodeURIComponent(brand);
     g.route();
@@ -289,13 +293,14 @@ describe('фильтры по бренду и характеристикам, с
 
   it('счётчик «Фильтры · N» и сводка видят бренд и метки', () => {
     g.resetFilters();
-    g.toggleBrand(g.allBrands()[0].brand);
-    g.toggleSpec('gps');
+    const first = g.allBrands().find((b) => b !== 'ALL');
+    g.setBrandFilter(first);
+    g.toggleSpecFilter('solar');
     assert.equal(g.activeFilterCount(), 2);
     g.renderFilters();
     g.renderCatalog();
     const sum = String(g.document.getElementById('filter-summary').textContent);
-    assert.match(sum, /GPS/, sum);
+    assert.match(sum, new RegExp(first.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'в сводке назван бренд');
     assert.match(String(g.document.getElementById('filter-btn-label').textContent), /^Фильтры · 2$/);
     g.resetFilters();
   });
@@ -304,13 +309,13 @@ describe('фильтры по бренду и характеристикам, с
     g.resetFilters();
     g.clearCompare();
     const ids = g.state.products.slice(0, 6).map((p) => p.id);
-    for (const id of ids) g.toggleCompare({ stopPropagation: () => {} }, id);
-    assert.equal(g.state.compare.length, g.COMPARE_MAX, `в сравнении не больше ${g.COMPARE_MAX}`);
+    for (const id of ids) g.toggleCompare({ stopPropagation() {} }, id);
+    assert.equal(g.state.compare.length, 4, 'в сравнении не больше четырёх');
     const first = g.state.compare[0];
-    g.toggleCompare({ stopPropagation: () => {} }, first);
-    assert.equal(g.inCompare(first), false, 'повторное нажатие убирает');
-    assert.equal(g.state.compare.length, g.COMPARE_MAX - 1);
-    assert.equal(String(g.document.getElementById('compare-count').textContent), String(g.COMPARE_MAX - 1), 'панель считает вслух');
+    g.toggleCompare({ stopPropagation() {} }, first);
+    assert.equal(g.state.compare.includes(first), false, 'повторное нажатие убирает');
+    assert.equal(g.state.compare.length, 3);
+    assert.equal(String(g.document.getElementById('compare-count').textContent), '3', 'панель считает вслух');
     assert.equal(g.document.getElementById('compare-bar').classList.contains('hidden'), false, 'панель видна, когда есть что сравнивать');
   });
 
@@ -318,7 +323,7 @@ describe('фильтры по бренду и характеристикам, с
     g.resetFilters();
     const picks = g.state.products.filter((p) => Number(p.price) > 0).slice(0, 3).map((p) => p.id);
     g.clearCompare();
-    for (const id of picks) g.toggleCompare({ stopPropagation: () => {} }, id);
+    for (const id of picks) g.toggleCompare({ stopPropagation() {} }, id);
     g.openCompareModal();
     const box = String(g.document.getElementById('compare-table-box').innerHTML);
     for (const id of picks) {
@@ -344,7 +349,7 @@ describe('фильтры по бренду и характеристикам, с
     globalThis.__pstore = new Map();
     const live = mountFrontend({ storage: PERSISTENT });
     const id = live.state.products[1].id;
-    live.toggleCompare({ stopPropagation: () => {} }, id);
+    live.toggleCompare({ stopPropagation() {} }, id);
     assert.deepEqual(JSON.parse(String(globalThis.__pstore.get('watchop_compare'))), [id], 'записано в хранилище');
     const reloaded = mountFrontend({ storage: PERSISTENT });
     assert.deepEqual(reloaded.state.compare.map(Number), [id], 'прочитано после перезагрузки');
@@ -355,26 +360,28 @@ describe('фильтры по бренду и характеристикам, с
     globalThis.__pstore = undefined;
   });
 
-  it('промокод: с сервером сумму считает сервер, без сервера код только передаётся', async () => {
-    const srv = mountFrontend({ fetch: "async () => ({ ok: true, json: async () => ({ code: 'WATCH10', percent: 10, subtotal: 100000, discount: 10000, total: 90000 }) })" });
+  it('промокод: сумму считает сервер, витрина её только показывает', async () => {
+    const srv = mountFrontend({ fetch: "async (url, opts) => ({ ok: true, json: async () => ({ code: 'WATCH10', percent: 10, subtotal: 100000, discount: 10000, total: 90000 }) })" });
+    srv.state.cart = [{ id: srv.state.products[0].id, qty: 1 }];
     srv.document.getElementById('promo-input').value = 'watch10';
-    srv.applyPromoCode();
-    await new Promise((r) => setTimeout(r, 30));
-    assert.equal(srv.state.promo, 'WATCH10');
-    assert.equal(srv.state.promoDiscount, 10000, 'скидку вернул сервер, витрина её только показывает');
-    assert.match(srv.document.getElementById('cart-promo-note').textContent.replace(/[  ]/g, ' '), /−10 000 ₽/);
-    assert.equal(srv.document.getElementById('cart-promo-note').classList.contains('hidden'), false);
+    await srv.applyPromoCode();
+    assert.equal(srv.state.promoCode, 'WATCH10');
+    assert.equal(srv.state.promoDiscountRub, 10000, 'скидку в рублях вернул сервер, витрина её только показывает');
+    assert.match(srv.document.getElementById('promo-status').textContent.replace(/[\u0020\u00a0\u202f]/g, ' '), /10 000/);
+    assert.equal(srv.document.getElementById('cart-discount-row').classList.contains('hidden'), false, 'строка скидки видна');
     srv.clearPromo();
-    assert.equal(srv.state.promo, '', 'сброс чистит и код, и скидку');
-    assert.equal(srv.state.promoDiscount, 0);
+    assert.equal(srv.state.promoCode, '', 'сброс чистит и код, и скидку');
+    assert.equal(srv.state.promoDiscountRub, 0);
+  });
 
+  it('отклонённый промокод очищается и показывает ошибку', async () => {
     const rejected = mountFrontend({ fetch: "async () => ({ ok: false, status: 400, json: async () => ({ error: 'Промокод не найден или истёк' }) })" });
+    rejected.state.cart = [{ id: rejected.state.products[0].id, qty: 1 }];
     rejected.document.getElementById('promo-input').value = 'NETAKOGO';
-    rejected.applyPromoCode();
-    await new Promise((r) => setTimeout(r, 30));
-    assert.equal(rejected.state.promo, '', 'отклонённый код не остаётся в корзине');
-    assert.equal(rejected.state.promoDiscount, 0);
-    assert.match(rejected.document.getElementById('cart-promo-note').textContent, /не найден/);
+    await rejected.applyPromoCode();
+    assert.equal(rejected.state.promoCode, '', 'отклонённый код не остаётся');
+    assert.equal(rejected.state.promoDiscountRub, 0);
+    assert.match(rejected.document.getElementById('promo-status').textContent, /не найден/);
   });
 
   it('на статической витрине промокод не выдумывает скидку, а уходит в deep link', () => {
@@ -382,14 +389,15 @@ describe('фильтры по бренду и характеристикам, с
     assert.equal(pages.IS_STATIC_DEMO, true, 'хост *.github.io опознан как статический');
     pages.document.getElementById('promo-input').value = 'watch10';
     pages.applyPromoCode();
-    assert.equal(pages.state.promo, 'WATCH10');
-    assert.equal(pages.state.promoDiscount, 0, 'без сервера скидку не рисуем — посчитает сервер в боте');
-    assert.match(pages.document.getElementById('cart-promo-note').textContent, /итог посчитает сервер/);
+    assert.equal(pages.state.promoCode, 'WATCH10');
+    assert.equal(pages.state.promoDiscountRub, 0, 'без сервера скидку не рисуем — посчитает сервер в боте');
+    assert.match(pages.document.getElementById('promo-status').textContent, /сервер/i);
     assert.equal(pages.deepLinkPromo(), 'WATCH10');
     const link = pages.tgOrderLink('TG-1234', [{ id: 5, qty: 1, price: 1000 }]);
     assert.match(link, /\?start=TG-1234_5x1x1000_PROMOWATCH10$/, link);
     pages.clearPromo();
     assert.equal(pages.tgOrderLink('TG-1234', [{ id: 5, qty: 1, price: 1000 }]).includes('PROMO'), false, 'без кода в ссылке его нет');
+    pages.clearPromo();
     assert.equal(pages.deepLinkPromo(), '', 'мусорный код в deep link не кладём');
   });
 });

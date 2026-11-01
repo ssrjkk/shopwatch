@@ -14,7 +14,7 @@ return { ADMIN_PAGE, ADMIN_ORDER_PAGE, ORDER_STATUS_SET, catalogShelves, catalog
 const flat = (s) => String(s).replace(/[  ]/g, ' ');
 
 function memdb() {  const db = new DatabaseSync(':memory:');
-  db.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
+  db.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4, seed_key TEXT);
 CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, promo_code TEXT, discount INTEGER DEFAULT 0);`);
   const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?,?,?,?,?,?,?,?,?,?)');
   [
@@ -64,7 +64,7 @@ describe('Админка: каталог', () => {
     assert.equal(p1.pages, 1);
     assert.equal(p1.items.length, 4);
     const many = new DatabaseSync(':memory:');
-    many.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);`);
+    many.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4, seed_key TEXT);`);
     const ins = many.prepare('INSERT INTO products (brand, category, name, price) VALUES (?,?,?,?)');
     for (let i = 0; i < 20; i++) ins.run('BR', 'Аксессуары', `Позиция ${i}`, 1000 + i);
     const page2 = api.catalogPage(many, { page: 2 });

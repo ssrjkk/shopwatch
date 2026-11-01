@@ -11,7 +11,7 @@ describe('MAX bot (parity with Telegram)', () => {
   before(() => {
     memdb = new DatabaseSync(':memory:');
     memdb.exec(`CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
-CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
+CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4, seed_key TEXT);
 CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, owner_max TEXT, promo_code TEXT, discount INTEGER DEFAULT 0);`);
     const seed = { payment_details: 'PAY', show_payment: '1', hero_title: 'H', phone: 'P', email: 'E', address: 'A', delivery_methods: 'СДЭК,Почта России,Boxberry', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I' };
     for (const [k, v] of Object.entries(seed)) memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(k, v);
@@ -21,7 +21,7 @@ CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQU
 
     const prelude = `
 const db = memdb;
-const defaultSettings = { hero_title: 'H', phone: 'P', email: 'E', address: 'A', delivery_methods: 'СДЭК,Почта России,Boxberry', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I', legal_ogrnip: 'O', payment_details: 'PAY', show_payment: '1', last_order_num: '1175' };
+const defaultSettings = { hero_title: 'H', phone: 'P', email: 'E', address: 'A', delivery_methods: 'СДЭК,Почта России,Boxberry', extra_categories: '', store_design: 'stealth', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I', legal_ogrnip: 'O', payment_details: 'PAY', show_payment: '1', last_order_num: '1175' };
 ${extractSettingsGuard()}
 const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?').get(k)?.value ?? '';
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
@@ -214,7 +214,7 @@ ${extractPromoBlock()}
     for (const label of labels) assert.ok(kb.includes(label), `на экране нет кнопки «${label}»`);
     const covered = new Set(Object.values(api.MAX_CFG_BUTTONS));
     for (const key of api.EDITABLE_SETTINGS) {
-      assert.ok(covered.has(key) || key === 'payment_details' || key === 'show_payment', `ключ ${key} не открывается ни одним экраном`);
+      assert.ok(covered.has(key) || key === 'payment_details' || key === 'show_payment' || key === 'store_design', `ключ ${key} не открывается ни одним экраном`);
     }
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'ОГРНИП'));
     await api.handleMaxUpdate(api.upd(999, 'Admin', '304362725400111'));
@@ -419,6 +419,27 @@ ${extractPromoBlock()}
     const p1 = api.db.prepare('SELECT price FROM products WHERE id=1').get().price;
     const p3 = api.db.prepare('SELECT price FROM products WHERE id=3').get().price;
     assert.equal(row.total, p1 * 2 + p3, 'итог пересчитан по ценам базы');
+  });
+
+  it('дизайн и тексты: кнопки доставки, категорий и смены дизайна на месте', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Тексты и контакты'));
+    const cfg = JSON.stringify(api.lastTo(999).body.attachments);
+    assert.ok(cfg.includes('Доставка'), 'доставки правятся из бота');
+    assert.ok(cfg.includes('Категории'), 'категории правятся из бота');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Категории'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Квадрокоптеры, Оптика'));
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='extra_categories'").get().value, 'Квадрокоптеры, Оптика');
+    const prod = api.db.prepare("SELECT id FROM products WHERE category='Спортивные часы'").get();
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Товары и цены'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Полка: Все товары'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Товар #' + prod.id));
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Наличие #' + prod.id), 'кнопка наличия в карточке');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Наличие #' + prod.id));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '12'));
+    assert.equal(api.db.prepare('SELECT stock FROM products WHERE id=?').get(prod.id).stock, 12);
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Дизайн'));
+    const menu = JSON.stringify(api.lastTo(999).body.attachments);
+    assert.ok(menu.includes('Дизайн: Stealth') && menu.includes('Дизайн: Classic'), 'оба дизайна на выбор');
   });
 
   it('привязка админа по имени: ждёт, привязывает, убирается', async () => {

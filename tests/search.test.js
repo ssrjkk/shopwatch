@@ -1,9 +1,11 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('fs');
 const path = require('path');
 const { mountFrontend, withIds } = require('./helpers/dom');
 
 const SEED = withIds(require(path.join(__dirname, '..', 'public', 'products-data.js')));
+const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const TOTAL = SEED.length;
 const countBy = (fn) => SEED.filter(fn).length;
 const prices = (rows) => rows.map((p) => Number(p.price));
@@ -62,10 +64,10 @@ describe('витрина: поиск, фильтры и оформление н�
     assert.equal(g.document.getElementById('found-count').textContent, 'Найдено: 0');
     assert.match(g.document.getElementById('grid-status').textContent, /Ничего не найдено/);
     assert.equal(g.document.getElementById('products-grid').innerHTML, '');
-    assert.equal(g.document.getElementById('grid-reset').classList.contains('hidden'), false, 'кнопка сброса видна');
-    g.resetSearch();
+    assert.equal(g.document.getElementById('search-clear-btn').classList.contains('hidden'), false, 'кнопка сброса видна');
+    g.clearSearchInput();
     assert.equal(g.document.getElementById('found-count').textContent, `Найдено: ${TOTAL}`);
-    assert.equal(g.document.getElementById('grid-reset').classList.contains('hidden'), true, 'кнопка сброса скрыта');
+    assert.equal(g.document.getElementById('search-clear-btn').classList.contains('hidden'), true, 'кнопка сброса скрыта');
   });
 
   it('ищет по названию, бренду, серии, категории и характеристикам', () => {
@@ -137,11 +139,10 @@ describe('витрина: поиск, фильтры и оформление н�
 
   it('ввод в поиске с другой страницы переключает каталог и пишет запрос в hash', () => {
     g.switchTab('contacts');
-    assert.equal(g.state.currentView, 'contacts');
+    assert.equal(g.document.getElementById('view-contacts').classList.contains('hidden'), false);
     g.document.getElementById('search-input').value = 'эхолот';
     g.onSearchInput();
-    assert.equal(g.state.currentView, 'catalog', 'поиск сам открывает каталог');
-    g.renderSuggestionsNow();
+    assert.equal(g.document.getElementById('view-catalog').classList.contains('hidden'), false, 'поиск сам открывает каталог');
     assert.equal(decodeURIComponent(global.location.hash), '#/catalog?q=эхолот');
     assert.ok(g.state.filtered.length > 0);
   });
@@ -187,14 +188,15 @@ describe('витрина: поиск, фильтры и оформление н�
     assert.equal(g.state.filtered.length, TOTAL);
   });
 
-  it('ссылка «назад в каталог» ведёт туда, откуда пришёл покупатель', () => {
+  it('ссылка «назад» с карточки ведёт в коллекцию', () => {
     global.location.hash = '#/c/' + encodeURIComponent('Эхолоты');
     g.route();
     const anyEcholot = g.state.filtered[0];
     global.location.hash = '#/p/' + anyEcholot.id;
     g.route();
-    assert.equal(g.state.currentView, 'product');
-    assert.equal(g.document.getElementById('product-back-link').href, '#/c/' + encodeURIComponent('Эхолоты'));
+    assert.equal(g.document.getElementById('view-product').classList.contains('hidden'), false, 'карточка открыта');
+    const sec = HTML.slice(HTML.indexOf('id="view-product"'), HTML.indexOf('id="view-product"') + 500);
+    assert.match(sec, /href="#\/catalog"/, 'у карточки есть возврат в коллекцию');
   });
 
   it('заказ на GitHub Pages доходит до success и deep link, без обращения к API', async () => {
@@ -218,7 +220,7 @@ describe('витрина: поиск, фильтры и оформление н�
     assert.match(pages.document.getElementById('order-code-badge').textContent, /^TG-\d+$/);
     assert.match(pages.document.getElementById('order-tg-btn').href, /\?start=TG-\d+_\d+x1x\d+_\d+x1x\d+$/);
     assert.equal(global.__calls || 0, 0, 'и /api/order тоже не зовём');
-    assert.equal(pages.state.currentView, 'order-success');
+    assert.equal(pages.document.getElementById('view-order-success').classList.contains('hidden'), false, 'успех показан');
   });
 
   it('если бэкенд не отвечает, витрина не показывает ошибку, а уходит в deep link', async () => {
@@ -248,15 +250,15 @@ describe('витрина: поиск, фильтры и оформление н�
     assert.equal(api.state.cart.length, 1, 'корзина не очищена');
   });
 
-  it('быстрый заказ из корзины открывает бота с составом и не трогает API', () => {
+  it('быстрый заказ открывает бота с составом и не трогает API', () => {
     const pages = mountFrontend({ location: { hostname: 'ssrjkk.github.io', protocol: 'https:' } });
     pages.state.cart = [];
-    pages.addToCart(null, pages.state.products[5].id);
-    pages.addToCart(null, pages.state.products[5].id);
-    pages.quickOrder();
-    assert.match(pages.document.getElementById('order-tg-btn').href, new RegExp('\\?start=TG-\\d+_' + pages.state.products[5].id + 'x2x\\d+$'));
-    assert.equal(pages.state.cart.length, 1, 'быстрый заказ корзину не чистит — это переход в чат');
-    assert.equal(pages.state.currentView, 'order-success');
+    const pid = pages.state.products[5].id;
+    pages.quickOrder(null, pid);
+    assert.match(pages.document.getElementById('order-tg-btn').href, new RegExp('\\?start=TG-\\d+_' + pid + 'x1x\\d+$'));
+    assert.equal(pages.state.cart.length, 0, 'быстрый заказ идёт мимо корзины — это переход в чат');
+    assert.equal(pages.document.getElementById('view-order-success').classList.contains('hidden'), false, 'успех показан');
+    assert.match(pages.document.getElementById('order-code-badge').textContent, /^TG-\d+$/);
   });
 
   it('index.html и public/index.html не расходятся', () => {

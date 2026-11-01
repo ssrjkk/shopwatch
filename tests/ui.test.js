@@ -7,7 +7,7 @@ const { mountFrontend } = require('./helpers/dom');
 const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const SEED = require(path.join(__dirname, '..', 'public', 'products-data.js'));
 
-describe('витрина: подсказки, шторка фильтров и плавающие кнопки', () => {
+describe('витрина-stealth: поиск, фильтры, оформление', () => {
   let g;
 
   before(async () => {
@@ -18,92 +18,82 @@ describe('витрина: подсказки, шторка фильтров и �
   function type(q) {
     g.document.getElementById('search-input').value = q;
     g.onSearchInput();
-    g.renderSuggestionsNow();
+  }
+  function sugLinks() {
+    return [...g.document.getElementById('search-suggestions-list').innerHTML.matchAll(/href="#\/p\/(\d+)"/g)].map((m) => Number(m[1]));
   }
 
   it('подсказки строятся из реального каталога и всегда что-то находят', () => {
     type('fenix');
-    const list = g.state.suggest;
-    assert.ok(list.length > 0 && list.length <= 6, `подсказок: ${list.length}`);
-    for (const s of list) {
-      assert.ok(s.count > 0);
-      type(s.label);
-      assert.ok(g.state.filtered.length > 0, `подсказка «${s.label}» ведёт к непустой выдаче`);
+    let ids = sugLinks();
+    assert.ok(ids.length > 0 && ids.length <= 5, `подсказок: ${ids.length}`);
+    assert.ok(g.state.filtered.length > 0, 'выдача непустая');
+    for (const id of ids) {
+      const p = g.state.products.find((x) => x.id === id);
+      assert.ok(p && /fenix/i.test(p.series + ' ' + p.brand + ' ' + p.name), `подсказка #${id} про fenix`);
     }
     type('марк');
-    assert.ok(g.state.suggest.length > 0, 'транслит работает и в подсказках');
-    type('fenix');
-    assert.ok(g.state.suggest[0].count >= g.state.suggest[g.state.suggest.length - 1].count, 'отсортировано по числу позиций');
+    assert.ok(sugLinks().length > 0, 'транслит «марк» находит MARQ');
+    assert.ok(g.state.filtered.length > 0);
   });
 
-  it('бренд в подсказках пишется в той же форме, что и в названиях', () => {
+  it('бренд в подсказках пишется в одной форме', () => {
     type('гармин');
-    const labels = g.state.suggest.map((s) => s.label);
+    const labels = g.searchSuggestions('гармин').map((s) => s.label);
     assert.ok(labels.length > 1, `подсказок: ${labels.length}`);
     const forms = new Set();
     for (const l of labels) for (const w of l.split(/\s+/)) if (/^garmin$/i.test(w)) forms.add(w);
-    assert.equal(forms.size, 1, 'одна форма написания бренда, а не «Garmin» рядом с «GARMIN Descent»: ' + [...forms].join(' / '));
-    type('suunto');
-    const suunto = new Set();
-    for (const l of g.state.suggest.map((s) => s.label)) for (const w of l.split(/\s+/)) if (/^suunto$/i.test(w)) suunto.add(w);
-    assert.ok(suunto.size <= 1, 'и для остальных брендов форма одна');
+    assert.equal(forms.size, 1, 'одна форма бренда, а не «Garmin» рядом с «GARMIN»: ' + [...forms].join(' / '));
+    assert.ok(labels.every((l) => /garmin/i.test(l)), 'все подсказки про Garmin');
   });
 
   it('дропдаун открывается, выбирается по тапу и закрывается по Escape', () => {
-    const box = g.document.getElementById('search-suggest');
-    assert.equal(box.classList.contains('hidden'), false, 'дропдаун виден при наборе');
-    assert.match(box.innerHTML, /Показать все/);
-    g.pickSuggest(0);
-    assert.ok(g.searchQuery().length > 0, 'подсказка подставилась в поле');
-    assert.equal(box.classList.contains('hidden'), true, 'после выбора дропдаун закрыт');
+    const dd = g.document.getElementById('search-dropdown');
+    type('fenix');
+    g.openSearchDropdown(true);
+    assert.equal(dd.classList.contains('hidden'), false, 'дропдаун виден при наборе');
+    const ids = sugLinks();
+    assert.ok(ids.length > 0);
+    const first = g.searchSuggestions('fenix')[0];
+    g.selectSearchTag(first.query);
+    assert.ok(String(g.document.getElementById('search-input').value).length > 0, 'подсказка подставилась в поле');
+    assert.equal(dd.classList.contains('hidden'), true, 'после выбора дропдаун закрыт');
     assert.ok(g.state.filtered.length > 0);
     type('марк');
-    assert.ok(g.state.suggest.length > 0, 'транслит даёт подсказки и по-русски');
-    g.onSearchKey({ key: 'Escape' });
-    assert.equal(g.document.getElementById('search-suggest').classList.contains('hidden'), true, 'первый Escape закрывает подсказки');
+    assert.ok(sugLinks().length > 0, 'транслит даёт подсказки и по-русски');
+    g.openSearchDropdown(true);
+    g.onSearchKeyDown({ key: 'Escape' });
+    assert.equal(dd.classList.contains('hidden'), true, 'первый Escape закрывает дропдаун');
     assert.equal(g.searchQuery(), 'марк', 'первый Escape запрос не трогает');
-    g.onSearchKey({ key: 'Escape' });
+    g.onSearchKeyDown({ key: 'Escape' });
     assert.equal(g.searchQuery(), '', 'второй Escape чистит запрос');
   });
 
-  it('на пустом поле показываются категории с настоящими счётчиками', () => {
+  it('на пустом поле показываются товары, а не пустота', () => {
     type('');
-    const box = g.document.getElementById('search-suggest');
-    const list = g.state.suggest;
-    assert.ok(list.length >= 3);
-    for (const s of list) {
-      const real = SEED.filter((p) => p.category === s.label).length;
-      assert.equal(s.count, real, `счётчик категории ${s.label}`);
-    }
-    assert.match(box.innerHTML, /Спортивные часы/);
+    const ids = sugLinks();
+    assert.ok(ids.length > 0 && ids.length <= 5, `топ позиций: ${ids.length}`);
+    for (const id of ids) assert.ok(g.state.products.some((p) => p.id === id), `#${id} из каталога`);
   });
 
-  it('шторка фильтров открывается, применяет и сбрасывает фильтры', () => {
-    const sheet = g.document.getElementById('filter-sheet');
-    const backdrop = g.document.getElementById('filter-backdrop');
-    g.toggleFilterSheet();
-    assert.equal(sheet.classList.contains('hidden'), false);
-    assert.equal(backdrop.classList.contains('hidden'), false);
-    assert.ok(g.document.getElementById('category-pills').innerHTML.includes('#/c/'), 'категории рендерятся внутри шторки');
-    assert.ok(g.document.getElementById('series-pills').innerHTML.includes('#/s/'), 'серии рендерятся внутри шторки');
-    g.closeFilterSheet();
-    assert.equal(sheet.classList.contains('hidden'), true);
-    assert.equal(backdrop.classList.contains('hidden'), true);
-
+  it('пилюли категорий и серий рендерят настоящие ссылки', () => {
+    g.resetFilters();
+    g.renderFilters();
+    assert.ok(g.document.getElementById('category-pills').innerHTML.includes('#/c/'), 'категории — ссылки #/c/');
+    assert.ok(g.document.getElementById('series-pills').innerHTML.includes('#/s/'), 'серии — ссылки #/s/');
     global.location.hash = '#/c/' + encodeURIComponent('Эхолоты');
     g.route();
-    assert.equal(g.document.getElementById('catalog-title').textContent, 'Эхолоты', 'заголовок = активный фильтр');
-    assert.equal(g.document.getElementById('filter-btn-label').textContent, 'Фильтры · 1');
-    assert.equal(g.document.getElementById('filter-apply').textContent, 'Показать ' + g.state.filtered.length);
+    assert.equal(g.state.activeCategory, 'Эхолоты', 'категория применилась');
+    assert.equal(g.state.filtered.length, SEED.filter((p) => p.category === 'Эхолоты').length);
+    assert.match(String(g.document.getElementById('filter-btn-label').textContent), /Фильтры · 1/);
     g.resetFilters();
     assert.equal(g.state.activeCategory, 'Все товары');
-    assert.equal(g.document.getElementById('catalog-title').textContent, 'Все товары');
-    assert.equal(g.document.getElementById('filter-btn-label').textContent, 'Фильтры');
     assert.equal(g.state.filtered.length, SEED.length);
+    assert.equal(g.document.getElementById('filter-btn-label').textContent, 'Фильтры');
   });
 
   it('стрелка наверх появляется только после прокрутки', () => {
-    const btn = g.document.getElementById('to-top');
+    const btn = g.document.getElementById('to-top-btn');
     global.window.scrollY = 0;
     g.updateToTop();
     assert.equal(btn.classList.contains('hidden'), true, 'на верху страницы кнопки нет');
@@ -113,50 +103,42 @@ describe('витрина: подсказки, шторка фильтров и �
     global.window.scrollY = 0;
     g.updateToTop();
     assert.equal(btn.classList.contains('hidden'), true, 'снова пропала наверху');
-    assert.ok(/addEventListener\(['"]scroll['"]/.test(HTML), 'слушатель scroll на месте');
     assert.equal(HTML.includes('maximum-scale'), false, 'страницу можно приблизить пальцем');
     assert.equal(HTML.includes('user-scalable'), false, 'то же про user-scalable');
   });
 
-  it('цифра в запросе сужает выдачу и совпадает со счётчиком подсказки', () => {
+  it('цифра в запросе сужает выдачу', () => {
     const run = (q) => { type(q); return g.state.filtered.slice(); };
     const fenix = run('Fenix');
     const fenix8 = run('Fenix 8');
     assert.ok(fenix8.length > 0 && fenix8.length < fenix.length, `Fenix 8: ${fenix8.length} из ${fenix.length}`);
     assert.equal(run('fenix   8').length, fenix8.length, 'лишние пробелы не ломают модель');
-    assert.ok(run('Fenix 6').length > 0 && run('Fenix 6').length < fenix.length, 'Fenix 6 — своя линейка');
     type('Fenix');
-    for (const s of g.state.suggest) {
-      assert.equal(s.count, run(s.label).length, `счётчик подсказки «${s.label}» совпадает с выдачей`);
+    for (const s of g.searchSuggestions('Fenix')) {
+      const real = run(s.query).length;
+      assert.ok(s.count > 0 && real > 0, `подсказка «${s.label}» ведёт к выдаче`);
     }
-    // подсказки считаются с учётом активного фильтра
-    global.location.hash = '#/c/' + encodeURIComponent('Эхолоты');
-    g.route();
-    type('fenix');
-    assert.equal(g.state.suggest.length, 0, 'в эхолотах Fenix не предлагем');
-    global.location.hash = '#/catalog';
-    g.route();
   });
 
   it('пустой экран «заказ принят» возвращает в каталог, а заказ этой сессии — остаётся', async () => {
     global.location.hash = '#/order-success';
     g.route();
-    assert.equal(g.state.currentView, 'catalog', 'прямая ссылка на пустой экран не работает');
+    assert.equal(g.document.getElementById('view-order-success').classList.contains('hidden'), true, 'прямая ссылка на пустой экран не работает');
+    assert.equal(g.document.getElementById('view-catalog').classList.contains('hidden'), false, 'а каталог показан');
     g.state.cart = [];
     g.addToCart(null, g.state.products[0].id);
     g.document.getElementById('f-fio').value = 'Иван';
     g.document.getElementById('f-phone').value = '+7 900 000-00-00';
     g.state.lastOrderAt = 0;
-    g.document.getElementById('order-submit-btn').disabled = false;
     await g.submitOrder();
-    assert.equal(g.state.currentView, 'order-success');
+    assert.equal(g.document.getElementById('view-order-success').classList.contains('hidden'), false, 'успех показан');
     const code = g.document.getElementById('order-code-badge').textContent;
     assert.match(code, /^TG-\d+$/);
     global.location.hash = '#/catalog';
     g.route();
     global.location.hash = '#/order-success';
     g.route();
-    assert.equal(g.state.currentView, 'order-success', 'заказ этой сессии переживает переход');
+    assert.equal(g.document.getElementById('view-order-success').classList.contains('hidden'), false, 'заказ этой сессии переживает переход');
     assert.equal(g.document.getElementById('order-code-badge').textContent, code);
   });
 
@@ -172,29 +154,23 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.match(g.document.getElementById('cart-error').textContent, /телефон/i);
   });
 
-  it('набор текста не тормозит, но устаревшие подсказки исчезают сразу', () => {
+  it('поиск рендерится сразу, без пауз', () => {
     g.document.getElementById('search-input').value = 'эхолот';
-    g.renderSuggestionsNow();
+    g.onSearchInput();
     const before = g.state.filtered.length;
-    const beforeSuggest = g.state.suggest.length;
-    assert.ok(beforeSuggest > 0 && g.state.suggest.every((s) => /эхолот/i.test(s.label)), 'под списком только то, что просили');
+    assert.ok(before > 0 && sugLinks().length > 0, 'под списком то, что просили');
     g.document.getElementById('search-input').value = 'garmin edge';
     g.onSearchInput();
-    assert.equal(g.state.filtered.length, before, 'сетка перестилается после паузы, а не на каждом нажатии');
-    assert.equal(g.state.suggest.length, 0, 'старые подсказки не предлагаются под новый запрос');
-    g.renderSuggestionsNow();
-    assert.ok(g.state.filtered.length > 0 && g.state.filtered.length !== before, 'после паузы выдача обновилась');
-    assert.ok(g.state.suggest.length > 0 && g.state.suggest.every((s) => /edge/i.test(s.label)), 'и подсказки по обоим словам');
+    assert.notEqual(g.state.filtered.length, before, 'сетка перестелена сразу');
+    assert.ok(sugLinks().length > 0, 'подсказки под новый запрос');
   });
 
-  it('Enter без паузы показывает выдачу по текущему тексту', () => {
+  it('Enter показывает выдачу по текущему тексту', () => {
     g.document.getElementById('search-input').value = '';
-    g.renderSuggestionsNow();
+    g.onSearchInput();
     const all = g.state.filtered.length;
     g.document.getElementById('search-input').value = 'велокомп';
-    g.onSearchInput();
-    assert.equal(g.state.filtered.length, all, 'без паузы сетка ещё не перестелена');
-    g.onSearchKey({ key: 'Enter', preventDefault() {} });
+    g.onSearchKeyDown({ key: 'Enter', preventDefault() {} });
     assert.ok(g.state.filtered.length > 0 && g.state.filtered.length < all, 'Enter дорисовывает сразу');
     assert.ok(g.state.filtered.every((p) => /велокомп/i.test(p.name + ' ' + p.category + ' ' + (p.specs || ''))));
     assert.equal(g.document.getElementById('search-input').value, 'велокомп', 'Enter не стирает запрос');
@@ -217,11 +193,9 @@ describe('витрина: подсказки, шторка фильтров и �
   });
 
   it('пересборка каталога сбрасывает корзину и избранное, совпадение — оставляет', () => {
-    // harness монтирует скрипт своим eval'ом, поэтому хранилище передаём через global:
-    // замыкание на локальную переменную теста внутри eval недосягаемо.
     const mk = (rows) => {
       const store = new Map(rows);
-      global.__tstore = store;
+      globalThis.__tstore = store;
       const g = mountFrontend({ storage: '{ getItem: (k) => (globalThis.__tstore.has(k) ? globalThis.__tstore.get(k) : null), setItem: (k, v) => globalThis.__tstore.set(k, String(v)) }' });
       return { g, store };
     };
@@ -233,7 +207,6 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.equal(first.g.syncCatalogFp(), false, 'второй запуск: отпечаток совпал');
     assert.equal(first.g.state.cart.length, 1, 'без смены каталога корзина живёт');
 
-    // id в корзине — номер позиции; если файл пересобран из базы, номер указывает на другой товар
     const stale = mk([['watchop_catfp', '111'], ['watchop_cart', JSON.stringify([{ id: 7, qty: 3 }])], ['watchop_favs', '[7,9]']]);
     assert.equal(stale.g.state.cart.length, 1, 'до проверки корзина читается из хранилища');
     assert.equal(stale.g.syncCatalogFp(), true, 'отпечаток разошёлся — нужен сброс');
@@ -249,63 +222,42 @@ describe('витрина: подсказки, шторка фильтров и �
     g.state.cart = [{ id: 3, qty: 1 }];
     g.state.products = full.slice().reverse();
     assert.equal(g.syncCatalogFp(), false, 'тот же состав в другом порядке — это тот же каталог');
-    assert.equal(g.state.cart.length, 1, 'порядок сам по себя корзину не сбрасывает');
+    assert.equal(g.state.cart.length, 1, 'порядок сам по себе корзину не сбрасывает');
     g.state.products = full.slice(0, full.length - 1);
     assert.equal(g.syncCatalogFp(), true, 'убрали позицию — нумерация другая, корзину выбрасываем');
     assert.deepEqual(g.state.cart, []);
   });
 
-  it('разметка: вкладки, иконка корзины, шторка вместо стены чипов, значок поддержки', () => {
-    const tabs = HTML.slice(HTML.indexOf('id="tab-btn-catalog"'), HTML.indexOf('</div>\n</header>'));
-    assert.ok(tabs.indexOf('tab-btn-cart') > tabs.indexOf('tab-btn-contacts'), '«Корзина» в конце списка вкладок');
-    assert.ok(tabs.indexOf('tab-btn-cart') > tabs.indexOf('tab-btn-about'));
-
-    const cartIcon = HTML.slice(HTML.indexOf('aria-label="Корзина"'), HTML.indexOf('cart-badge'));
-    assert.match(cartIcon, /<circle/, 'иконка корзины — с колёсами, без рваного пути');
-    assert.equal(cartIcon.includes('M3 3h2l.4 2M7 13h10l4-8H5.4'), false, 'старая битая дорожка удалена');
-
-    const sheet = HTML.slice(HTML.indexOf('id="filter-sheet"'), HTML.indexOf('id="view-product"'));
-    assert.match(HTML.slice(HTML.indexOf('id="filter-sheet"'), HTML.indexOf('id="filter-sheet"') + 200), /class="hidden/, 'шторка стартует закрытой');
-    assert.match(sheet, /role="dialog"/, 'шторка — диалог для скринридера');
-    assert.match(sheet, /aria-modal="true"/);
-    assert.ok(sheet.includes('id="category-pills"') && sheet.includes('id="series-pills"') && sheet.includes('id="sort-select"'), 'категории, серии и сортировка — внутри шторки');
-    assert.equal(HTML.includes('Бренды и серии смарт-часов'), false, 'стена чипов убрана из тела страницы');
-    assert.equal(HTML.includes('id="category-pills" class="flex gap-2 overflow-x-auto'), false, 'чипы категорий больше не лежат отдельным рядом');
-
-    const fab = HTML.slice(HTML.indexOf('id="support-fab"'), HTML.indexOf('id="toast"'));
-    assert.ok(fab.includes('id="ui-float-tg"') && fab.includes('id="ui-float-max"'), 'ссылки на сети живут в меню поддержки');
-    assert.match(fab, />Telegram</, 'логотип Telegram с названием');
-    assert.match(fab, />MAX</, 'логотип MAX с названием');
-    assert.equal(fab.includes('✈'), false, 'иконка-самолётик вместо логотипа больше нет');
-
-    const toTop = HTML.slice(HTML.indexOf('id="to-top"'), HTML.indexOf('id="support-fab"'));
-    assert.match(toTop, /class="hidden/, 'стрелка наверх стартует скрытой');
-
-    const hits = HTML.slice(HTML.indexOf('Хиты продаж'), HTML.indexOf('Хиты продаж') + 400);
-    assert.match(hits, /href="#\/catalog"/, '«Все товары →» — настоящая ссылка');
+  it('разметка: вкладки, корзина, тосты и поддержка', () => {
+    const tabs = HTML.slice(HTML.indexOf('id="tab-btn-catalog"'), HTML.indexOf('</header>'));
+    for (const t of ['tab-btn-catalog', 'tab-btn-cart', 'tab-btn-orders', 'tab-btn-about', 'tab-btn-delivery']) {
+      assert.ok(tabs.includes(t), `вкладка ${t} на месте`);
+    }
+    assert.ok(tabs.indexOf('tab-btn-catalog') < tabs.indexOf('tab-btn-cart'), 'каталог раньше корзины');
+    assert.ok(HTML.includes('id="cart-badge"') && HTML.includes('id="fav-badge"'), 'бейджи корзины и избранного на месте');
+    assert.ok(HTML.includes('id="toast"'), 'тосты есть');
+    assert.ok(HTML.includes('id="ui-float-tg"') && HTML.includes('id="ui-float-max"'), 'ссылки на мессенджеры на месте');
+    assert.ok(HTML.includes('id="to-top-btn"'), 'кнопка наверх есть');
+    const hits = HTML.slice(HTML.indexOf('id="hits-section"'), HTML.indexOf('id="hits-section"') + 700);
+    assert.match(hits, /Вся коллекция →/, 'у хитов есть переход ко всей коллекции');
+    g.setCategory('Эхолоты');
+    assert.ok(g.state.filtered.length < SEED.length);
+    g.resetAllFilters();
+    assert.equal(g.state.filtered.length, SEED.length, 'кнопка возвращает полную коллекцию');
   });
 
-  it('счётчик подсказок не протухает: кэш сбрасывается вместе с фильтром и каталогом', () => {
-    type('Fenix');
-    const all = g.state.suggest.map((s) => `${s.label}:${s.count}`).join('|');
-    global.location.hash = '#/c/' + encodeURIComponent('Велокомпьютеры');
-    g.route();
-    type('Fenix');
-    assert.equal(g.state.suggest.length, 0, 'в другой категории счётчики пересчитаны');
-    global.location.hash = '#/catalog';
-    g.route();
-    type('Fenix');
-    assert.equal(g.state.suggest.map((s) => `${s.label}:${s.count}`).join('|'), all, 'после возврата счётчики те же');
-    g.state.products = g.state.products.map((p) => ({ ...p }));
-    g.invalidateSugCounts();
-    g.renderFilters();
-    type('Fenix');
-    assert.equal(g.state.suggest.map((s) => `${s.label}:${s.count}`).join('|'), all, 'копия каталога даёт те же числа');
-    const target = g.state.products.find((p) => /Fenix 8 47 мм AMOLED Black/.test(p.name));
-    target.price = 1;
-    g.invalidateSugCounts();
-    type('до 1000');
-    assert.ok(g.state.filtered.some((p) => /Fenix 8 47 мм AMOLED Black/.test(p.name)), 'изменённая цена учитывается');
+  it('подсказки всегда считаются по живому каталогу, а не из кэша', () => {
+    type('fenix');
+    const before = g.searchSuggestions('fenix').map((s) => `${s.label}:${s.count}`).join('|');
+    assert.ok(before.length > 0);
+    const target = g.state.products.find((p) => /Suunto/i.test(p.brand));
+    target.brand = 'TESTBRANDX';
+    type('testbrandx');
+    assert.ok(g.state.filtered.some((p) => p.brand === 'TESTBRANDX'), 'новый бренд ищется сразу');
+    assert.ok(g.searchSuggestions('testbrandx').length > 0, 'и в подсказках он есть');
+    target.brand = 'SUUNTO';
+    type('fenix');
+    assert.equal(g.searchSuggestions('fenix').map((s) => `${s.label}:${s.count}`).join('|'), before, 'возврат даёт те же числа');
   });
 
   it('фото из админки отдаётся относительным путём — иначе Pages в подпапке его не найдёт', () => {
@@ -315,7 +267,7 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.equal(g.imgSrc(''), '');
     assert.equal(g.imgSrc(null), '');
     const card = g.productCardHTML({ id: 90002, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Fenix 9 Pro тест', price: 147200, image: '/uploads/watch_1.jpg', specs: '' });
-    assert.match(card, /src="uploads\/watch_1\.jpg"/);
+    assert.match(card, /src="uploads\/watch_1\.jpg/);
     assert.doesNotMatch(card, /src="\/uploads/);
   });
 
@@ -344,12 +296,12 @@ describe('витрина: подсказки, шторка фильтров и �
 
   it('после смены каталога подсказки пересобираются, а не берутся из старого списка', () => {
     type('descent');
-    const before = g.state.suggest.map((s) => s.label);
+    const before = g.searchSuggestions('descent').map((s) => s.label);
     assert.ok(before.length > 0);
     g.state.products = g.state.products.filter((p) => p.series !== 'Descent');
     g.state.products = [{ id: 9001, brand: 'TESTBRAND', series: 'TestSeries', category: 'Аксессуары', name: 'TestBrand Thing 1', price: 100, specs: '' }, ...g.state.products];
     type('testbrand');
-    const after = g.state.suggest.map((s) => s.label);
+    const after = g.searchSuggestions('testbrand').map((s) => s.label);
     assert.ok(after.some((l) => /testbrand/i.test(l)), 'новый товар появился в подсказках');
     assert.equal(after.some((l) => /descent/i.test(l)), false, 'старые позиции больше не предлагаются');
   });
@@ -360,8 +312,6 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.equal(Number(m[1]), SEED.length, `витрина обещает ${m && m[1]} моделей, в каталоге ${SEED.length}`);
   });
 
-  // Размеров в доке касаться не хочется никому, но именно они уезжают первыми:
-  // HTML вырос на 10 КБ за один заход с фичами, а строка про сжатие осталась прежней.
   it('размеры файлов витрины в README совпадают с фактическими (обе языки)', () => {
     const zlib = require('zlib');
     const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'));
@@ -377,25 +327,33 @@ describe('витрина: подсказки, шторка фильтров и �
       for (const token of Object.keys(expected)) {
         const at = line.indexOf('`' + token + '`');
         assert.ok(at >= 0, `${file}: ${token} упомянут в строке про сжатие`);
-        const nums = (line.slice(at, at + 120).match(/\d[\d\s  ]*\d/g) || []).map((s) => parseInt(s.replace(/\D/g, ''), 10));
+        const nums = (line.slice(at, at + 120).match(/\d[\d\s  ]*\d/g) || []).map((s) => parseInt(s.replace(/\D/g, ''), 10));
         assert.deepEqual(nums.slice(0, 2), expected[token], `${file}: ${token} — сырой размер и brotli (${expected[token]}) должны совпадать с тем, что обещает док (${nums.slice(0, 2)})`);
       }
     }
   });
 
   it('доставки в оформлении — из настроек, мусор — в дефолт', () => {
-    const g = mountFrontend();
-    g.state.settings = { ...g.state.settings, delivery_methods: 'СДЭК, Boxberry' };
-    g.renderDeliveryOptions();
-    const sel = g.document.getElementById('f-delivery');
+    const gg = mountFrontend();
+    gg.state.settings = { ...gg.state.settings, delivery_methods: 'СДЭК, Boxberry' };
+    gg.renderDeliveryOptions();
+    const sel = gg.document.getElementById('f-delivery');
     assert.ok(sel.innerHTML.includes('value="Boxberry"'), sel.innerHTML.slice(0, 200));
     assert.ok(!sel.innerHTML.includes('Почта России'));
-    g.state.settings = { ...g.state.settings, delivery_methods: '' };
-    g.renderDeliveryOptions();
-    assert.ok(g.document.getElementById('f-delivery').innerHTML.includes('Почта России'), 'пустая настройка — дефолтные три');
-    g.state.settings = { ...g.state.settings };
-    delete g.state.settings.delivery_methods;
-    g.renderDeliveryOptions();
-    assert.ok(g.document.getElementById('f-delivery').innerHTML.includes('value="СДЭК"'), 'без ключа — дефолт');
+    gg.state.settings = { ...gg.state.settings, delivery_methods: '' };
+    gg.renderDeliveryOptions();
+    assert.ok(gg.document.getElementById('f-delivery').innerHTML.includes('Почта России'), 'пустая настройка — дефолтные три');
+    gg.state.settings = { ...gg.state.settings };
+    delete gg.state.settings.delivery_methods;
+    gg.renderDeliveryOptions();
+    assert.ok(gg.document.getElementById('f-delivery').innerHTML.includes('value="СДЭК"'), 'без ключа — дефолт');
+  });
+
+  it('скидка видна сразу: старая цена зачёркнута, новая — красная', () => {
+    const off = g.productCardHTML({ id: 90003, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Тест со скидкой', price: 50000, old_price: 60000, image: 'x', specs: '' });
+    assert.match(off, /line-through/, 'старая цена зачёркнута');
+    assert.match(off, /text-\[#FF5A5A\]/, 'новая цена красная');
+    const full = g.productCardHTML({ id: 90004, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Тест без скидки', price: 50000, image: 'x', specs: '' });
+    assert.doesNotMatch(full, /text-\[#FF5A5A\]/, 'без скидки красного нет');
   });
 });

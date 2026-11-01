@@ -122,7 +122,7 @@ describe('экспорт каталога из базы в файл-источн
     const { DatabaseSync } = require('node:sqlite');
     const { applySeed } = require('../catalog-export.js');
     const memdb = new DatabaseSync(':memory:');
-    memdb.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, old_price INTEGER DEFAULT 0, seed_key TEXT);
+    memdb.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4, old_price INTEGER DEFAULT 0, seed_key TEXT);
 CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
     const src = withIds(require(path.join(__dirname, '..', 'products-data.js')).slice(0, 25));
     const first = applySeed(memdb, src);
@@ -133,7 +133,7 @@ CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT C
 
     // база, доставшаяся без seed_key (старая), помечается при первом же запуске
     const legacy = new (require('node:sqlite').DatabaseSync)(':memory:');
-    legacy.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, old_price INTEGER DEFAULT 0, seed_key TEXT);
+    legacy.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4, old_price INTEGER DEFAULT 0, seed_key TEXT);
 CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
     legacy.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('GARMIN', 'fēnix', 'Спортивные часы', 'Старая позиция', 1000, 'x', 's');
     assert.equal(applySeed(legacy, [{ brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Старая позиция', price: 1000, image: 'x', specs: 's' }]).added, 0, 'дубль не добавляется');

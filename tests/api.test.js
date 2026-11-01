@@ -243,9 +243,11 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.ok(gz.body.length < plain.body.length * 0.4, `gzip ${gz.body.length} vs raw ${plain.body.length}`);
     assert.deepEqual(JSON.parse(zlib.gunzipSync(gz.body).toString('utf8')).products.length, JSON.parse(plain.body.toString('utf8')).products.length);
 
+    const plainHtml = await getRaw(`${BASE}/`, {});
+    assert.equal(plainHtml.status, 200);
     const br = await getRaw(`${BASE}/`, { 'Accept-Encoding': 'br, gzip' });
     assert.equal(br.headers['content-encoding'], 'br');
-    assert.ok(br.body.length < 30000, `брокер HTML после brotli: ${br.body.length}`);
+    assert.ok(br.body.length < plainHtml.body.length * 0.3, `брокер HTML после brotli: ${br.body.length} из ${plainHtml.body.length}`);
 
     const catalog = await getRaw(`${BASE}/products-data.js`, { 'Accept-Encoding': 'gzip' });
     assert.equal(catalog.headers['content-encoding'], 'gzip', 'JS каталога тоже жмётся');

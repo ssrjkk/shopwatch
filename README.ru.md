@@ -1,90 +1,125 @@
-# Watchop — магазин смарт-часов + боты TG / MAX
+# Watchop — smartwatch shop with Telegram and MAX admin bots
 
-[Витрина](https://ssrjkk.github.io/shopwatch/) · [Бот](https://t.me/wwwatchshop_bot) · [Хаб проектов](https://ssrjkk.github.io/) · [SSRJKK](https://github.com/ssrjkk) · [English version](README.md)
+[Shopfront](https://ssrjkk.github.io/shopwatch/) · [Bot](https://t.me/wwwatchshop_bot) · [Projects hub](https://ssrjkk.github.io/) · [SSRJKK](https://github.com/ssrjkk) · [Русская версия](README.ru.md)
 
-![Витрина Watchop: каталог, карточки товаров и цены](docs/screenshots/storefront.jpg)
+![Watchop storefront: catalog, product cards and prices](docs/screenshots/storefront.jpg)
 
-Витрина: каталог из `products-data.js` (347 позиции, выгружены из рабочей базы вместе с id), который сервер использует для засева и апгрейда БД; хиты продаж; бургер-меню со счётчиками; фильтры в шторке (категории, серии, сортировка — кнопка «Фильтры · N» рядом с заголовком «Все товары»); корзина с оформлением (ФИО/телефон/email/адрес/доставка); кликабельные карточки с характеристиками; заказ двумя путями — «Быстрый заказ» сразу уводит в бота с составом, «Перейти к оформлению» — форма с проверкой состава. Справа внизу — значок поддержки, разворачивающийся в Telegram/MAX, и стрелка «наверх», которая появляется после прокрутки. Навигация — настоящие ссылки с hash-маршрутами (`#/catalog`, `#/c/Эхолоты`, `#/s/fēnix`, `#/p/123`, поиск — `#/catalog?q=fenix`, выбранный подбор и вилка цены — `#/catalog?preset=hits&min=20000&max=60000`): открываются в новой вкладке, ими можно делиться. Deep Link `?start=TG-XXXX_IDxQTYxPRICE...` в `@wwwatchshop_bot` (бот создаёт заявку даже с GitHub Pages). Реквизиты — только в боте, на сайте их нет. Доставка по всей России (СДЭК, Почта России, Boxberry).
+Storefront: a catalog of 347 products read from `products-data.js` (exported from the live
+database together with their ids), which the server also uses to seed and upgrade the database;
+bestseller strip; burger menu with counters; filters in a bottom sheet (categories, model lines,
+sorting — a `Фильтры · N` button next to the `Все товары` heading); cart with checkout (full
+name / phone / email / address / delivery method); cards that open into full specs; two ways to
+order — `Быстрый заказ` hands the cart straight to the bot, `Перейти к оформлению` opens a form
+that checks the contents before submitting. Bottom right: a support badge that expands into
+Telegram and MAX, and a scroll-to-top arrow that appears after scrolling. Navigation uses real
+links with hash routes (`#/catalog`, `#/c/Эхолоты`, `#/s/fēnix`, `#/p/123`, search as
+`#/catalog?q=fenix`, a chosen preset and price window as
+`#/catalog?preset=hits&min=20000&max=60000`), so every view opens in a new tab and can be shared. The deep link
+`?start=TG-XXXX_IDxQTYxPRICE...` goes to `@wwwatchshop_bot`, which creates the order even when
+the page came from GitHub Pages. Payment requisites exist only in the bot, never on the site.
+Delivery across Russia (CDEK, Russian Post, Boxberry).
 
-## Поиск на витрине
+Admin button labels are quoted in Russian throughout this file because those are the literal
+strings the bots show: the shop's buyers and admins are Russian-speaking.
 
-`parseSearch` / `getFiltered` в `index.html` — по названию, бренду, серии, категории и тексту характеристик, с нормализацией (регистр, `ё→е`, лишние пробелы), словами-паразитами («для», «купить», «цена»), совпадением падежей («бега» находит «бег»), транслитом брендов и моделей («гармин», «самсунг», «феникс», «эпл вотч», «суунто рейс») и ценовыми фильтрами: «до 60000», «от 200000», «40000-50000», «60 000» (голое число от 1000 — это ±5% от цены). Пустой результат честно показывает «Найдено: 0» и кнопку сброса; ввод с любой страницы переключает в каталог и пишет запрос в hash.
+## Search on the storefront
 
-Выдача при активном поиске упорядочена по релевантности (`relScore`): совпадение в начале слова в названии — 3, внутри названия — 2, бренд/серия или категория — 2 (категория даёт ещё +2), упоминание в характеристиках — 1. Поэтому «корос пейс» показывает Pace 3 раньше VERTIX Space, «эхолот» — эхолоты, а не аккумулятор «для эхолотов», «пульсометр» — нагрудные датчики, а не часы с пульсометром в описании. Любой выбранный в шторке сортировщик («сначала дешёвые», «дороже») перекрывает релевантность.
+`parseSearch` / `getFiltered` in `index.html` match name, brand, model line, category and the
+spec text, with normalization (case, `ё→е`, collapsed whitespace), stop words stripped («для»,
+«купить», «цена»), case endings matched («бега» finds «бег») and transliteration for brands and
+models («гармин», «самсунг», «феникс», «эпл вотч», «суунто рейс»). Price filters: «до 60000»,
+«от 200000», «40000-50000», and a bare number from 1000 («60 000») means ±5% of the price. An
+empty result honestly says `Найдено: 0` and offers a reset button; typing from any page switches
+to the catalog and writes the query into the hash.
 
-Под полем — дропдаун подсказок (`searchSuggestions`): строится из реального каталога (префиксы названий до 4 слов, серии, бренд+серия, категории), у каждой подсказки число позиций, в конце — «Показать все N». На пустом поле показываются категории, отсортированные по числу товаров. Навигация стрелками, выбор по тапу/Enter, первый Escape закрывает подсказки, второй чистит запрос.
+While a query is active the result set is ordered by relevance (`relScore`): a match at the start
+of a word in the name scores 3, anywhere in the name 2, brand/model line or category 2 (a category
+match adds another 2), a mention in the specs 1. That is why «корос пейс» lists Pace 3 before
+VERTIX Space, «эхолот» lists echo sounders rather than an echo-sounder battery, and «пульсометр»
+lists chest straps rather than watches that mention a heart-rate sensor in their description. Any
+sorter chosen in the filter sheet («сначала дешёвые», «дороже») overrides relevance.
 
-## Быстрый подбор, вилка цены и дополнения на странице товара
+Below the field there is a suggestions dropdown (`searchSuggestions`) built from the live catalog:
+name prefixes up to four words, model lines, brand+model line, categories, each carrying its
+product count, and `Показать все N` at the end. An empty field shows categories ordered by product
+count. Arrow keys navigate, tap or Enter selects, the first Escape closes suggestions, the second
+clears the query.
 
-Вверху шторки фильтров — пилюли подбора: `Хиты`, `Премиум от 60 000`, `До 35 000`, и поля `От`/`До`
-для цены. Счётчик на каждой пилюле считается по тому же каталогу, из которого строится выдача, поэтому
-пилюля не может обещать 28 позиций и показывать 347 — `tests/presets.test.js` сравнивает именно эти
-два числа. Границы из трёх источников — набранного запроса («до 65000»), пресета и полей —
-пересекаются, а не перекрывают друг друга, так что запрос и пресет вместе дают вилку, а не отменяют
-друг друга. Перепутанный порядок (`70000` в `От`, `20000` в `До`) читается как вилка, а не как пустая
-выдача.
+## Quick pick, price range and product-page extras
 
-Выбор живёт в адресе: `#/catalog?preset=hits&min=20000&max=60000` воспроизводит его в новой вкладке,
-после перезагрузки и у того, кому ты прислал ссылку; `Сбросить` чистит и пресет, и оба поля. Счётчик
-`Фильтры · N` считает пресет и заполненную вилку активными фильтрами, а сводка в шторке их называет.
+At the top of the filter sheet there are preset chips — `Хиты`, `Премиум от 60 000`, `До 35 000` —
+plus `От`/`До` price fields. Every chip carries a count computed from the same catalog the result
+list reads, so a chip cannot promise 28 products and then show 347; `tests/presets.test.js` compares
+those two numbers. The three sources of a price bound — a typed query («до 65000»), the preset and
+the fields — intersect instead of overriding each other, so a query and a preset together give a
+window rather than cancelling out. A swapped range (`70000` in `От`, `20000` in `До`) is read as a
+window, not as an empty result.
 
-- **Бренды и метки характеристик.** В шторке перечислены бренды, которые реально есть в каталоге (девять, по числу позиций), и чипы по текстам характеристик: `AMOLED` 67, `Солнечная зарядка` 41, `Титан` 39, `Сапфир` 28, `GPS` 27, `ЭКГ` 7, `LTE / eSIM` 5. Чип с нулём позиций не рисуется — пустой фильтр это ловушка «нажал — ничего нет». Несколько меток пересекаются, и с брендом, пресетом, вилкой цены и набранным запросом тоже.
-- **Сравнение.** Кнопка ⚖ на карточке кладёт модель в нижнюю панель — максимум четыре; панель показывает счётчик и даёт `Сравнить` и `Очистить`. Таблица сравнивает цену, бренд, серию, полку и характеристики, заголовок колонки ведёт на страницу товара. Список хранится по id, переживает перезагрузку и сбрасывается вместе с корзиной, избранным и просмотренным при пересборке каталога.
-- **Лайтбокс фотографии.** Картинка на странице товара открывается крупно — запрос `w=1200` вместо `w=700` из карточки, с названием товара в доступной подписи; Escape и тап по фону закрывают. Адрес картинки, начинающийся с `javascript:`, `data:` или `vbscript:`, в источник не попадает.
-- **Недавно вы смотрели.** Последние 12 позиций (на витрине 6), без дублей, по id. Пересборка каталога сбрасывает список вместе с корзиной и избранным: id из старой нумерации — уже другие часы.
-- **`Product` schema для поисковиков.** Страница товара пишет JSON-LD из настоящих полей каталога — название, бренд, категория, описание, абсолютная ссылка на фото, цена в рублях и абсолютная ссылка на товар. `availability` не указываем намеренно: складских остатков в базе нет, а выдуманное — это способ получить ручную проверку. Текст товара при записи экранируется, поэтому название с `</script>` не закроет скрипт.
+The selection lives in the URL: `#/catalog?preset=hits&min=20000&max=60000` reproduces it in a new
+tab, after a reload or on the receiving end of a share, and `Сбросить` clears the preset and both
+fields. The `Фильтры · N` counter counts a preset and a filled price window as active filters, and
+the sheet summary names them.
 
-## Промокоды
+- **Brand and spec facets.** The sheet lists the brands actually present in the catalog (nine, ordered by how many positions each holds) and spec chips read from the spec text: `AMOLED` 67, `Солнечная зарядка` 41, `Титан` 39, `Сапфир` 28, `GPS` 27, `ЭКГ` 7, `LTE / eSIM` 5. A chip with zero matches is not rendered — an empty filter is a trap. Several chips intersect, and they intersect with the brand, the preset, the price window and the typed query as well.
+- **Comparison.** The ⚖ button on a card adds a model to a bottom bar, up to four; the bar shows the count and offers `Сравнить` and `Очистить`. The table compares price, brand, model line, shelf and specs, each column heading linking to that product page. The list is stored by id, survives a reload and is cleared together with cart, favorites and recently-viewed when the catalog is rebuilt.
+- **Photo lightbox.** The image on the product page opens full-size — a `w=1200` request instead of the card's `w=700` — with the product name as the accessible label; Escape or a tap on the backdrop closes it. An image address starting with `javascript:`, `data:` or `vbscript:` never reaches the lightbox.
+- **Recently viewed.** The last 12 products (6 shown) above the catalog, no duplicates, stored by id. A catalog rebuild drops the list together with cart and favorites: an id from the previous numbering is a different watch.
+- **`Product` schema for search engines.** The product page writes a JSON-LD block built from real catalog fields — name, brand, category, description, absolute image, price in RUB and an absolute product URL. `availability` is left out on purpose: the database holds no stock quantities, and inventing one is how a shop earns a manual review. Product text is escaped as it is written, so a name containing `</script>` cannot close the script tag.
 
-Правила живут в настройке базы `promo_codes` одной строкой — `WATCH10=10,GARMIN5=5:GARMIN,VIP15=15:min50000`,
-где после кода идёт процент, опционально бренд и опциональная минимальная сумма. Из коробки работают три
-кода: 10% на всю корзину, 5% только на позиции Garmin и 15% при заказе от 50 000 ₽. Порог включительный,
-скидка округляется до 10 ₽ и не может превысить сумму корзины.
+## Promo codes
 
-Поле промокода — в корзине. `Применить` зовёт `POST /api/promo-check`, и скидку считает сервер по ценам своей
-базы, а не страница: ответ содержит скидку и новую сумму. `POST /api/order` пересчитывает тот же код заново,
-кладёт `promo_code` и `discount` в заявку и отвечает суммой после скидки, поэтому правка суммы в devtools
-ничего не меняет. Незнакомый или истёкший код отбивается с причиной, а не молча оформляет заказ по полной
-цене.
+Rules live in the database setting `promo_codes` as one line — `WATCH10=10,GARMIN5=5:GARMIN,VIP15=15:min50000`
+— meaning code = percent, optionally restricted to a brand and to a minimum cart. The three seeded codes
+are 10% off the whole cart, 5% off Garmin positions only, and 15% off orders from 50 000 ₽. Thresholds are
+inclusive, the discount rounds to 10 ₽ and never exceeds the cart total.
 
-На GitHub Pages бэкенда нет, поэтому витрина не выдумывает скидку: код передаётся боту в deep link
-(`?start=TG-1234_5x1x1000_PROMOWATCH10`), и бот применяет то же серверское правило при создании заявки.
-Неприменившийся код всё равно сохраняется в заявке, и в уведомлении админ видит, почему вышло 0 ₽. Символы
-кода — латиница, цифры, `_` и `-`: deep link остаётся ASCII и ничего не нужно кодировать в процент-экспонаты.
+The promo field sits in the cart. `Применить` calls `POST /api/promo-check`, and the server — not the page —
+takes prices from its own database and returns the discount and the new total. `POST /api/order` re-evaluates
+the same code, stores `promo_code` and `discount` on the order and answers with the discounted total, so a
+price edited in devtools changes nothing. An unknown or expired code is rejected with its reason instead of
+quietly creating a full-price order.
 
-Управляют кодами оба бота: экран `Промокоды` в меню и `/promo` в Telegram. Список показывает коды с
-условиями, `Добавить промокод` ждёт строку вида `VIP20 20 GARMIN min100000`, `Убрать промокод` забирает код.
-Процент вне 1–90, код короче двух символов и неразобранное правило отвергаются с текстом.
+On GitHub Pages there is no backend, so the page does not invent a discount: it hands the code to the bot in
+the deep link (`?start=TG-1234_5x1x1000_PROMOWATCH10`), and the bot runs the same server-side evaluation when
+it creates the order. A code that did not apply is still stored, and the admin notification says why it gave
+0 ₽. Codes are Latin letters, digits, `_` and `-` — the deep link stays ASCII and nothing has to be
+percent-encoded on the way to the bot.
 
-## Демо на GitHub Pages (без сервера)
+Admins manage codes from both bots: the `Промокоды` screen in the menu, `/promo` in Telegram. It lists the
+codes with their conditions, adds one with a line like `VIP20 20 GARMIN min100000` and removes it; a percent
+outside 1–90, a code shorter than two characters and an unparseable rule are refused.
 
-Один сайт — две точки входа с одинаковыми байтами. Канон — `public/`: сервер (`node server.js`,
-Docker) раздаёт `public/index.html` + `public/products-data.js`. Корневые `index.html` и
-`products-data.js` — зеркало для Pages (Settings → Pages → Deploy from a branch → `main` / `/ (root)`),
-сайт: `https://ssrjkk.github.io/shopwatch/`. Правило: правишь только `public/`, потом
-`npm run sync:pages` — он докопирует изменившееся в корень. Тест `tests/search.test.js`
-(«не расходятся») не даёт закоммитить разъехавшиеся копии, экспорт каталога из бота пишет
-сразу в обе (`products-data.js` + `public/products-data.js`).
+## Demo on GitHub Pages (no server)
 
-Фото, загруженные через админку, лежат в `public/uploads/` и отдаются по `/uploads/...`;
-`npm run sync:pages` зеркалит их в корневой `uploads/`, иначе на Pages этот путь 404-ит и
-карточка выходит без картинки. Файлы из админки — такие же данные витрины, их коммитят в
-репозиторий.
+One site, two entry points with byte-identical files. `public/` is canonical: the server
+(`node server.js`, Docker) serves `public/index.html` + `public/products-data.js`. The root
+`index.html` and `products-data.js` are the mirror used by Pages (Settings → Pages → Deploy from a
+branch → `main` / `/ (root)`), the site lives at `https://ssrjkk.github.io/shopwatch/`. Rule: edit
+only `public/`, then run `npm run sync:pages`, which copies the changed files to the root.
+`tests/search.test.js` («не расходятся») fails if the two copies drift apart, and the catalog
+export in the bots writes both copies at once (`products-data.js` + `public/products-data.js`).
 
-Корневая витрина работает автономно: на `*.github.io` она не зовёт `/api/*` (нет лишних 404 в консоли), каталог берёт из `products-data.js`, а заказ оформляет локально — номер `TG-2xxxx` и deep link с составом, по которому бот создаёт заявку на своей стороне.
+Photos uploaded through the admin panel live in `public/uploads/` and are served as `/uploads/...`;
+`npm run sync:pages` mirrors them into the root `uploads/`, otherwise that path 404s on Pages and
+the product card renders without an image. Admin-uploaded files are storefront data like any other
+and get committed to the repository.
 
-## Запуск с сервером и ботами
+The root storefront works standalone: on `*.github.io` it never calls `/api/*` (no stray 404s in
+the console), takes the catalog from `products-data.js` and completes the order locally — it issues
+a `TG-2xxxx` number and a deep link carrying the cart, and the bot creates the order on its side.
+
+## Running with the server and the bots
 
 1. `npm install`
-2. Скопируй `.env.example` в `.env`, вставь токены:
-   - `TG_BOT_TOKEN` — токен от @BotFather
-   - `TG_ADMIN_ID` — свой ID: напиши боту `/id`, он ответит числом (несколько админов — через запятую)
-   - `TG_ADMIN_USERNAMES` — юзернеймы админов через запятую, без числа: бот сам подставит их ID при первом сообщении
-   - `MAX_BOT_TOKEN` — токен из @MasterBot / business.max.ru (бот «MAX для бизнеса» → Получить токен)
-   - `MAX_ADMIN_ID` — напиши MAX-боту `/id`, он ответит числом (несколько — через запятую; остальных добавляет админ кнопкой `Админы` в самом боте)
-3. `npm start` — сайт на http://localhost:3000
+2. Copy `.env.example` to `.env` and fill in the tokens:
+   - `TG_BOT_TOKEN` — from @BotFather
+   - `TG_ADMIN_ID` — your numeric id: message `/id` to the bot and it answers with the number (several admins: comma-separated)
+   - `TG_ADMIN_USERNAMES` — admin usernames, comma-separated, no numbers: the bot resolves them to ids on their first message
+   - `MAX_BOT_TOKEN` — from @MasterBot / business.max.ru (the «MAX для бизнеса» bot → Получить токен)
+   - `MAX_ADMIN_ID` — message `/id` to the MAX bot (several: comma-separated; more admins are added by an admin with the `Админы` button inside the bot)
+3. `npm start` — the site is on http://localhost:3000
 
-## Docker (для VPS, например rdp.sh)
+## Docker (for a VPS)
 
 ```
 docker build -t watchop .
@@ -94,132 +129,147 @@ docker run -d --name watchop -p 3000:3000 \
   watchop
 ```
 
-`.env` не копируется в образ (см. `.dockerignore`) — передаётся через `--env-file`.
-База и фото из админки лежат в volume (`DB_PATH=/data/watchop.db`, `UPLOADS_DIR=/data/uploads`), здоровье — `GET /healthz`.
+`.env` is not copied into the image (see `.dockerignore`) — it is passed with `--env-file`.
+The database and admin photos live in the volume (`DB_PATH=/data/watchop.db`,
+`UPLOADS_DIR=/data/uploads`), health check is `GET /healthz`.
 
-## Переменные окружения
+## Environment variables
 
-- `TG_BOT_TOKEN`, `TG_ADMIN_ID`, `TG_ADMIN_USERNAMES` — бот и админы: ID через `/id` у бота (список через запятую) либо юзернеймы, которые бот резолвит в ID при первом сообщении
-- `MAX_BOT_TOKEN`, `MAX_ADMIN_ID` — то же для MAX: список числовых ID через запятую. Юзернеймов MAX не отдаёт, поэтому второй путь (резолв по нику) в нём недоступен; добавленные из бота ID живут в настройке `max_extra_admin_ids` и переживают перезапуск
-- `WEBAPP_URL` — публичный HTTPS мини-приложения (кнопка web_app в ТГ)
-- `SHOP_URL` — публичная витрина (кнопка-ссылка в ботах, если нет `WEBAPP_URL`)
-- `CORS_ORIGIN` — разрешённые origins через запятую (по умолчанию same-origin)
-- `ORDER_COOLDOWN_MS` — антиспам-кулдаун (по умолчанию 5000)
-- `DB_PATH` — путь к SQLite (по умолчанию `watchop.db`)
-- `UPLOADS_DIR` — папка фото из админки (по умолчанию `public/uploads`; в Docker — `/data/uploads`, чтобы переживать пересборку образа)
-- `GITHUB_PUSH_TOKEN` — опционально: fine-grained PAT с `Contents: Write` на этот репозиторий, нужен, чтобы кнопка «Выгрузить и опубликовать» работала там, где у git нет сохранённых кредов (например, в контейнере на VPS). Не задан — пуш идёт через сохранённые креды. В коммит и в `.git/config` токен не попадает, из сообщений об ошибках вырезается
-- `GITHUB_PUSH_REMOTE`, `GITHUB_PUSH_BRANCH` — куда и в какую ветку пушить (по умолчанию `https://github.com/ssrjkk/shopwatch/`, `main`)
+- `TG_BOT_TOKEN`, `TG_ADMIN_ID`, `TG_ADMIN_USERNAMES` — the bot and its admins: ids from `/id` (comma-separated list) or usernames, which the bot resolves to ids at the first message
+- `MAX_BOT_TOKEN`, `MAX_ADMIN_ID` — the same for MAX: a comma-separated list of numeric ids. MAX does not expose usernames in its updates, so the username path is not available there; ids added from the bot are stored in the `max_extra_admin_ids` setting and survive a restart
+- `WEBAPP_URL` — public HTTPS URL of the Mini App (the web_app button in Telegram)
+- `SHOP_URL` — public storefront URL (the link button in both bots when `WEBAPP_URL` is absent)
+- `CORS_ORIGIN` — allowed origins, comma-separated (same-origin by default)
+- `ORDER_COOLDOWN_MS` — anti-spam cooldown (5000 by default)
+- `DB_PATH` — SQLite path (`watchop.db` by default)
+- `UPLOADS_DIR` — folder for admin photos (`public/uploads` by default; in Docker `/data/uploads`, so it survives an image rebuild)
+- `GITHUB_PUSH_TOKEN` — optional: a fine-grained PAT with `Contents: Write` on this repository, needed for the `Выгрузить и опубликовать` button where git has no stored credentials (for example inside a container on a VPS). Unset — the push uses stored credentials. The token never reaches a commit or `.git/config` and is stripped from error output
+- `GITHUB_PUSH_REMOTE`, `GITHUB_PUSH_BRANCH` — where to push and into which branch (`https://github.com/ssrjkk/shopwatch/`, `main` by default)
 
-Без токенов сервер работает в демо-режиме. `.env` не коммитится (см. `.gitignore`).
+Without tokens the server still runs in demo mode. `.env` is not committed (see `.gitignore`).
 
-## Telegram-бот (админка)
+## Telegram bot (admin panel)
 
-- `Добавить часы` — мастер: бренд → серия → категория → название → цена → описание → фото с телефона или ссылка
-- `Товары и цены` — браузер каталога: полки со счётчиками → страница по 8 позиций (листается) → карточка товара. В карточке правится любое поле: `Название`, `Бренд`, `Серия`, `Полка`, `Цена`, `Описание`, `Фото` (ссылка или файлом), `В хиты` / `Убрать из хитов`, `Скидка`, `Удалить` (с подтверждением). `Скидка` — процент 1–90, цена пересчитывается с округлением до 10 ₽, прежняя уходит в `old_price` и на витрине показывается серой зачёркнутой; повторная скидка считается от `old_price`, «Снять скидку» возвращает цену. `Найти` ищет по названию, бренду, серии и описанию без учёта регистра (и по-русски тоже). Чтобы GitHub Pages увидел изменения — `Экспорт каталога` + коммит `products-data.js`
-- `Реквизиты оплаты` — изменить текст / скрыть-показать на сайте
-- `Тексты и контакты` — баннер, телефон, email, адрес, способы доставки, ссылки ТГ/MAX, ИП/ИНН/ОГРНИП. Меняются только публичные настройки из списка `EDITABLE_SETTINGS`; служебный счётчик номеров заявок `last_order_num` из бота не перезаписывается — его порча ломает выдачу кодов, и в обоих ботах на это есть отказ с прямым текстом
-- `Фото на стоках` — отчёт по картинкам: сколько позиций со своим фото из админки, по каким хостам разложены остальные и какие фотографии повторяются на нескольких товарах. Нужен, потому что каталог собран на стоках Unsplash, и витрина выглядит макетом, а не магазином
-- `Последние заказы` — браузер заявок: фильтр по статусу со счётчиками, поиск по номеру/фамилии/телефону/товару, карточка (состав, суммы, клиент, доставка, TG покупателя), смена статуса (`Новый`, `Trade-In`, `В сборке`, `Оплачен`, `Отменен`), удаление с подтверждением и переход к списку, плюс `Новая заявка` — ручной заказ в три шага (состав вида `12x2, 45`, ФИО, телефон), сумма считается по ценам базы. Те же статусы работают кнопками в уведомлении о новой заявке
-- `Сводка сайта` — товары по полкам, число хитов и позиций со скидкой, заявки по статусам, за 7 дней, сколько ждут действия, оплачено на сумму, показаны ли реквизиты
-- `Экспорт каталога` — превью расхождения базы и файла; `Выгрузить` перезаписывает `products-data.js` и `public/products-data.js`, сохраняет старую копию в `.bak` и присылает файл документом; `Выгрузить и опубликовать` показывает, что уйдёт в репозиторий, и после `Подтвердить публикацию` делает коммит и push — витрина на GitHub Pages обновляется сама
-- `Импорт товаров` — массовая выкладка: таблицу можно прислать текстом или файлом `.csv`/`.txt` (`.xlsx` попросит пересохранить в CSV). Столбцы `бренд;серия;категория;название;цена;описание;фото`, разделитель `;`, таб или запятая, строка-шапка распознаётся. Бот сначала показывает разбор: сколько новых позиций, сколько уже есть в базе (по ключу бренд+серия+категория+название — правка цены не считается новой позицией) и какие строки не прошли и почему. Запись — только после кнопки `Записать`, одной транзакцией: при сбое не записывается ни строки. Категории строго те, что на витрине, список сторожит тест. До 2000 строк за раз, файл до 2 МБ
-- `Промокоды` (и `/promo`) — список активных кодов с условиями, `Добавить промокод` ждёт строку вида `VIP20 20 GARMIN min100000`, `Убрать промокод` забирает код. Правила лежат в настройке `promo_codes` и переживают перезапуск; неверный процент и короткий код отвергаются с текстом
-- `Админы` — список админов с источником (`.env` или бот); добавить по ID или юзернейму, убрать добавленных через бота. Админы из `.env` из бота не убираются. Добавленные хранятся в настройках БД (`tg_extra_admin_ids`, `tg_extra_admin_usernames`) и переживают перезапуск; юзернейм резолвится в ID при первом сообщении человека боту и тоже запоминается
-- Клиентам: отправь номер `TG-XXXX` — бот пришлет состав, сумму и реквизиты
-- `/id` — узнать свой Telegram ID
+- `Добавить часы` — wizard: brand → model line → category → full name → price → description → photo from the phone or a link
+- `Товары и цены` — catalog browser: shelves with counters → a page of 8 products (paginated, SQL `COUNT` + `LIMIT/OFFSET`) → product card. Every field is editable from the card: `Название`, `Бренд`, `Серия`, `Полка`, `Цена`, `Наличие`, `Описание`, `Фото` (link or file), `В хиты` / `Убрать из хитов`, `Скидка`, `Удалить` (with confirmation). `Скидка` takes a percentage 1–90, the price is recalculated rounded to 10 ₽, the previous price moves to `old_price` and shows on the storefront as grey struck-through text; a second discount is computed from `old_price`, and `Снять скидку` restores the price. `Найти` searches name, brand, model line and description, case-insensitively, including Russian text. For GitHub Pages to see the changes — `Экспорт каталога` plus a commit of `products-data.js`
+- `Реквизиты оплаты` — edit the requisites text, hide or show it on the site
+- `Тексты и контакты` — banner, phone, email, address, delivery methods (`delivery_methods`), custom shelves (`extra_categories`), Telegram/MAX links, legal name, INN and OGRNIP. Only public settings from the `EDITABLE_SETTINGS` list can be changed; the order-number counter `last_order_num` is refused in both bots with an explicit message, because corrupting it breaks number allocation
+- `Фото на стоках` — image report: how many products carry a photo uploaded through the admin panel, which hosts the rest sit on, and which images are reused across several products. Needed because the catalog was assembled on Unsplash stock photos, which makes the storefront look like a mockup rather than a shop
+- `Последние заказы` — order browser: filter by status with counters, search by number / surname / phone / product, order card (contents, totals, customer, delivery, buyer's Telegram), status change (`Новый`, `Trade-In`, `В сборке`, `Оплачен`, `Отменен`), deletion with confirmation and a jump back to the list, plus `Новая заявка` — a manual order in three steps (items like `12x2, 45`, name, phone) priced from the database. The same statuses are buttons inside the new-order notification
+- `Сводка сайта` — products per shelf, number of hits and discounted products, orders by status, last 7 days, how many wait for action, revenue paid so far, whether requisites are shown
+- `Экспорт каталога` — preview of the difference between the database and the file; `Выгрузить` rewrites `products-data.js` and `public/products-data.js`, keeps the old copy in `.bak` and sends the file as a document; `Выгрузить и опубликовать` shows what will go into the repository and, after `Подтвердить публикацию`, commits and pushes — the Pages storefront refreshes by itself
+- `Импорт товаров` — bulk listing: send the table as text or as a `.csv`/`.txt` file (`.xlsx` asks to be re-saved as CSV). Columns `бренд;серия;категория;название;цена;описание;фото`, separator `;`, tab or comma, a header row is recognized. The bot shows the breakdown first: how many new products, how many are already in the database (matched by brand+model line+category+name — a price change is not a new product) and which rows were rejected and why. Writing happens only after the `Записать` button and in one transaction: on failure not a single row is stored. Categories are exactly the ones on the storefront, and a test guards that list. Up to 2000 rows at a time, file up to 2 MB
+- `Дизайн` — storefront design switch: Stealth Titanium or Classic Light (writes public/index.html and the root, then «Экспорт каталога» + commit)
+- `Промокоды` (and `/promo`) — the list of active codes with their conditions, `Добавить промокод` expects a line like `VIP20 20 GARMIN min100000`, `Убрать промокод` takes the code. Rules are stored in `promo_codes` and survive a restart; invalid percent or code is refused with a text
+- `Админы` — roster with the source of each entry (`.env` or the bot); add by id or username, remove the ones the bot added. Admins from `.env` cannot be removed from the bot. Added entries are stored in the database settings (`tg_extra_admin_ids`, `tg_extra_admin_usernames`) and survive a restart; a username resolves to an id at that person's first message to the bot and is remembered
+- Customers: send the number `TG-XXXX` and the bot replies with the contents, the total and the requisites
+- `/id` — your own Telegram id
 
-## MAX-бот (те же экраны админки, что в Telegram)
+## MAX bot (the same admin screens as Telegram)
 
-Управление сайтом построено на общих функциях работы с базой, поэтому MAX-бот повторяет
-витрину админки один в один (домен `platform-api2.max.ru`, авторизация заголовком `Authorization`):
+Site administration is built on shared database functions, so the MAX bot repeats the admin
+screens one by one (domain `platform-api2.max.ru`, header `Authorization`):
 
-- Меню: `Добавить часы` (мастер 6 шагов + фото/ссылка), `Товары и цены` (полки → страница → карточка: `Название #ID`, `Бренд #ID`, `Серия #ID`, `Полка #ID`, `Цена #ID`, `Описание #ID`, `Фото #ID`, `В хиты #ID`, `Скидка #ID`, `Удалить #ID` с подтверждением, `Найти товар`, листание `Каталог ←/→`), `Реквизиты оплаты` (изменить/скрыть-показать), `Тексты и контакты` (Баннер/Телефон/Email/Адрес/Доставка/Ссылка ТГ/Ссылка MAX/ИП/ИНН/ОГРНИП), `Последние заказы` (фильтр `Заказы: СТАТУС`, `Заявка TG-XXXX`, `Найти заявку`, `Новая заявка`, смена статуса, удаление), `Экспорт каталога` → `Подтвердить экспорт`, `Выгрузить и опубликовать` → `Подтвердить публикация`, `Импорт товаров` → `Записать N`, `Админы` (`Добавить по ID`, `Добавить по имени`, `Убрать ID N`, `Убрать имя ...`), `Промокоды` (`Добавить промокод`, `Убрать промокод`), `Сводка сайта`, `Фото на стоках`, `Отмена` — сброс шага
-- Кнопка меню всегда важнее ввода: пока бот ждёт значение поля или шаг мастера, нажатие кнопки админки прерывает ввод, а не уезжает в него текстом. Поиск заявки по номеру в админке не перехватывается клиентским экраном заказа
-- Старые команды тоже работают: `/orders`, `/pay ТЕКСТ`, `/add БРЕНД | СЕРИЯ | НАЗВАНИЕ | ЦЕНА`, `/del ID`, `/products`, `/export`, `/id`
-- Клиентам: номер `TG-XXXX` — состав + сумма + реквизиты; остальное пересылается админу
-- Примечание: long polling подходит для теста; для продакшена MAX рекомендует Webhook (`POST /subscriptions`)
-- Мульти-админ теперь в обоих ботах. В Telegram — по ID (`TG_ADMIN_ID` списком) и по юзернейму (`TG_ADMIN_USERNAMES`, который резолвится в ID при первом сообщении человека). В MAX — по числовым ID (`MAX_ADMIN_ID` списком плюс добавленные кнопкой `Админы` → `Добавить по ID`) и по ожидаемым именам (`Добавить по имени`): MAX не отдаёт юзернейм в обновлениях, только отображаемое имя, поэтому бот привязывает первого написавшего с совпавшим именем. Экран `Админы` в обоих ботах помечает источник: из `.env` или из бота, и убирает только добавленных ботом
-- Остальные экраны админки (каталог с правкой полей, скидки, заявки со статусами и удалением, импорт, сводка, отчёт по картинкам, публикация) — общие с Telegram и покрыты тестами на реальном MAX-диспетчере (`tests/max.test.js`). Живьём MAX не проверялся нигде: `MAX_BOT_TOKEN` пуст, так что тесты подтверждают логику вызова, а не ответ платформы
+- Menu: `Добавить часы` (6-step wizard + photo or link), `Товары и цены` (shelves → page → card: `Название #ID`, `Бренд #ID`, `Серия #ID`, `Полка #ID`, `Цена #ID`, `Наличие #ID`, `Описание #ID`, `Фото #ID`, `В хиты #ID`, `Скидка #ID`, `Удалить #ID` with confirmation, `Найти товар`, paging `Каталог ←/→`), `Реквизиты оплаты` (edit / hide-show), `Тексты и контакты` (banner / phone / email / address / delivery methods / categories / Telegram link / MAX link / legal name / INN / OGRNIP), `Последние заказы` (filter `Заказы: СТАТУС`, `Заявка TG-XXXX`, `Найти заявку`, `Новая заявка`, status change, deletion), `Экспорт каталога` → `Подтвердить экспорт`, `Выгрузить и опубликовать` → `Подтвердить публикация`, `Импорт товаров` → `Записать N`, `Админы` (`Добавить по ID`, `Добавить по имени`, `Убрать ID N`, `Убрать имя ...`), `Промокоды` (`Добавить промокод`, `Убрать промокод`), `Сводка сайта`, `Фото на стоках`, `Дизайн` (`Дизайн: Stealth` / `Дизайн: Classic`), `Отмена` — resets the current step
+- A menu button always outranks free text: while the bot waits for a field value or a wizard step, pressing an admin button aborts the input instead of feeding it in as text. Looking up an order by number inside the admin panel is not intercepted by the customer order screen
+- Legacy commands still work: `/orders`, `/pay TEXT`, `/add BRAND | LINE | NAME | PRICE`, `/del ID`, `/products`, `/export`, `/id`
+- Customers: the number `TG-XXXX` returns contents + total + requisites; anything else is forwarded to the admins
+- Note: long polling is fine for testing; for production MAX recommends a Webhook (`POST /subscriptions`)
+- Multiple admins work in both bots now. In Telegram — by id (`TG_ADMIN_ID` as a list) and by username (`TG_ADMIN_USERNAMES`, resolved to an id at the first message). In MAX — numeric ids (`MAX_ADMIN_ID` as a list plus ids added through `Админы` → `Добавить по ID`) and pending display names (`Добавить по имени`): MAX updates carry no username, only the shown name, so the bot binds the first writer whose name matches, case-insensitively. The `Админы` screen in both bots marks where each entry came from — `.env` or the bot — and removes only the ones added by the bot
+- The remaining admin screens (catalog with field editing, discounts, orders with statuses and deletion, import, summary, image report, publishing) are shared with Telegram and covered by tests running against the real MAX dispatcher (`tests/max.test.js`). MAX has not been exercised live anywhere: `MAX_BOT_TOKEN` is empty, so the tests prove the calling logic, not the platform's response
 
-## Каталог: база и файл
+## Catalog: database and file
 
-`products-data.js` (он же `public/products-data.js`, тест следит, чтобы копии не расходились) — источник для витрины без бэкенда и для засева пустой базы. Позиции в файле содержат `id`, поэтому пустая база воспроизводит файл один в один, и `#/p/<id>` и payload заказа значат один и тот же товар и на сервере, и на GitHub Pages.
+`products-data.js` (and `public/products-data.js`, with a test guarding that the two copies stay
+identical) is the catalog source for the backend-less storefront and for seeding an empty database.
+Rows carry their `id`, so an empty database reproduces the file exactly, and `#/p/<id>` plus the
+order payload mean the same product both on the server and on GitHub Pages.
 
-Сервер при старте добавляет в базу то, чего в ней нет, но не воскрешает удалённое: таблица `seed_marks` хранит ключи позиций, которые в базе уже были, а картинки админки больше не перезаписываются файлом. Отсюда расхождение: в рабочей базе может быть больше позиций, чем в файле — например, товары, добавленные через админку. Лечится кнопкой `Экспорт каталога` в боте: она пишет актуальную базу в обе копии файла (предыдущая версия остаётся в `products-data.js.bak`), присылает файл документом и напоминает, что его надо закоммитить — Pages берёт каталог из репозитория. Экспорт блокируется, если позиций в базе меньше, чем в файле; запись идёт через временный файл с проверкой, что он читается, и откатом из `.bak`, поэтому битый результат не может ни испортить рабочий файл, ни перезаписать резервную копию.
+On start the server adds to the database whatever the file has and does not resurrect deleted rows:
+the `seed_marks` table keeps the keys of products the database already saw, and admin photos are
+never overwritten from the file. Hence the expected difference: the live database can hold more
+products than the file, for example items created in the admin panel. That is fixed with the
+`Экспорт каталога` button, which writes the current database into both copies of the file (the
+previous version stays in `products-data.js.bak`), sends the file as a document and reminds you to
+commit it — Pages takes the catalog from the repository. The export refuses to run when the
+database holds fewer products than the file, and writing goes through a temporary file that is
+verified to parse before it replaces anything, with a rollback from `.bak`, so a broken result can
+neither corrupt the working file nor overwrite the backup.
 
-## Витрина: скорость
+## Storefront: speed
 
-Замерено на рабочем каталоге (347 позиции), а не на глаз:
+Measured against the working catalog of 347 products, not eyeballed:
 
-- **Сжатие.** Сервер отдаёт HTML/JS/JSON через brotli, если клиент его принимает, иначе gzip (`zlib`, без новых зависимостей); замер живым GET'ом: `index.html` — 122 796 Б → 28 373 Б, `/api/state` — 135 347 Б → 17 906 Б, `products-data.js` — 116 661 Б → 9 898 Б. Картинки и ответы меньше 1 КБ не оборачиваем, `Vary: Accept-Encoding` ставится, ETag и 304 продолжают работать. GitHub Pages жмёт сам, отсюда выигрыш на локальном запуске и на VPS.
-- **Оконная сетка каталога.** В DOM живёт не больше 60 карточек, сколько ни листай: сверху и снизу — заглушки высотой с убранное, так что полоса прокрутки не прыгает. До этого сетка только дописывалась: после полного пролистывания 347 карточек и 3470 узлов вместо 60 и 600. Проверка числом — в `tests/virtual.test.js`.
-- **Размер картинок по слоту.** В базе запечён `w=600`, хотя карточка в макете `max-w-md` — 181px, а превью в корзине — 64px. Витрина просит `w=400` для карточки, `w=700` для страницы товара и `w=160`/`w=140` для миниатюр. Для Unsplash добавляется `fm=webp`: проверено по факту — `Content-Type: image/webp`, сигнатура `RIFF…WEBP`, 7 786 Б вместо 10 882 Б на карточку (−28%). Чужие хосты (Wikimedia) не переписываем — они параметр ширины не понимают.
-- **Кэш фото.** `/uploads/...` отдаётся с `Cache-Control: public, max-age=31536000, immutable` — имя файла уникально на каждую загрузку, поэтому устареть он не может. Сама витрина кэшироваться навсегда не может (`max-age=0`), иначе правка цены не отобразилась бы до сброса кэша.
-- **Окно и в избранном.** Тот же ограничитель, что и в каталоге: больше 60 карточек в DOM не попадает на любой глубине прокрутки.
-- **Индексы БД.** `products(category)`, `products(is_hit)`, `orders(status)`, `orders(created_at)`: полки, хиты, фильтры сводки и заявки за 7 дней читаются индексами, планы показывает `EXPLAIN QUERY PLAN`.
-- **Что НЕ оптимизировали и почему.** Поиск по каталогу: `getFiltered()` на 347 позициях стоит 0.02–0.31 мс, предвычисление снипов только добавило бы кода. Чтение базы из-под сервера: `/api/state` отвечает за 5–11 мс целиком.
+- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 282 953 B → 53 369 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 116 661 B → 9 898 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
+- **Windowed catalog grid.** Never more than 60 cards in the DOM, however far you scroll: spacers above and below hold the height of what is hidden, so the scrollbar does not jump. Before this the grid only ever grew — after scrolling to the end it held 347 cards and 3470 nodes instead of 60 and 600. The numeric check is in `tests/virtual.test.js`.
+- **Images sized to their slot.** The database baked in `w=600` although a card in the `max-w-md` layout is 181 px and a cart thumbnail is 64 px. The storefront now asks for `w=400` on a card, `w=700` on the product page and `w=160`/`w=140` for thumbnails. Unsplash URLs also get `fm=webp`, verified by fact — `Content-Type: image/webp`, a `RIFF…WEBP` signature, 7 786 B instead of 10 882 B per card (−28%). Other hosts (Wikimedia) are left as they are: they do not understand the width parameter.
+- **Photo cache.** `/uploads/...` is served with `Cache-Control: public, max-age=31536000, immutable` — the file name is unique per upload, so it cannot go stale. The storefront HTML itself cannot be cached forever (`max-age=0`), otherwise a price change would not appear until the visitor cleared the cache.
+- **Favorites use the same window.** The same limiter as in the catalog: over 60 cards never reach the DOM at any scroll depth.
+- **Database indexes.** `products(category)`, `products(is_hit)`, `orders(status)`, `orders(created_at)`: shelves, hits, summary filters and the 7-day order window are read through indexes, plans shown by `EXPLAIN QUERY PLAN`.
+- **What was not optimized, and why.** Catalog search: `getFiltered()` over 347 products costs 0.02–0.31 ms, and precomputing snippets would only add code. Reading the database under the server: `/api/state` answers in 5–11 ms end to end.
 
-## Мини-приложение Telegram (Mini App)
+## Telegram Mini App
 
-Та же витрина открывается внутри Telegram:
+The same storefront opens inside Telegram:
 
-1. Задеплой бота на публичный HTTPS (VPS/rdp.sh) и задай в `.env`: `WEBAPP_URL=https://<твой-домен>`
-2. В @BotFather: `/setmenubutton` → выбери `@wwwatchshop_bot` → пришли `WEBAPP_URL` + текст «Магазин»
-   (или `/newapp` для отдельной иконки приложения)
-3. Бот сам покажет кнопку «Открыть магазин» (web_app) в `/start` — и клиентам, и админу
+1. Deploy the bot on public HTTPS (VPS) and set in `.env`: `WEBAPP_URL=https://<your-domain>`
+2. In @BotFather: `/setmenubutton` → choose `@wwwatchshop_bot` → send the `WEBAPP_URL` and the label «Магазин»
+   (or `/newapp` for a separate app icon)
+3. The bot shows the `Открыть магазин` (web_app) button in `/start` — to customers and admins alike
 
-Что умеет мини-апп: `telegram-web-app.js`, `ready/expand`, тема из `themeParams`,
-`BackButton` (назад в каталог), `MainButton` («Заказать • цена» на карточке товара),
-`disableVerticalSwipes`, `HapticFeedback` при заказе, подпись `initData`
-уходит в `POST /api/order` и проверяется сервером (`verifyTelegramInitData`: подпись + свежесть < 24ч, иначе `403`).
+What the Mini App uses: `telegram-web-app.js`, `ready`/`expand`, the theme from `themeParams`,
+`BackButton` (back to the catalog), `MainButton` (`Заказать • price` on the product page),
+`disableVerticalSwipes`, `HapticFeedback` on ordering, and the `initData` signature sent to
+`POST /api/order`, verified by the server (`verifyTelegramInitData`: signature plus `auth_date`
+younger than 24 hours, otherwise `403`).
 
-## API сайта
+## HTTP API
 
-- `GET /api/state` → `{ settings, products }` (реквизитов `payment_details` в ответе нет — они только в боте)
-- `POST /api/promo-check {code, items}` → `{ code, percent, subtotal, discount, total }` или `400` с причиной; цены берутся из базы, неизвестный код отбивается
-- `POST /api/order {items, total, customer}` → `{ orderCode: TG-XXXX, total }`, цены и названия сервер пересчитывает по своей БД, телефон — минимум 10 цифр, антиспам 5 сек (`429`)
-- `GET /healthz` → `{ ok, products, orders, uptime }` (для Docker HEALTHCHECK и мониторинга)
+- `GET /api/state` → `{ settings, products }` (payment requisites `payment_details` are not in the response — they stay in the bot)
+- `POST /api/promo-check {code, items}` → `{ code, percent, subtotal, discount, total }` or `400` with the reason; prices come from the database, an unknown code is rejected
+- `POST /api/order {items, total, customer}` → `{ orderCode: TG-XXXX, total }`. Names and prices are recalculated from the server's own database, the phone needs at least 10 digits, anti-spam 5 s (`429`)
+- `GET /healthz` → `{ ok, products, orders, uptime }` (for the Docker HEALTHCHECK and monitoring)
 
-## Защита
+## Protection
 
-- Цены и названия в заказе берутся только из серверной БД (подмена цены/суммы клиентом игнорируется, `total` считает сервер). В deep link бота цена из `?start=` сверяется с базой: если расходится — заявка не создаётся (это либо правка ссылки, либо устаревший каталог на витрине, где под тем же id другой товар), клиент получает внятный ответ, а админ — сообщение `⚠️ ЗАКАЗ TG-XXXX НЕ СОЗДАН` с обеими ценами; несуществующая позиция не превращается в «Товар #123»
-- Промокод никогда не несёт сумму: из запроса берётся только код, а скидку `evaluatePromo` пересчитывает по ценам базы — подделанные `total` или `discount` в теле запроса ни на что не влияют
-- Номер заказа выдаёт сервер и обходит занятые значения: два покупателя статической витрины не получают один номер на двоих, а при совпадении бот берёт свободный и сообщает об этом админу
-- Состав и реквизиты заказа показывает только его владелец (первый, кто открыл ссылку) или админ; номер заказа сам по себе доступом не считается
-- Статусы заказа (`В сборку` / `Оплачен` / `Отменить`) меняет только админ — и в Telegram, и в MAX
-- Экран «Заказ принят» без заказа в этой сессии возвращает в каталог; заказ этой сессии переживает перезагрузку (sessionStorage)
-- Ссылки на MAX скрыты, пока MAX-бот не настроен (`MAX_BOT_TOKEN`), — покупатель не уходит в 404
-- Подпись Mini App: HMAC + свежесть `auth_date` < 24ч, иначе `403`
-- Валидация: до 50 позиций, количество 1–99, телефон от 10 цифр, несуществующий товар — `400`; лимит тела `100kb` (`413`); ошибки асинхронного обработчика не роняют запрос
-- Экранирование всех текстов товаров при рендере (защита от stored XSS через бота); испорченный `localStorage` не убивает витрину, а сбрасывается
-- Кодировка на приёме: тело заказа читается строгим UTF-8, а если байты ему не подошли — перекодируются из `windows-1251` (так Excel и старые клиенты несут русские имена). Без этого `body-parser` молча ставит `U+FFFD`, и в заявке лежит «?????» вместо имени покупателя. Все строки проходят через `cleanText`: NFC-склейка (`е` + диакритика → `ё`), управляющие символы долой, `\r\n` к `\n`. Если `U+FFFD` остался после перекодировки — поле отбивается с `400`, а не сохраняется мусором. Тот же декодер стоит на загрузке CSV-файла в импорт
-- Корзина и избранное хранят id позиций. Витрина сверяет отпечаток каталога (`watchop_catfp`) и при его расхождении сбрасывает оба списка с понятным тостом: пересобранный файл означает другую нумерацию, а старый id — уже другой товар
-- Security-заголовки (`nosniff`, `SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`)
-- CORS закрыт по умолчанию (same-origin); для кросс-домена задай `CORS_ORIGIN=https://a,https://b` в `.env`
-- Антиспам заказов: кулдаун на IP (`ORDER_COOLDOWN_MS`, по умолчанию 5000)
-- Параметризованные запросы SQLite; токены только в `.env` (не коммитится)
+- Prices and names in an order come only from the server database: a client substituting a price or a total is ignored and `total` is computed server-side. In the bot's deep link the price from `?start=` is checked against the database — if it differs, no order is created (that is either an edited link or a stale catalog on the storefront where the same id now means a different product), the customer gets a clear answer and the admin a `⚠️ ЗАКАЗ TG-XXXX НЕ СОЗДАН` notice with both prices; a nonexistent product does not turn into «Товар #123»
+- A promo code never carries a sum: the client sends only the code, and `evaluatePromo` recomputes the discount from database prices, so a tampered `total` or a invented `discount` in the request body has no effect
+- The order number is issued by the server and skips taken values: two buyers on the static storefront cannot get the same number, and on a collision the bot takes a free one and tells the admin
+- Order contents and requisites are shown only to its owner (whoever opened the link first) or to an admin; knowing the order number is not access
+- Order statuses (`В сборку` / `Оплачен` / `Отменить`) are changed by admins only — in Telegram and in MAX
+- The `Заказ принят` screen reached without an order in this session returns to the catalog; an order made in this session survives a reload (sessionStorage)
+- MAX links stay hidden until the MAX bot is configured (`MAX_BOT_TOKEN`) — a buyer is never sent into a 404
+- Mini App signature: HMAC plus `auth_date` freshness under 24 hours, otherwise `403`
+- Validation: up to 50 line items, quantity 1–99, phone from 10 digits, unknown product → `400`; body limit `100kb` (`413`); an error thrown in an async handler does not hang the request
+- All product text is escaped on render (protection against stored XSS coming through the bot); a corrupted `localStorage` is reset instead of killing the storefront
+- Input encoding: the order body is read as strict UTF-8, and when the bytes do not fit UTF-8 they are re-decoded from `windows-1251` (that is how Excel and older clients carry Russian names). Without this `body-parser` silently puts `U+FFFD` in and the order holds «?????» instead of a buyer's name. Every string goes through `cleanText`: NFC composition (`e` + diacritic → `ё`), control characters removed, `\r\n` folded to `\n`. If `U+FFFD` survives re-decoding the field is rejected with `400` rather than stored as garbage. The same decoder runs on CSV upload for the importer
+- Cart and favorites store product ids. The storefront compares a catalog fingerprint (`watchop_catfp`) and, when it differs, resets both lists with a plain explanation: a rebuilt file means different numbering, so an old id already points at another product
+- Security headers (`nosniff`, `SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`)
+- CORS is closed by default (same-origin); for a cross-domain setup use `CORS_ORIGIN=https://a,https://b` in `.env`
+- Order anti-spam: a per-IP cooldown (`ORDER_COOLDOWN_MS`, 5000 by default)
+- Parameterized SQLite queries; tokens only in `.env` (never committed)
 
-## Тесты
+## Tests
 
-`npm test` — 208 тестов в 23 сюитах, встроенный раннер Node (без установки):
+`npm test` — 208 tests in 23 suites, the built-in Node runner (nothing to install):
 
-- `tests/api.test.js` — живой сервер на временном порту и пустой БД: state (300+ товаров), заказ `TG-XXXX`, антиспам `429`, `400`/`403`, перерасчёт цен, данные покупателя, `healthz`, статика, сжатие ответов и `immutable`-кэш загрузок, промокоды: `/api/promo-check` считает сервер, заказ уходит с суммой после скидки, неизвестный код отбит
-- `tests/promo.test.js` — движок промокодов как чистые функции: правила разбираются и собираются обратно без потерь, мусор и процент вне диапазона не становятся скидкой, брендовый код считает только свои позиции в смешанной корзине, минимальная сумма включительная, неприменившийся код оставляет полную сумму и внятную причину, цены берутся из lookup, а не из запроса, скидка не превышает сумму корзины, а список для админа печатает код, процент и условия
-- `tests/initdata.test.js` — подпись Mini App: валидная/битая/пустая/без токена
-- `tests/max.test.js` — MAX-паритет: меню, мастер добавления, цены, реквизиты, настройки (включая покрытие экраном «Тексты и контакты» всех правимых полей), статусы, клиентский поиск, отмена, кнопка магазина, импорт и экспорт каталога, админы: экран, `Добавить по ID`, `Убрать ID N`, отказ трогать админа из `.env`, уведомление уходит каждому админу, список переживает рестарт, кнопка `Админы` прерывает ввод реквизитов, промокоды: экран, добавление, отзыв, отказ на неверном проценте и на несуществующем коде, кнопка `Промокоды` прерывает незавершённый ввод
-- `tests/virtual.test.js` — виртуализация: в DOM не больше `WINDOW_CARDS` карточек на любой глубине прокрутки (заглушки сверху и снизу держат высоту), избранное в том же окне, короткий список рендерится целиком, после смены фильтра окно не пустует, экранирование XSS, корзина (add/qty/remove/оформление/проверка), deep link с составом, hash-маршруты и ссылки, хиты, избранное без перерисовки
-- `tests/tgadmin.test.js` — мульти-админ Telegram: ID списком, юзернеймы резолвятся в ID при первом сообщении и запоминаются, добавленные переживают перезапуск, админа из `.env` из бота не убрать, мусорный ID отклоняется
-- `tests/discount.test.js` — скидки: округление до 10 ₽, повторная скидка считается от исходной цены, а не от уже уценённой, снятие скидки возвращает `old_price`, витрина показывает зачёркнутую старую цену
-- `tests/import.test.js` — массовый импорт: разбор разделителей (`;`, таб, запятая), строка-шапка, категории только с витрины, цена «24 990 ₽», превью с причинами отбраковки, запись одной транзакцией (сбой — не записана ни одна строка), лимит строк
-- `tests/admin.test.js` — функции админки: полки, страница каталога с регистронезависимым поиском, карточка, правка поля, хиты, удаление, разбивка заявок по статусам, смена статуса, сводка, отчёт по стоковым картинкам, удаление заявки, гейт правимых настроек, и карточка заявки с промокодом и его скидкой (или с причиной, почему вышло 0 ₽)
-- `tests/publish.test.js` — публикация: план без токена (обычный `push origin`) и с токеном (явный URL, remote в конфиге не переписывается), белый список путей коммита (ни базы, ни `.env`, ни `server.js`, ни `-A`), вырезание секрета из вывода git, подсказка про доступ только когда он берётся из кредитов
-- `tests/encoding.test.js` — кодировка: strict UTF-8, добор windows-1251, NFC-нормализация, отбрасывание управляющих символов, тело без валидного декода остаётся как было, а не выкидывается
-- `tests/tgdeeplink.test.js` — заявка из deep link: состав и цена из базы, ссылка с чужой ценой не создаёт заказ и поднимает админу `НЕ СОЗДАН`, несуществующий id отклоняется, повтор того же состава не дублирует заказ, коллизия номера получает свободный, детали видит только владелец или админ, счётчик номеров не выдаёт занятые, промокод из deep link считает сервер, а неизвестный код оставляет полную сумму и сохраняется в заявке, чтобы админ видел причину
-- `tests/search.test.js` — поиск и flow: «Найдено: 0» вместо цифр прошлого запроса и кнопка сброса, поиск по характеристикам/транслиту/падежам, релевантность выдачи («корос пейс» → Pace до VERTIX Space, «эхолот» → товары категории, а не аккумулятор для неё, «эпл вотч» и «суунто рейс» находятся) и то, что выбранный сортировщик её перекрывает, ценовые фильтры (`до`, `от`, `40000-50000`, голое число ±5%), запрос в hash и восстановление из ссылки, сброс висячего запроса при переходе по категории, «назад в каталог» туда, откуда пришёл, заказ на GitHub Pages без бэкенда (success + deep link, `/api/*` не зовём), настоящая ошибка бэкенда показывается, быстрый заказ, идентичность `index.html` и `public/index.html`
-- `tests/catalog-export.test.js` — выгрузка базы в файл-источник: нормализация строки БД, генерация читается и в Node, и в браузере (кавычки/переносы в названиях), id не съезжают, боевой файл несёт уникальные положительные id и в обеих копиях одинаковые, повтор выгрузки даёт тот же файл, diff «что живёт только в базе», реальный `applySeed` (пустая база, повторный запуск, удалённый товар не воскресает, новая позиция догружается), атомарная запись с откатом и сохранением `.bak`
-- `tests/ui.test.js` — подсказки (строятся из каталога, счётчики совпадают с выдачей и учитывают активный фильтр, Escape в два шага, пересборка индекса при смене каталога, цифра в запросе сужает выдачу), шторка фильтров (заголовок «Все товары»/активный фильтр, счётчик на кнопке, сброс, диалог для скринридера), стрелка наверх по прокрутке, экран «заказ принят» без заказа, телефон из букв, битый `localStorage`, сброс корзины и избранного при пересборке каталога (и сохранение при том же составе), бренд в подсказках в одной форме («Garmin», а не «GARMIN Descent» рядом), скрытая ссылка MAX и разметка: вкладки с «Корзиной» в конце, иконка корзины, логотипы Telegram/MAX в значке поддержки, счётчик моделей в `og:description` сверяется с длиной каталога, а размеры в обоих README — с фактическим числом байт и brotli у `index.html` и `products-data.js`
-- `tests/presets.test.js` — быстрый подбор, фасеты, сравнение и дополнения страницы товара: счётчик на пилюле «Хиты» равен длине выдачи, границы пресета и полей цены пересекаются с набранным запросом, перепутанный порядок читается вилкой, выбор доезжает по hash-ссылке и сбрасывается кнопкой, `Фильтры · N` его видит, чипы брендов воспроизводят набор брендов каталога и их числа равны длине выдачи, чип характеристики не рисуется, если по нему нет ни одной позиции, несколько фасетов пересекаются, а не расширяют, `brand=` и `spec=` доезжают по ссылке, а неизвестный ключ в адресе игнорируется, лайтбокс просит `w=1200` и подписывает картинку, `javascript:`/`data:`/`vbscript:` не становятся источником, «недавно смотрели» без дублей и с потолком, пересборка каталога сбрасывает его как корзину и избранное, сравнение ограничено четырьмя, повторное нажатие убирает модель, его таблица несёт реальные поля и экранирует название, а список переживает перезагрузку и чистится при пересборке каталога, и JSON-LD несёт реальные поля без `availability`, и `</script>` в названии не разрывает скрипт, а поле промокода в корзине показывает только то, что посчитал сервер — на статическом хостинге код уходит в бота через deep link вместо локальной скидки
-- `tests/helpers/dom.js` — общий harness: монтирует inline-скрипт витрины на фиктивных элементах
+- `tests/api.test.js` — a live server on a temporary port with an empty database: state (300+ products), order `TG-XXXX`, anti-spam `429`, `400`/`403`, price recalculation, customer data, `healthz`, static files, compression and `immutable` caching of uploads, promo codes: `/api/promo-check` answers with the server's own arithmetic, an order carries the discounted total, an unknown code is refused
+- `tests/promo.test.js` — the promo engine as pure functions: rules parse and serialize back without loss, garbage and out-of-range percents never become a discount, a brand code counts only that brand's lines in a mixed cart, the minimum cart is inclusive, a code that does not apply leaves the full sum and a readable reason, prices come from the lookup and not from the request, the discount is capped at the cart total, and the admin list prints code, percent and conditions
+- `tests/initdata.test.js` — Mini App signature: valid / broken / empty / without a token
+- `tests/max.test.js` — MAX parity: menu, add-product wizard, prices, requisites, settings (including that the `Тексты и контакты` screen offers every editable field), statuses, customer search, cancel, shop link button, catalog import and export, admins: the screen, `Добавить по ID`, `Убрать ID N`, refusing to remove an `.env` admin, notification delivered to every admin, the roster surviving a restart, and the `Админы` button interrupting requisite input, promo codes: the screen, `Добавить промокод`, `Убрать промокод`, refusal on an out-of-range percent and on a code that is not there, and the `Промокоды` button aborting pending input
+- `tests/virtual.test.js` — virtualization: never more than `WINDOW_CARDS` cards in the DOM at any scroll depth (spacers hold the height), favorites inside the same window, a short list rendered whole, the window staying inside the new list after a filter change, XSS escaping, cart (add/qty/remove/checkout/validation), deep link with contents, hash routes and links, hits, favorites without re-rendering
+- `tests/tgadmin.test.js` — Telegram multi-admin: ids as a list, usernames resolved at the first message and remembered, added admins surviving a restart, an `.env` admin not removable from the bot, garbage ids rejected
+- `tests/discount.test.js` — discounts: rounding to 10 ₽, a repeat discount computed from the original price and not from an already reduced one, removing a discount restoring `old_price`, the storefront showing the struck-through old price
+- `tests/import.test.js` — bulk import: separators (`;`, tab, comma), header row, categories restricted to the storefront set, prices like «24 990 ₽», preview with rejection reasons, writing in one transaction (a failure stores nothing), row limit
+- `tests/admin.test.js` — admin functions: shelves, catalog page with case-insensitive search, product card, field editing, hits, deletion, orders by status, status change, summary, stock-image report, order deletion, the editable-settings gate, and the order card showing the promo code with its discount, or the reason it gave 0 ₽
+- `tests/publish.test.js` — publishing: the plan without a token (plain `push origin`) and with one (explicit URL, the remote config is never rewritten), the commit whitelist (never the database, `.env`, `server.js`, `node_modules`, never `git add -A`), secret redaction from git output, and the access hint shown only when credentials come from the store
+- `tests/encoding.test.js` — encoding: strict UTF-8, `windows-1251` recovery, NFC normalization, control characters dropped, a body that decodes to nothing is kept as it was rather than discarded
+- `tests/tgdeeplink.test.js` — order from a deep link: contents and price taken from the database, a link carrying a foreign price creates no order and raises `НЕ СОЗДАН` for the admin, a nonexistent id is rejected, repeating the same contents does not duplicate the order, a number collision takes a free one, details visible only to the owner or an admin, the counter never handing out a taken number, and a promo code inside the deep link discounted by the server while an unknown code keeps the full total and is stored so the admin sees why it gave nothing
+- `tests/search.test.js` — search and flow: `Найдено: 0` instead of the previous query's numbers plus a reset button, search across specs / transliteration / case endings, relevance ordering («корос пейс» → Pace before VERTIX Space, «эхолот» → products of that category rather than a battery for it, «эпл вотч» and «суунто рейс» are found) and a chosen sorter overriding it, price filters (`до`, `от`, `40000-50000`, a bare number ±5%), the query in the hash and restored from a link, a dangling query cleared when navigating by category, «back to catalog» returning where you came from, ordering on GitHub Pages without a backend (success + deep link, `/api/*` is not called), a real backend error shown to the user, quick order, and `index.html` identical to `public/index.html`
+- `tests/catalog-export.test.js` — exporting the database into the source file: database row normalization, generated output readable both in Node and in a browser (quotes and newlines inside names), ids do not shift, the shipped file carries unique positive ids and is identical in both copies, re-exporting produces the same file, the diff of «what lives only in the database», the real `applySeed` (empty database, second run, a deleted product not resurrected, a new row appended), atomic writing with rollback and keeping `.bak`
+- `tests/ui.test.js` — suggestions (built from the catalog, counters matching the result set and the active filter, Escape in two steps, the index rebuilt when the catalog changes, a digit in the query narrowing results), the filter sheet (heading `Все товары` / active filter, counter on the button, reset, dialog semantics for a screen reader), scroll-to-top appearing on scroll, the `Заказ принят` screen without an order, a phone typed from letters, broken `localStorage`, cart and favorites reset when the catalog is rebuilt (and kept when it is not), brand suggestions in one inflected form («Garmin», not «GARMIN Descent» next to it), the hidden MAX link, markup: tabs ending with the cart, the cart icon, Telegram/MAX logos in the support badge, and the product count in `og:description` matching the catalog length, and the sizes quoted in both READMEs matching the real byte length and brotli output of `index.html` and `products-data.js`
+- `tests/presets.test.js` — quick pick, facets, comparison and product-page extras: the count on the `Хиты` chip equals the length of the result it produces, preset bounds and the price fields intersect with a typed query, a swapped range is read as a window, the selection survives through the hash link and is cleared by reset, the `Фильтры · N` counter sees it, brand chips reproduce the brands in the catalog and their counts match the result length, a spec chip is not drawn when no position matches it, several facets intersect instead of widening, `brand=` and `spec=` travel through the link while an unknown key in the URL is ignored, the lightbox requests `w=1200` and labels the image, `javascript:`/`data:`/`vbscript:` never becomes an image source, recently-viewed dedupes and is capped, a catalog rebuild wipes it like cart and favorites, comparison is capped at four with a repeat press removing the item and its table carrying real fields with the name escaped, and JSON-LD carries real product fields with no `availability` while a `</script>` in a product name cannot break out, and the cart's promo field only shows what the server returned — on a static host the code is handed to the bot through the deep link instead of being discounted locally
+- `tests/helpers/dom.js` — shared harness: mounts the inline storefront script on fake elements
 
 ---
 

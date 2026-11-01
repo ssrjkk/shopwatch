@@ -56,6 +56,8 @@ global.window = {
 };
 global.location = { hash: '', reload() {}, ${Object.entries(loc).map(([k, v]) => `${k}: ${JSON.stringify(v)},`).join(' ')} };
 global.IntersectionObserver = global.window.IntersectionObserver;
+global.requestAnimationFrame = (...a) => global.window.requestAnimationFrame(...a);
+global.cancelAnimationFrame = () => {};
 global.localStorage = ${storeImpl};
 global.fetch = ${fetchImpl};
 `;
@@ -67,9 +69,9 @@ const EXPOSE = [
   'switchTab', 'showView', 'route', 'toggleDrawer', 'submitOrder', 'renderFilters', 'setCategory', 'setSeries',
   'getFiltered', 'parseSearch', 'hayOf', 'isHit', 'tokenHit', 'onSearchInput', 'resetSearch', 'searchQuery',
   'setSearchQuery', 'syncCatalogHash', 'goAllProducts', 'goCatalogHome', 'quickOrder', 'fallbackCopy',
-  'updateGridStatus', 'parseHash', 'searchSuggestions', 'renderSuggestions', 'hideSuggestions', 'pickSuggest',
+  'updateGridStatus', 'parseHash', 'searchSuggestions', 'renderSearchSuggestions', 'openSearchDropdown', 'selectSearchTag', 'onSearchKeyDown', 'clearSearchInput', 'scrollToCatalog', 'renderSuggestions', 'hideSuggestions', 'pickSuggest',
   'moveSuggest', 'onSearchFocus', 'onSearchKey', 'narrowSuggestions', 'paintSuggestions', 'toggleFilterSheet', 'closeFilterSheet', 'resetFilters',
-  'updateFilterChrome', 'activeFilterCount', 'filterSheetOpen', 'toggleSupportMenu', 'updateToTop',
+  'updateFilterChrome', 'activeFilterCount', 'filterSheetOpen', 'toggleSupportMenu', 'updateToTop', 'resetAllFilters', 'setBrandFilter', 'toggleSpecFilter',
   'readStore', 'rememberOrder', 'lastOrder', 'showOrderSuccess', 'applyOrderToDom', 'suggestionCount', 'invalidateSugCounts', 'applySettingsToUI',
   'scrollToGrid', 'buildSugMap', 'sugMap', 'renderSuggestionsNow', 'scheduleSuggestions', 'sortedSug', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
   'catalogFp', 'syncCatalogFp',
@@ -83,12 +85,15 @@ const EXPOSE = [
 ];
 
 // Монтирует фронтенд. seed — источник данных каталога (по PRODUCTS_DATA можно подменить файл).
+// Имена, которых нет в текущем дизайне, пропускаются: тесты, которым они нужны,
+// падают явно в своём теле, а не роняют весь mount.
 function mountFrontend(opts = {}) {
   const seedPath = opts.productsData || path.join(ROOT, 'public', 'products-data.js');
   const seedSrc = fs.readFileSync(seedPath, 'utf8');
-  const body = `(function(){ ${prelude(opts)}\n${seedSrc}\n${extractFrontendScript()}\n;return { ${EXPOSE.filter(
-    (n) => /^[A-Z_]+$/.test(n) ? `get ${n}(){ return ${n}; }` : n
-  ).join(', ')}, get document() { return document; }, get window() { return window; }, hearts }; })()`;
+  const want = EXPOSE.filter((n) => !/^(document|window|hearts)$/.test(n));
+  const body = `(function(){ ${prelude(opts)}\n${seedSrc}\n${extractFrontendScript()}\n;const __out = { get document() { return document; }, get window() { return window; }, hearts };
+  for (const __n of ${JSON.stringify(want)}) { try { const __v = eval(__n); if (__v !== undefined) __out[__n] = __v; } catch (e) {} }
+  return __out; })()`;
   return eval(body);
 }
 

@@ -9,7 +9,7 @@ describe('TG deep-link orders (Pages without backend)', () => {
   before(() => {
     const memdb = new DatabaseSync(':memory:');
     memdb.exec(`CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
-CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0);
+CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4);
 CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, owner_max TEXT, promo_code TEXT, discount INTEGER DEFAULT 0);`);
     memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('payment_details', 'PAY');
     memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('last_order_num', '1175');

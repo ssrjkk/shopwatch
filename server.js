@@ -189,7 +189,7 @@ function tgAdminMenuKb() {
     ['Последние заказы', 'Экспорт каталога'],
     ['Импорт товаров', 'Админы'],
     ['Сводка сайта', 'Фото на стоках'],
-    ['Промокоды']
+    ['Промокоды', 'Дизайн']
   ]).resize();
 }
 
@@ -281,6 +281,8 @@ const defaultSettings = {
   legal_inn: '362703988401',
   legal_ogrnip: '304362725400110',
   delivery_methods: 'СДЭК,Почта России,Boxberry',
+  extra_categories: '',
+  store_design: 'stealth',
   payment_details: 'СБП / Т-Банк / Сбер: +7 (900) 000-00-00 (Татьяна Ю.)\nВ комментарии к переводу укажите номер заказа.',
   show_payment: '1',
   last_order_num: '1175'
@@ -289,9 +291,11 @@ const defaultSettings = {
 const initSettingStmt = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
 for (const [k, v] of Object.entries(defaultSettings)) initSettingStmt.run(k, v);
 
-// Что админка имеет право переписывать. last_order_num — служебный счётчик
+// Что админка имеет право переписывать текстом. last_order_num — служебный счётчик
 // номеров заявок: его порча ломает выдачу кодов, поэтому его в списке нет.
-const EDITABLE_SETTINGS = Object.keys(defaultSettings).filter((k) => k !== 'last_order_num');
+// store_design меняется только кнопками «Дизайн» (там проверка файла),
+// произвольный текст в этой настройке ломал бы витрину.
+const EDITABLE_SETTINGS = Object.keys(defaultSettings).filter((k) => k !== 'last_order_num' && k !== 'store_design');
 function isEditableSetting(key) {
   return EDITABLE_SETTINGS.indexOf(String(key || '')) >= 0;
 }
@@ -305,6 +309,7 @@ if (getSetting('hero_title').includes('Воронеже')) setSetting('hero_titl
 if (getSetting('address').includes('Воронеж') || getSetting('address').includes('Пушкинская')) setSetting('address', 'Доставка по всей России — СДЭК, Почта России, Boxberry');
 try { db.exec('ALTER TABLE products ADD COLUMN is_hit INTEGER DEFAULT 0'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN old_price INTEGER DEFAULT 0'); } catch (e) {}
+try { db.exec('ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT 4'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN seed_key TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN customer_json TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN owner_tg TEXT'); } catch (e) {}
@@ -465,10 +470,22 @@ initSettingStmt.run('promo_codes', getSetting('promo_codes') || DEFAULT_PROMO_RU
 const IMPORT_CATEGORIES = ['Спортивные часы', 'Эхолоты', 'Велокомпьютеры', 'GPS навигаторы', 'Фитнес-трекеры', 'Дайвинг компьютеры', 'Охота и дрессировка', 'Пульсометры', 'Аксессуары'];
 const IMPORT_MAX_ROWS = 2000;
 
-function normalizeCategory(raw) {
+function extraCategories(conn) {
+  const c = conn && conn.prepare ? conn : (typeof db !== 'undefined' ? db : null);
+  if (!c) return [];
+  try {
+    const raw = String(c.prepare('SELECT value FROM settings WHERE key = ?').get('extra_categories')?.value || '');
+    return raw.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 20);
+  } catch (e) { return []; }
+}
+function allStoreCategories(conn) {
+  return [...IMPORT_CATEGORIES, ...extraCategories(conn).filter((c) => !IMPORT_CATEGORIES.includes(c))];
+}
+function normalizeCategory(raw, conn) {
   const s = String(raw || '').trim().replace(/ё/g, 'е').toLowerCase();
   if (!s) return null;
-  for (const c of IMPORT_CATEGORIES) {
+  const pool = conn ? allStoreCategories(conn) : IMPORT_CATEGORIES;
+  for (const c of pool) {
     if (c.replace(/ё/g, 'е').toLowerCase() === s) return c;
   }
   return null;
@@ -487,7 +504,7 @@ function splitImportLine(line) {
 
 // Столбцы: бренд;серия;категория;название;цена;описание;фото. Лишние хвосты
 // режем, нехватка описания и фото — не беда, без названия/цены/категории — ошибка строки.
-function parseImportTable(text) {
+function parseImportTable(text, conn) {
   const rows = [];
   const errors = [];
   const seen = new Set();
@@ -507,8 +524,8 @@ function parseImportTable(text) {
     const [brand, series, category, name, priceRaw, specs, image] = cells;
     if (!brand) { errors.push({ line: n, reason: 'пустой бренд' }); continue; }
     if (!name || name.length < 3) { errors.push({ line: n, reason: 'название пустое или короче трёх знаков' }); continue; }
-    const cat = normalizeCategory(category);
-    if (!cat) { errors.push({ line: n, reason: `категории «${category || ''}» нет на витрине; можно: ${IMPORT_CATEGORIES.join(', ')}` }); continue; }
+    const cat = normalizeCategory(category, conn || null);
+    if (!cat) { errors.push({ line: n, reason: `категории «${category || ''}» нет среди полок; можно: ${allStoreCategories(conn).join(', ')}` }); continue; }
     const price = parsePriceNumber(priceRaw);
     if (!price) { errors.push({ line: n, reason: `цена «${priceRaw || ''}» не читается — нужно число` }); continue; }
     const row = {
@@ -578,15 +595,14 @@ function insertImportedRows(conn, rows) {
 // работа с базой проверяется тестами один раз, а не дважды.
 const ADMIN_PAGE = 8;
 const ADMIN_ORDER_PAGE = 6;
-const PRODUCT_FIELD_LABELS = { name: 'Название', brand: 'Бренд', series: 'Серия', category: 'Полка', price: 'Цена', specs: 'Описание', image: 'Фото' };
+const PRODUCT_FIELD_LABELS = { name: 'Название', brand: 'Бренд', series: 'Серия', category: 'Полка', price: 'Цена', stock: 'Наличие', specs: 'Описание', image: 'Фото' };
 const ORDER_STATUS_SET = ['Новый', 'Новый (сайт)', 'Trade-In', 'Trade-In (сайт)', 'В сборке', 'Оплачен', 'Отменен'];
 // Кнопки статусов в обоих ботах: короткий ключ -> значение в базе
 const ORDER_STATUS_BUTTONS = { neu: 'Новый', trade: 'Trade-In', work: 'В сборке', paid: 'Оплачен', cancel: 'Отменен' };
 
 // Способы доставки — тоже настройка сайта: витрина рисует select из неё,
 // API принимает только значение из неё. Формат: через запятую, 1–10 штук.
-function deliveryMethods(conn) {
-  const c = conn || db;
+function deliveryMethods(conn) {  const c = conn || db;
   const raw = String(c.prepare('SELECT value FROM settings WHERE key = ?').get('delivery_methods')?.value || '').trim();
   const list = raw.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 10);
   return list.length ? list : ['СДЭК', 'Почта России', 'Boxberry'];
@@ -595,6 +611,29 @@ function normalizeDelivery(conn, raw) {
   const list = deliveryMethods(conn);
   const v = String(raw || '').trim();
   return list.includes(v) ? v : list[0];
+}
+
+// Два дизайна витрины. Файлы-источники живут рядом: public/index-stealth.html
+// и public/index-classic.html; активный собирается в public/index.html + index.html.
+// Админ переключает кнопкой в боте — квадратные метры кода не трогаем, только файлы.
+const STORE_DESIGNS = { stealth: 'Stealth Titanium', classic: 'Classic Light' };
+function storeDesignName(conn) {
+  const v = String((conn || db).prepare('SELECT value FROM settings WHERE key = ?').get('store_design')?.value || 'stealth').trim();
+  return STORE_DESIGNS[v] ? v : 'stealth';
+}
+function setStoreDesign(rootDir, name) {
+  const key = String(name || '').trim().toLowerCase();
+  if (!STORE_DESIGNS[key]) return { ok: false, error: 'Дизайн: stealth или classic.' };
+  const src = path.join(rootDir, 'public', `index-${key}.html`);
+  let html;
+  try { html = fs.readFileSync(src, 'utf8'); } catch (e) { return { ok: false, error: 'Файл дизайна не найден: ' + src }; }
+  if (!html.includes('products-data.js')) return { ok: false, error: 'Файл не похож на витрину: нет подключения каталога.' };
+  try {
+    fs.writeFileSync(path.join(rootDir, 'public', 'index.html'), html);
+    fs.writeFileSync(path.join(rootDir, 'index.html'), html);
+  } catch (e) { return { ok: false, error: 'Не записать файлы дизайна: ' + e.message }; }
+  setSetting('store_design', key);
+  return { ok: true, design: key, label: STORE_DESIGNS[key] };
 }
 
 function catalogShelves(conn) {
@@ -615,13 +654,13 @@ function catalogPage(conn, opts) {
     const total = Number(conn.prepare(`SELECT COUNT(*) AS c FROM products${sqlWhere}`).get(...args).c);
     const pages = Math.max(1, Math.ceil(total / ADMIN_PAGE));
     const page = Math.min(Math.max(1, Math.trunc(Number(opts && opts.page)) || 1), pages);
-    const items = conn.prepare(`SELECT id, brand, series, category, name, price, old_price, image, specs, is_hit FROM products${sqlWhere} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...args, ADMIN_PAGE, (page - 1) * ADMIN_PAGE);
+    const items = conn.prepare(`SELECT id, brand, series, category, name, price, old_price, stock, image, specs, is_hit FROM products${sqlWhere} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...args, ADMIN_PAGE, (page - 1) * ADMIN_PAGE);
     return { items, total, pages, page, category, query };
   }
   // Поиск нормализуем в JS: и LOWER(), и UPPER() в SQLite различают регистр
   // только у латиницы, а «Феникс» ищут и строчными, и прописными по-русски.
   const q = query.toUpperCase();
-  const rows = conn.prepare(`SELECT id, brand, series, category, name, price, old_price, image, specs, is_hit FROM products${sqlWhere} ORDER BY id DESC`).all(...args)
+  const rows = conn.prepare(`SELECT id, brand, series, category, name, price, old_price, stock, image, specs, is_hit FROM products${sqlWhere} ORDER BY id DESC`).all(...args)
     .filter((r) => [r.name, r.brand, r.series, r.specs].some((v) => String(v || '').toUpperCase().includes(q)));
   const total = rows.length;
   const pages = Math.max(1, Math.ceil(total / ADMIN_PAGE));
@@ -630,7 +669,7 @@ function catalogPage(conn, opts) {
 }
 
 function productById(conn, id) {
-  return conn.prepare('SELECT id, brand, series, category, name, price, old_price, image, specs, is_hit FROM products WHERE id = ?').get(Number(id)) || null;
+  return conn.prepare('SELECT id, brand, series, category, name, price, old_price, stock, image, specs, is_hit FROM products WHERE id = ?').get(Number(id)) || null;
 }
 
 function productCardText(p) {
@@ -642,6 +681,7 @@ function productCardText(p) {
     `Полка: ${p.category || '—'}`,
     `Цена: ${Number(p.price).toLocaleString('ru-RU')} ₽${off ? `, до уценки ${Number(p.old_price).toLocaleString('ru-RU')} ₽` : ''}`,
     `Хит: ${Number(p.is_hit) ? 'да' : 'нет'}`,
+    `Наличие: ${(p.stock ?? 4)} шт.`,
     `Фото: ${p.image || 'нет'}`,
     `Описание: ${p.specs || '—'}`,
   ].join('\n');
@@ -658,9 +698,15 @@ function setProductField(conn, id, field, raw) {
     const n = Math.trunc(Number(value.replace(/\D/g, '')));
     if (!n) return { ok: false, error: 'Цена — число, например 58990.' };
     conn.prepare('UPDATE products SET price = ? WHERE id = ?').run(n, p.id);
+  } else if (field === 'stock') {
+    const raw = String(value).trim();
+    if (!/^-?\d+$/.test(raw)) return { ok: false, error: 'Наличие — число штук от 0 (под заказ) до 9999.' };
+    const sn = Math.trunc(Number(raw));
+    if (!Number.isSafeInteger(sn) || sn < 0 || sn > 9999) return { ok: false, error: 'Наличие — число штук от 0 (под заказ) до 9999.' };
+    conn.prepare('UPDATE products SET stock = ? WHERE id = ?').run(sn, p.id);
   } else if (field === 'category') {
-    const cat = normalizeCategory(value);
-    if (!cat) return { ok: false, error: `Такой полки нет на витрине. Можно: ${IMPORT_CATEGORIES.join(', ')}` };
+    const cat = normalizeCategory(value, conn);
+    if (!cat) return { ok: false, error: `Такой полки нет. Можно: ${allStoreCategories(conn).join(', ')}` };
     conn.prepare('UPDATE products SET category = ? WHERE id = ?').run(cat, p.id);
   } else if (field === 'image') {
     if (value && !/^https?:\/\//i.test(value)) return { ok: false, error: 'Фото — ссылка http(s)://…, или пусто, чтобы убрать картинку.' };
@@ -1443,16 +1489,17 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     ctx.answerCbQuery();
     ctx.reply(adminSummary(db, { show_payment: getSetting('show_payment') }));
   });
-  tgBot.action(/^pf_(name|brand|series|category|price|specs|image)_(\d+)$/, (ctx) => {
+  tgBot.action(/^pf_(name|brand|series|category|price|stock|specs|image)_(\d+)$/, (ctx) => {
     if (!isTgAdmin(ctx)) return;
     const field = ctx.match[1];
     const p = productById(db, Number(ctx.match[2]));
     if (!p) return ctx.answerCbQuery('Товар не найден');
     ctx.answerCbQuery();
     ctx.session = { ...(ctx.session || {}), step: 'pf_wait', field, prodId: p.id };
-    const hint = field === 'category' ? `Полки: ${IMPORT_CATEGORIES.join(', ')}`
+    const hint = field === 'category' ? `Полки: ${allStoreCategories(db).join(', ')}`
       : field === 'image' ? 'Ссылка http(s)://… или пришли фото файлом; «Отмена» отбивает шаг'
       : field === 'price' ? 'Только число, например 58990'
+      : field === 'stock' ? 'Число штук (0 — под заказ)'
       : 'Новое значение:';
     ctx.reply(`${PRODUCT_FIELD_LABELS[field]} товара #${p.id}\nСейчас: ${p[field] || '—'}\n\n${hint}`);
   });
@@ -1487,7 +1534,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       [Markup.button.callback('Заголовок баннера', 'tg_cfg_hero_title')],
       [Markup.button.callback('Телефон', 'tg_cfg_phone'), Markup.button.callback('Email', 'tg_cfg_email')],
       [Markup.button.callback('Адрес', 'tg_cfg_address')],
-      [Markup.button.callback('Доставка', 'tg_cfg_delivery_methods')],
+      [Markup.button.callback('Доставка', 'tg_cfg_delivery_methods'), Markup.button.callback('Категории', 'tg_cfg_extra_categories')],
       [Markup.button.callback('Ссылка ТГ', 'tg_cfg_tg_link'), Markup.button.callback('Ссылка MAX', 'tg_cfg_max_link')],
       [Markup.button.callback('ИП ФИО', 'tg_cfg_legal_name'), Markup.button.callback('ИНН', 'tg_cfg_legal_inn'), Markup.button.callback('ОГРНИП', 'tg_cfg_legal_ogrnip')]
     ]));
@@ -1598,8 +1645,29 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     ctx.answerCbQuery(res.ok ? `Статус: ${res.status}` : res.error);
     if (res.ok) showOrderTg(ctx, res.code);
   });
-  tgBot.hears('Экспорт каталога', (ctx) => {
+  function showDesignTg(ctx) {
+    const cur = storeDesignName(db);
+    ctx.reply(
+      'Дизайн витрины: сейчас «' + STORE_DESIGNS[cur] + '». Переключение меняет public/index.html и корень, дальше — «Экспорт каталога» + коммит.',
+      Markup.inlineKeyboard([
+        [Markup.button.callback((cur === 'stealth' ? '● ' : '') + 'Stealth Titanium', 'design_stealth'),
+          Markup.button.callback((cur === 'classic' ? '● ' : '') + 'Classic Light', 'design_classic')],
+      ])
+    );
+  }
+  tgBot.hears('Дизайн', (ctx) => {
     if (!isTgAdmin(ctx)) return;
+    ctx.session = {};
+    showDesignTg(ctx);
+  });
+  tgBot.action(/^design_(stealth|classic)$/, (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    const res = setStoreDesign(__dirname, ctx.match[1]);
+    if (!res.ok) return ctx.reply(res.error);
+    ctx.reply('Включён дизайн «' + res.label + '». Проверь витрину, затем жми «Экспорт каталога» и коммить.');
+  });
+  tgBot.hears('Экспорт каталога', (ctx) => {    if (!isTgAdmin(ctx)) return;
     const preview = summarizeDiff(diffCatalog(fileCatalog(), catalogFromDb()));
     ctx.reply(
       `Выгрузка каталога из рабочей базы в products-data.js\n\n${preview}\n\nФайл перезапишется целиком, текущая копия уйдёт в products-data.js.bak.`,
@@ -1971,7 +2039,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
   });
 
   function runImportPreview(ctx, body) {
-    const parsed = parseImportTable(body);
+    const parsed = parseImportTable(body, db);
     if (!parsed.rows.length) {
       ctx.session = {};
       return ctx.reply(
@@ -2230,11 +2298,11 @@ function maxPromoKb() {
   return [['Добавить промокод', 'Убрать промокод'], ['Отмена']];
 }
 
-const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках'], ['Промокоды']];
+const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках'], ['Промокоды', 'Дизайн']];
 const MAX_CANCEL = [['Отмена']];
 // Кнопки меню и навигации админки. Пока бот ждёт значение поля или шаг мастера,
 // нажатие такой кнопки обязано прервать ввод, а не уехать в него текстом.
-const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Добавить промокод', 'Убрать промокод', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
+const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Категории', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Дизайн', 'Дизайн: Stealth', 'Дизайн: Classic', 'Добавить промокод', 'Убрать промокод', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
 function maxIsMenuCommand(text) {
   const t = String(text || '').trim();
   return MAX_MENU_COMMANDS.has(t)
@@ -2371,7 +2439,7 @@ async function maxAdminMenu(userId, title) {
 
 const MAX_CFG_BUTTONS = {
   'Баннер': 'hero_title', 'Телефон': 'phone', 'Email': 'email', 'Адрес': 'address',
-  'Доставка': 'delivery_methods',
+  'Доставка': 'delivery_methods', 'Категории': 'extra_categories',
   'Ссылка ТГ': 'tg_link', 'Ссылка MAX': 'max_link', 'ИП': 'legal_name', 'ИНН': 'legal_inn', 'ОГРНИП': 'legal_ogrnip'
 };
 async function handleMaxUpdate(upd) {
@@ -2563,7 +2631,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
       return sendMaxMessage(senderId, `Промокод ${r.code} убран.\n\n${promoRulesText(getSetting('promo_codes'))}`, maxPromoKb());
     }
     if (sess.step === 'max_import') {
-      const parsed = parseImportTable(text);
+      const parsed = parseImportTable(text, db);
       if (!parsed.rows.length) {
         maxSessions.delete(senderId);
         return sendMaxMessage(senderId, parsed.errors.length
@@ -2729,6 +2797,17 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   if (text === 'Админы') {
     return sendMaxMessage(senderId, maxAdminsText(senderId), maxAdminsKb());
   }
+  if (text === 'Дизайн') {
+    const cur = storeDesignName(db);
+    return sendMaxMessage(senderId, 'Дизайн витрины: сейчас «' + STORE_DESIGNS[cur] + '». После смены — «Экспорт каталога» + коммит.', [['Дизайн: Stealth', 'Дизайн: Classic'], ['Отмена']]);
+  }
+  const designMatch = text.match(/^Дизайн: (Stealth|Classic)$/i);
+  if (designMatch) {
+    const key = designMatch[1].toLowerCase();
+    const res = setStoreDesign(__dirname, key);
+    if (!res.ok) return sendMaxMessage(senderId, res.error, MAX_MENU);
+    return sendMaxMessage(senderId, 'Включён дизайн «' + res.label + '». Проверь витрину, затем: «Экспорт каталога» + коммит.', MAX_MENU);
+  }
   if (text === 'Промокоды') {
     return sendMaxMessage(senderId, `${promoRulesText(getSetting('promo_codes'))}\n\nПравило задаётся строкой «КОД ПРОЦЕНТ [БРЕНД] [minСУММА]», например «VIP20 20 GARMIN min100000». Скидку считает сервер по ценам своей базы, клиент присылает только код.`, maxPromoKb());
   }
@@ -2790,7 +2869,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     return sendMaxMessage(senderId, `Показ реквизитов: ${next === '1' ? 'Включен' : 'Выключен'}`, MAX_MENU);
   }
   if (text === 'Тексты и контакты') {
-    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес', 'Доставка'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН'], ['ОГРНИП', 'Отмена']]);
+    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес', 'Доставка'], ['Категории'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН'], ['ОГРНИП', 'Отмена']]);
   }
   if (MAX_CFG_BUTTONS[text]) {
     const key = MAX_CFG_BUTTONS[text];

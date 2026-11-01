@@ -25,11 +25,18 @@ describe('catalog virtualization', () => {
   it('держит в DOM окно не больше WINDOW_CARDS карточек', () => {
     seed350();
     assert.ok(g.WINDOW_CARDS <= 60, `окно слишком большое: ${g.WINDOW_CARDS}`);
-    assert.equal(domCards(), g.WINDOW_CARDS);
+    // первый чанк — PAGE_SIZE, окно предзаявлено на WINDOW_CARDS
+    assert.ok(domCards() <= g.WINDOW_CARDS, `карточек в DOM: ${domCards()}`);
+    assert.equal(g.state.windowFrom, 0);
     assert.equal(g.state.windowTo, g.WINDOW_CARDS);
     assert.equal(g.document.getElementById('found-count').textContent, 'Найдено: 350');
-    assert.equal(g.document.getElementById('grid-status').textContent, `Показаны 1–${g.WINDOW_CARDS} из 350 — листайте вниз`);
-    assert.equal(g.document.getElementById('grid-top').style.height, '0px');
+    // прокрутка включает окно: в DOM только окно, хвост дописывается чанками
+    scrollTop(20000);
+    assert.ok(domCards() <= g.WINDOW_CARDS, `после прокрутки в DOM ${domCards()} карточек`);
+    assert.equal(g.document.getElementById('found-count').textContent, 'Найдено: 350');
+    assert.equal(g.document.getElementById('grid-top').style.height === '0px', g.state.windowFrom === 0);
+    g.window.scrollY = 0;
+    g.renderCatalog();
   });
 
   it('на любом глубине прокрутки карточек столько же, а не всё до этого места', () => {
@@ -75,8 +82,8 @@ describe('catalog virtualization', () => {
     g.document.getElementById('search-input').value = '';
     g.renderCatalog();
     assert.equal(domCards(), 12);
-    assert.equal(g.document.getElementById('grid-top').style.height, '0px');
-    assert.equal(g.document.getElementById('grid-bottom').style.height, '0px');
+    assert.equal(g.document.getElementById('grid-top').style.height || '0px', '0px');
+    assert.equal(g.document.getElementById('grid-bottom').style.height || '0px', '0px');
     assert.equal(g.document.getElementById('grid-status').textContent, '');
   });
 
@@ -89,11 +96,13 @@ describe('catalog virtualization', () => {
     const mid = g.state.windowFrom;
     assert.ok(mid > 0, 'после прокрутки окно ушло от начала');
     g.document.getElementById('search-input').value = 'garmin';
+    g.window.scrollY = 0;
     g.renderCatalog();
     assert.equal(g.state.filtered.length, 175);
     const shown = domCards();
     assert.ok(shown > 0 && shown <= g.WINDOW_CARDS, `карточек в DOM: ${shown}`);
     assert.ok(g.state.windowTo <= 175 && g.state.windowFrom >= 0, `окно ${g.state.windowFrom}–${g.state.windowTo} вышло за 175`);
+    assert.equal(g.state.windowFrom, 0, 'фильтр сбрасывает окно к началу');
     g.window.scrollY = 0;
     g.document.getElementById('search-input').value = '';
     g.renderCatalog();

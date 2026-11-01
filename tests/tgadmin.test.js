@@ -124,9 +124,23 @@ describe('TG admins: несколько админов по ID и юзерней
     assert.deepEqual(rows.find((r) => r.value === '777'), { source: 'бот', kind: 'id', value: '777' });
   });
 
-  it('админка TG: бренд, доставки и ручная заявка проведены', () => {
+  it('админка TG: бренд, доставки, категории, дизайн и ручная заявка проведены', () => {
     const { serverSrc } = require('./helpers/load');
     const src = serverSrc();
-    for (const [sub, what] of [["pf_(name|brand|series|category|price|specs|image)","правка бренда в карточке"],["tgBot.action('ord_new'","кнопка новой заявки"],["step === 'ord_new_items'","шаг состава заявки"],["step === 'ord_new_fio'","шаг ФИО заявки"],["step === 'ord_new_phone'","шаг телефона заявки"],["createManualOrder(db,","создание заявки через ядро"],["tg_cfg_delivery_methods","кнопка доставки в панели текстов"]]) assert.ok(src.includes(sub), what);
+    const checks = [
+      ["pf_(name|brand|series|category|price|stock|specs|image)", "правка бренда в карточке"],
+      ["tgBot.action('ord_new'", "кнопка новой заявки"],
+      ["step === 'ord_new_items'", "шаг состава заявки"],
+      ["step === 'ord_new_fio'", "шаг ФИО заявки"],
+      ["step === 'ord_new_phone'", "шаг телефона заявки"],
+      ["createManualOrder(db,", "создание заявки через ядро"],
+      ["tg_cfg_delivery_methods", "кнопка доставки в панели текстов"],
+      ["tg_cfg_extra_categories", "кнопка категорий в панели текстов"],
+      ["Дизайн", "пункт дизайна в админ-меню"],
+      ["design_stealth", "кнопка дизайна stealth"],
+      ["design_classic", "кнопка дизайна classic"],
+      ["setStoreDesign(__dirname", "применение дизайна пишет файлы"],
+    ];
+    for (const [sub, what] of checks) assert.ok(src.includes(sub), what);
   });
 });
