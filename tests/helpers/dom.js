@@ -75,7 +75,9 @@ const EXPOSE = [
   'catalogFp', 'syncCatalogFp',
   'oldPriceHTML', 'productCardHTML', 'localOrders', 'pushLocalOrder', 'renderOrders', 'imgSrc', 'imgUrl', 'renderWindow', 'scheduleWindow', 'WINDOW_CARDS', 'renderFavorites',
   'PRESETS', 'presetOf', 'presetBounds', 'presetCount', 'applyPreset', 'applyPriceRange', 'priceRangeFromInputs', 'priceRangeLabel',
-  'effectivePriceRange', 'applyPresetTo', 'renderPresets', 'openLightbox', 'closeLightbox', 'safeImageSrc', 'absoluteUrl',
+  'effectivePriceRange', 'applyPickTo', 'renderPresets', 'openLightbox', 'closeLightbox', 'safeImageSrc', 'absoluteUrl',
+  'SPEC_FACETS', 'facetOf', 'facetCount', 'specHit', 'allBrands', 'toggleBrand', 'toggleSpec', 'renderBrandPills', 'renderSpecPills',
+  'COMPARE_MAX', 'toggleCompare', 'clearCompare', 'compareItems', 'inCompare', 'updateCompareBar', 'openCompareModal', 'closeCompareModal',
   'recordRecent', 'clearRecentViewed', 'recentItems', 'renderRecent', 'RECENT_MAX', 'productJsonLd', 'setProductJsonLd', 'applyHashFilters',
 ];
 

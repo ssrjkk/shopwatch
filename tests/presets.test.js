@@ -209,3 +209,149 @@ describe('подбор по пресетам и цене, лайтбокс, пр
     global.location.hash = '';
   });
 });
+
+describe('фильтры по бренду и характеристикам, сравнение', () => {
+  let g;
+
+  before(async () => {
+    g = mountFrontend();
+    await new Promise((r) => setTimeout(r, 50));
+  });
+
+  const setField = (id, v) => { g.document.getElementById(id).value = v; };
+
+  it('бренды берутся из каталога, а число на чипе равно выдаче', () => {
+    g.resetFilters();
+    g.renderFilters();
+    const brands = g.allBrands();
+    assert.equal(brands.length, new Set(g.state.products.map((p) => p.brand)).size, 'каждый бренд каталога имеет чип');
+    assert.ok(brands.every((b) => b.count > 0), 'нулевых брендов не показываем');
+    assert.ok(brands[0].count >= brands[brands.length - 1].count, 'отсортировано по числу позиций');
+    const target = brands[0].brand;
+    g.toggleBrand(target);
+    const list = g.getFiltered();
+    assert.equal(list.length, brands[0].count, `чип обещает ${brands[0].count}, выдача ${list.length}`);
+    assert.ok(list.every((p) => p.brand === target), 'в выдаче только этот бренд');
+    g.toggleBrand(target);
+    assert.equal(g.state.activeBrand, '', 'повторное нажатие снимает бренд');
+    assert.equal(g.getFiltered().length, g.state.products.length, 'и выдача возвращается к полному каталогу');
+  });
+
+  it('метки характеристик существуют только если по ним есть позиции', () => {
+    g.resetFilters();
+    g.renderSpecPills();
+    const html = String(g.document.getElementById('spec-pills').innerHTML);
+    for (const f of g.SPEC_FACETS) {
+      const count = g.facetCount(f.key);
+      assert.equal(html.includes(f.label), count > 0, `${f.label}: чип=${count > 0}, позиций=${count}`);
+    }
+  });
+
+  it('несколько меток — пересечение, а не объединение', () => {
+    g.resetFilters();
+    g.toggleSpec('amoled');
+    const amoled = g.getFiltered();
+    assert.equal(amoled.length, g.facetCount('amoled'), 'одна метка: чип и выдача совпадают');
+    g.toggleSpec('titanium');
+    const both = g.getFiltered();
+    assert.ok(both.every((p) => g.specHit(p, 'amoled') && g.specHit(p, 'titanium')), 'обе метки одновременно');
+    assert.ok(both.length <= amoled.length, 'вторая метка сужает, а не расширяет');
+    // и бренд поверх меток тоже сужает
+    const brand = g.allBrands()[0].brand;
+    g.toggleBrand(brand);
+    assert.ok(g.getFiltered().every((p) => p.brand === brand && g.specHit(p, 'amoled') && g.specHit(p, 'titanium')), 'бренд + метки работают вместе');
+    g.resetFilters();
+    assert.equal(g.activeFilterCount(), 0, 'сброс снимает и бренд, и метки');
+  });
+
+  it('бренд и метки доезжают по ссылке', () => {
+    g.resetFilters();
+    const brand = g.allBrands()[0].brand;
+    g.toggleBrand(brand);
+    g.toggleSpec('solar');
+    const hash = String(global.location.hash);
+    assert.ok(hash.includes('brand='), hash);
+    assert.match(hash, /spec=solar/, hash);
+    g.resetFilters();
+    global.location.hash = hash;
+    g.route();
+    assert.equal(g.state.activeBrand, brand, 'бренд восстановлен из ссылки');
+    assert.deepEqual(g.state.activeSpecs, ['solar'], 'метка восстановлена из ссылки');
+    assert.ok(g.getFiltered().every((p) => p.brand === brand && g.specHit(p, 'solar')), 'и реально ограничивает выдачу');
+    // мусорная метка в ссылке игнорируется, а не ломает фильтр
+    global.location.hash = '#/catalog?spec=马戏团&brand=' + encodeURIComponent(brand);
+    g.route();
+    assert.deepEqual(g.state.activeSpecs, [], 'неизвестной метке в state не место');
+    assert.equal(g.state.activeBrand, brand, 'бренд при этом применился');
+    g.resetFilters();
+    global.location.hash = '';
+  });
+
+  it('счётчик «Фильтры · N» и сводка видят бренд и метки', () => {
+    g.resetFilters();
+    g.toggleBrand(g.allBrands()[0].brand);
+    g.toggleSpec('gps');
+    assert.equal(g.activeFilterCount(), 2);
+    g.renderFilters();
+    g.renderCatalog();
+    const sum = String(g.document.getElementById('filter-summary').textContent);
+    assert.match(sum, /GPS/, sum);
+    assert.match(String(g.document.getElementById('filter-btn-label').textContent), /^Фильтры · 2$/);
+    g.resetFilters();
+  });
+
+  it('сравнение: потолок четыре, повтор убирает, панель показывает число', () => {
+    g.resetFilters();
+    g.clearCompare();
+    const ids = g.state.products.slice(0, 6).map((p) => p.id);
+    for (const id of ids) g.toggleCompare({ stopPropagation: () => {} }, id);
+    assert.equal(g.state.compare.length, g.COMPARE_MAX, `в сравнении не больше ${g.COMPARE_MAX}`);
+    const first = g.state.compare[0];
+    g.toggleCompare({ stopPropagation: () => {} }, first);
+    assert.equal(g.inCompare(first), false, 'повторное нажатие убирает');
+    assert.equal(g.state.compare.length, g.COMPARE_MAX - 1);
+    assert.equal(String(g.document.getElementById('compare-count').textContent), String(g.COMPARE_MAX - 1), 'панель считает вслух');
+    assert.equal(g.document.getElementById('compare-bar').classList.contains('hidden'), false, 'панель видна, когда есть что сравнивать');
+  });
+
+  it('таблица сравнения несёт реальные поля и экранирует название', () => {
+    g.resetFilters();
+    const picks = g.state.products.filter((p) => Number(p.price) > 0).slice(0, 3).map((p) => p.id);
+    g.clearCompare();
+    for (const id of picks) g.toggleCompare({ stopPropagation: () => {} }, id);
+    g.openCompareModal();
+    const box = String(g.document.getElementById('compare-table-box').innerHTML);
+    for (const id of picks) {
+      const p = g.state.products.find((x) => x.id === id);
+      assert.ok(box.includes(p.name), 'название в таблице');
+      assert.ok(box.includes('#/p/' + p.id), 'колонка ведёт на страницу товара');
+      assert.ok(box.includes(Number(p.price).toLocaleString('ru-RU')), 'цена в таблице');
+    }
+    assert.ok(box.includes('<table'), 'это таблица, а не набор строк');
+    const evil = { id: 4242, name: '<img src=x onerror=alert(1)>', brand: 'B', series: 'S', category: 'C', price: 1000, specs: 'x' };
+    g.state.products = [...g.state.products, evil];
+    g.state.compare = [evil.id];
+    g.openCompareModal();
+    const html2 = String(g.document.getElementById('compare-table-box').innerHTML);
+    assert.equal(html2.includes('<img src=x'), false, 'название с тегом не попадает в разметку как тег');
+    assert.ok(html2.includes('&lt;img'), html2.slice(0, 80));
+    g.state.products = g.state.products.filter((p) => p.id !== evil.id);
+    g.clearCompare();
+    assert.equal(g.document.getElementById('compare-bar').classList.contains('hidden'), true, 'пустое сравнение прячет панель');
+  });
+
+  it('сравнение переживает перезагрузку и сбрасывается при пересборке каталога', () => {
+    globalThis.__pstore = new Map();
+    const live = mountFrontend({ storage: PERSISTENT });
+    const id = live.state.products[1].id;
+    live.toggleCompare({ stopPropagation: () => {} }, id);
+    assert.deepEqual(JSON.parse(String(globalThis.__pstore.get('watchop_compare'))), [id], 'записано в хранилище');
+    const reloaded = mountFrontend({ storage: PERSISTENT });
+    assert.deepEqual(reloaded.state.compare.map(Number), [id], 'прочитано после перезагрузки');
+    reloaded.syncCatalogFp();
+    reloaded.state.products = [...reloaded.state.products, { id: 400002, brand: 'TEST', series: 'T', category: 'Спортивные часы', name: 'Test 2', price: 1500, specs: '' }];
+    assert.equal(reloaded.syncCatalogFp(), true, 'пересборка распознана');
+    assert.equal(reloaded.state.compare.length, 0, 'список сравнения сброшен вместе с остальными');
+    globalThis.__pstore = undefined;
+  });
+});
