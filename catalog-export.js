@@ -5,7 +5,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 
-const FIELDS = ['id', 'brand', 'series', 'category', 'name', 'price', 'image', 'specs', 'hit'];
+const FIELDS = ['id', 'brand', 'series', 'category', 'name', 'price', 'old_price', 'image', 'specs', 'hit'];
 
 // Устойчивый идентификатор позиции файла-источника. По нему сервер понимает,
 // что товар уже жил в базе, — в том числе если админ его удалил.
@@ -22,6 +22,9 @@ function normalizeRow(r) {
     category: String(r.category == null ? '' : r.category),
     name: String(r.name == null ? '' : r.name),
     price: Math.trunc(Number(r.price)) || 0,
+    // 0 = скидки нет. Храним цену до уценки, а не процент: так «снять скидку»
+    // возвращает ровно ту цену, что была, и витрина не зависит от округления.
+    old_price: Math.trunc(Number(r.old_price)) || 0,
     image: String(r.image == null ? '' : r.image),
     specs: String(r.specs == null ? '' : r.specs),
     hit: Number(r.hit != null ? r.hit : r.is_hit) > 0 ? 1 : 0,
@@ -34,7 +37,7 @@ function renderCatalogFile(rows, meta) {
   const lines = items.map((x) => '  ' + JSON.stringify(x)).join(',\n');
   return [
     '// Единый источник каталога: server.js делает require(), index.html подключает <script src="products-data.js">.',
-    '// Формат элемента: { id, brand, series, category, name, price, image, specs, hit } — id задаёт порядок и deep link #/p/<id>.',
+    '// Формат элемента: { id, brand, series, category, name, price, old_price, image, specs, hit } — id задаёт порядок и deep link #/p/<id>. old_price > price означает скидку, 0 — её нет.',
     `// Выгружено из рабочей базы админ-ботом, дата ${stamp}, позиций: ${items.length}.`,
     'const PD_SEED_PRODUCTS = [',
     lines ? lines + ',' : '',
@@ -90,16 +93,17 @@ function applySeed(db, rows) {
   const setKey = db.prepare('UPDATE products SET seed_key = ? WHERE id = ?');
   for (const r of db.prepare('SELECT id, brand, series, category, name FROM products WHERE seed_key IS NULL').all()) setKey.run(seedKey(r), r.id);
   const marked = new Set(db.prepare('SELECT seed_key FROM seed_marks').all().map((r) => r.seed_key));
-  const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-  const insWithId = db.prepare('INSERT INTO products (id, brand, series, category, name, price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const insWithId = db.prepare('INSERT INTO products (id, brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   const empty = db.prepare('SELECT COUNT(*) AS c FROM products').get().c === 0;
   let added = 0;
   for (const x of rows) {
     const key = seedKey(x);
     if (!empty && marked.has(key)) continue;
     const hit = Number(x.hit || x.is_hit) > 0 ? 1 : 0;
-    if (empty && Number(x.id) > 0) insWithId.run(Number(x.id), x.brand, x.series, x.category, x.name, x.price, x.image, x.specs, hit, key);
-    else ins.run(x.brand, x.series, x.category, x.name, x.price, x.image, x.specs, hit, key);
+    const oldPrice = Math.trunc(Number(x.old_price)) || 0;
+    if (empty && Number(x.id) > 0) insWithId.run(Number(x.id), x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key);
+    else ins.run(x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key);
     mark.run(key);
     added++;
   }

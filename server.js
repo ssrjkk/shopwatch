@@ -153,6 +153,7 @@ if (getSetting('tg_link') === 'https://t.me/watchop_manager') setSetting('tg_lin
 if (getSetting('hero_title').includes('Воронеже')) setSetting('hero_title', 'Магазин оригинальной продукции Garmin и смарт-часов с доставкой по всей России — поможем выбрать под ваши задачи');
 if (getSetting('address').includes('Воронеж') || getSetting('address').includes('Пушкинская')) setSetting('address', 'Доставка по всей России — СДЭК, Почта России, Boxberry');
 try { db.exec('ALTER TABLE products ADD COLUMN is_hit INTEGER DEFAULT 0'); } catch (e) {}
+try { db.exec('ALTER TABLE products ADD COLUMN old_price INTEGER DEFAULT 0'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN seed_key TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN customer_json TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN owner_tg TEXT'); } catch (e) {}
@@ -174,6 +175,29 @@ const CATALOG_FILES = [path.join(__dirname, 'products-data.js'), path.join(publi
 function catalogFromDb() {
   return db.prepare('SELECT * FROM products ORDER BY id ASC').all().map(normalizeRow);
 }
+
+// ---------- Скидки ----------
+// old_price — цена до уценки, price — текущая. Повторная скидка считается от
+// old_price, иначе уценки незаметно накладывались бы друг на друга.
+// Округление до 10 ₽: витрина должна выглядеть как магазин, а не как калькулятор.
+function discountFor(row, percent) {
+  const p = Math.trunc(Number(percent));
+  if (!Number.isFinite(p) || p < 1 || p > 90) return { ok: false, error: 'Скидка — целое число от 1 до 90 процентов.' };
+  const base = Math.trunc(Number(row.price)) || 0;
+  if (!base) return { ok: false, error: 'У товара нет цены — сначала выставьте её в «Товары и цены».' };
+  const stored = Math.trunc(Number(row.old_price)) || 0;
+  const from = stored > base ? stored : base;
+  const next = Math.round(((from * (100 - p)) / 100) / 10) * 10;
+  if (next < 10 || next >= from) return { ok: false, error: 'При такой цене скидка ничего не меняет — возьмите процент побольше.' };
+  return { ok: true, oldPrice: from, price: next, percent: p };
+}
+
+function discountOff(row) {
+  const stored = Math.trunc(Number(row.old_price)) || 0;
+  if (!stored) return { ok: false, error: 'Скидки на этом товаре и так нет.' };
+  return { ok: true, price: stored };
+}
+// ---------- /Скидки ----------
 
 function fileCatalog() {
   try {
@@ -516,12 +540,41 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
 
   tgBot.hears('Товары и цены', (ctx) => {
     if (!isTgAdmin(ctx)) return;
-    const prods = db.prepare('SELECT id, name, price FROM products ORDER BY id DESC LIMIT 15').all();
-    const btns = prods.map((p) => [
-      Markup.button.callback(`#${p.id} ${p.name.slice(0, 22)} (${p.price})`, `tg_price_${p.id}`),
-      Markup.button.callback('Удалить', `tg_del_${p.id}`)
-    ]);
-    ctx.reply('Последние 15 товаров:', Markup.inlineKeyboard(btns));
+    const prods = db.prepare('SELECT id, name, price, old_price FROM products ORDER BY id DESC LIMIT 15').all();
+    const btns = prods.map((p) => {
+      const stored = Math.trunc(Number(p.old_price)) || 0;
+      const off = stored > Number(p.price) ? `−${Math.round((1 - Number(p.price) / stored) * 100)}%` : 'Скидка';
+      return [
+        Markup.button.callback(`#${p.id} ${p.name.slice(0, 22)} (${p.price})`, `tg_price_${p.id}`),
+        Markup.button.callback(off, `tg_disc_${p.id}`),
+        Markup.button.callback('Удалить', `tg_del_${p.id}`)
+      ];
+    });
+    ctx.reply('Последние 15 товаров. «Скидка» — процент от цены, зачёркнутая цена появится на витрине:', Markup.inlineKeyboard(btns));
+  });
+  tgBot.action(/^tg_disc_(\d+)$/, (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    const id = Number(ctx.match[1]);
+    const prod = db.prepare('SELECT id, name, price, old_price FROM products WHERE id = ?').get(id);
+    if (!prod) return ctx.answerCbQuery('Нет такого товара');
+    ctx.session = { step: 'wait_discount', prodId: id };
+    const stored = Math.trunc(Number(prod.old_price)) || 0;
+    ctx.reply(
+      `Скидка для #${id} ${prod.name}\nТекущая цена: ${Number(prod.price).toLocaleString('ru-RU')} ₽${stored > prod.price ? `, до уценки: ${stored.toLocaleString('ru-RU')} ₽` : ''}\n\nПришлите процент (например 20) или «Отмена»:`,
+      Markup.inlineKeyboard([[Markup.button.callback('Снять скидку', `tg_disc_clear_${id}`)]])
+    );
+  });
+  tgBot.action(/^tg_disc_clear_(\d+)$/, (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    const id = Number(ctx.match[1]);
+    const prod = db.prepare('SELECT id, name, price, old_price FROM products WHERE id = ?').get(id);
+    if (!prod) return ctx.answerCbQuery('Нет такого товара');
+    const res = discountOff(prod);
+    if (!res.ok) return ctx.answerCbQuery(res.error);
+    db.prepare('UPDATE products SET price = ?, old_price = 0 WHERE id = ?').run(res.price, id);
+    ctx.session = {};
+    ctx.answerCbQuery('Скидка снята');
+    ctx.reply(`#${id} ${prod.name}: скидка снята, цена снова ${res.price.toLocaleString('ru-RU')} ₽.\nЧтобы витрина без сервера (GitHub Pages) увидела это, нажмите «Экспорт каталога» и закоммитьте products-data.js.`);
   });
   tgBot.action(/^tg_del_(\d+)$/, (ctx) => {
     if (!isTgAdmin(ctx)) return;
@@ -652,6 +705,19 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       db.prepare('UPDATE products SET price = ? WHERE id = ?').run(p, s.prodId);
       ctx.session = {};
       return ctx.reply(`Цена #${s.prodId}: ${p.toLocaleString('ru-RU')} ₽`);
+    }
+    if (s.step === 'wait_discount') {
+      const id = s.prodId;
+      const prod = db.prepare('SELECT id, name, price, old_price FROM products WHERE id = ?').get(id);
+      ctx.session = {};
+      if (!prod) return ctx.reply('Товар не найден — обновите список в «Товары и цены».');
+      const res = discountFor(prod, txt.replace(/\D/g, ''));
+      if (!res.ok) return ctx.reply(`${res.error} Пример: 20`);
+      db.prepare('UPDATE products SET price = ?, old_price = ? WHERE id = ?').run(res.price, res.oldPrice, id);
+      return ctx.reply(
+        `#${id} ${prod.name}: −${res.percent}%\nБыло ${res.oldPrice.toLocaleString('ru-RU')} ₽ → стало ${res.price.toLocaleString('ru-RU')} ₽. На витрине старая цена стоит зачёркнутой и серой — без красного.\nЧтобы GitHub Pages увидел цену, нажмите «Экспорт каталога» и закоммитьте products-data.js.`,
+        Markup.inlineKeyboard([[Markup.button.callback('Снять скидку', `tg_disc_clear_${id}`)]])
+      );
     }
     if (s.step === 'add_brand') { s.draft.brand = txt.toUpperCase(); s.step = 'add_series'; return ctx.reply('Шаг 2/6. Серия (fenix, Forerunner, Apple Watch, Galaxy Watch, Suunto...):'); }
     if (s.step === 'add_series') { s.draft.series = txt; s.step = 'add_cat'; return ctx.reply('Шаг 3/6. Категория (Спортивные часы / Дайвинг компьютеры / Фитнес-трекеры):'); }

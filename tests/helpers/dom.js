@@ -64,6 +64,7 @@ const EXPOSE = [
   'readStore', 'rememberOrder', 'lastOrder', 'showOrderSuccess', 'applyOrderToDom', 'suggestionCount', 'invalidateSugCounts', 'applySettingsToUI',
   'scrollToGrid', 'buildSugMap', 'sugMap', 'renderSuggestionsNow', 'scheduleSuggestions', 'sortedSug', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
   'catalogFp', 'syncCatalogFp',
+  'oldPriceHTML', 'productCardHTML', 'localOrders', 'pushLocalOrder', 'renderOrders',
 ];
 
 // Монтирует фронтенд. seed — источник данных каталога (по PRODUCTS_DATA можно подменить файл).

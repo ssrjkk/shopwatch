@@ -51,4 +51,12 @@ function extractTgAdminBlock() {
   return src.slice(start, end);
 }
 
-module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock };
+function extractDiscountFns() {
+  const src = serverSrc();
+  const start = src.indexOf('// ---------- Скидки ----------');
+  const end = src.indexOf('// ---------- /Скидки ----------');
+  if (start < 0 || end < 0) throw new Error('Скидки block markers not found in server.js');
+  return src.slice(start, end);
+}
+
+module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns };

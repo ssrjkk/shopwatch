@@ -17,12 +17,23 @@ describe('экспорт каталога из базы в файл-источн
     const n = normalizeRow(DB_ROWS[0]);
     assert.deepEqual(n, {
       id: 3, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы',
-      name: 'Fenix 8 47 мм "Black"', price: 59900, image: 'https://img/3.jpg',
+      name: 'Fenix 8 47 мм "Black"', price: 59900, old_price: 0, image: 'https://img/3.jpg',
       specs: 'AMOLED, мульти-GNSS', hit: 1,
     });
     assert.equal(normalizeRow(DB_ROWS[1]).hit, 0);
     assert.equal(normalizeRow({ ...DB_ROWS[0], id: '12', price: '99.7', hit: undefined, is_hit: 1 }).id, 12);
     assert.equal(normalizeRow({ ...DB_ROWS[0], price: '99.7' }).price, 99);
+    // old_price — зачёркнутая цена из админки: дробное обрезается, мусор становится нулём
+    assert.equal(normalizeRow({ ...DB_ROWS[0], old_price: '62320.9' }).old_price, 62320);
+    assert.equal(normalizeRow({ ...DB_ROWS[0], old_price: null }).old_price, 0);
+    assert.equal(normalizeRow({ ...DB_ROWS[0] }).old_price, 0);
+  });
+
+  it('скидка доезжает до файла-источника и обратно без потерь', () => {
+    const rows = [{ ...DB_ROWS[0], price: 47920, old_price: 59900 }];
+    const parsed = readCatalogFile(renderCatalogFile(rows, { date: '2026-11-01' }));
+    assert.equal(parsed[0].price, 47920);
+    assert.equal(parsed[0].old_price, 59900);
   });
 
   it('генерирует файл, который читается и в Node, и в браузере, без потери полей', () => {
@@ -111,7 +122,7 @@ describe('экспорт каталога из базы в файл-источн
     const { DatabaseSync } = require('node:sqlite');
     const { applySeed } = require('../catalog-export.js');
     const memdb = new DatabaseSync(':memory:');
-    memdb.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
+    memdb.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, old_price INTEGER DEFAULT 0, seed_key TEXT);
 CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
     const src = withIds(require(path.join(__dirname, '..', 'products-data.js')).slice(0, 25));
     const first = applySeed(memdb, src);
@@ -122,7 +133,7 @@ CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT C
 
     // база, доставшаяся без seed_key (старая), помечается при первом же запуске
     const legacy = new (require('node:sqlite').DatabaseSync)(':memory:');
-    legacy.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
+    legacy.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, old_price INTEGER DEFAULT 0, seed_key TEXT);
 CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
     legacy.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('GARMIN', 'fēnix', 'Спортивные часы', 'Старая позиция', 1000, 'x', 's');
     assert.equal(applySeed(legacy, [{ brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Старая позиция', price: 1000, image: 'x', specs: 's' }]).added, 0, 'дубль не добавляется');
