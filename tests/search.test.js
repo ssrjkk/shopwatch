@@ -268,4 +268,19 @@ describe('витрина: поиск, фильтры и оформление н�
     const d2 = fs.readFileSync(path.join(__dirname, '..', 'public', 'products-data.js'), 'utf8');
     assert.equal(d1, d2, 'копии каталога различаются');
   });
+
+  it('фото из админки доступны Pages: uploads/ зеркалит public/uploads/', () => {
+    const fs = require('fs');
+    const from = path.join(__dirname, '..', 'public', 'uploads');
+    const to = path.join(__dirname, '..', 'uploads');
+    const names = fs.existsSync(from) ? fs.readdirSync(from) : [];
+    const mirrored = fs.existsSync(to) ? fs.readdirSync(to) : [];
+    assert.deepEqual(mirrored.slice().sort(), names.slice().sort(),
+      `в корне uploads/ не те файлы, что в public/uploads — выполните npm run sync:pages`);
+    for (const n of names) {
+      const a = fs.readFileSync(path.join(from, n));
+      const b = fs.readFileSync(path.join(to, n));
+      assert.ok(a.equals(b), `uploads/${n} отличается от public/uploads/${n} — выполните npm run sync:pages`);
+    }
+  });
 });
