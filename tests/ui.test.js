@@ -353,4 +353,10 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.ok(after.some((l) => /testbrand/i.test(l)), 'новый товар появился в подсказках');
     assert.equal(after.some((l) => /descent/i.test(l)), false, 'старые позиции больше не предлагаются');
   });
+
+  it('счётчик моделей в og:description не расходится с каталогом', () => {
+    const m = HTML.match(/<meta property="og:description" content="(\d+) моделей в каталоге/);
+    assert.ok(m, 'в og:description заявлено число моделей');
+    assert.equal(Number(m[1]), SEED.length, `витрина обещает ${m && m[1]} моделей, в каталоге ${SEED.length}`);
+  });
 });

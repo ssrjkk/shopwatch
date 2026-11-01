@@ -5,7 +5,7 @@ const { extractPublishBlock, extractRedactFn } = require('./helpers/load');
 // План пуша — чистая функция: проверяем, чем именно бот соберётся пушить,
 // не поднимая git и не трогая репозиторий.
 function loadPublish() {
-  const factory = new Function(`${extractPublishBlock()}\nreturn { PUBLISH_PATHS, publishPlan };`);
+  const factory = new Function(`${extractPublishBlock()}\nreturn { PUBLISH_PATHS, publishPlan, pushFailureNote };`);
   return factory();
 }
 
@@ -61,5 +61,14 @@ describe('Публикация каталога из бота', () => {
       if (real === undefined) delete process.env.GITHUB_PUSH_TOKEN;
       else process.env.GITHUB_PUSH_TOKEN = real;
     }
+  });
+
+  it('подсказка про доступ показывается только когда доступ берётся из кредитов', () => {
+    const { pushFailureNote } = loadPublish();
+    const note = pushFailureNote('saved credentials');
+    assert.match(note, /GITHUB_PUSH_TOKEN/, 'говорит, куда вписать токен');
+    assert.match(note, /gh auth status/, 'говорит, как проверить креды');
+    assert.equal(pushFailureNote('GITHUB_PUSH_TOKEN'), '', 'при токене в .env эта подсказка была бы неправдой');
+    assert.equal(/ghp_|x-access-token|token=[A-Za-z0-9]/.test(note), false, 'подсказка не содержит секретов');
   });
 });

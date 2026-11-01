@@ -707,6 +707,12 @@ function exportCatalog(force) {
 const PUBLISH_PATHS = ['products-data.js', 'public/products-data.js', 'index.html', 'public/index.html', 'uploads', 'public/uploads'];
 let publishInFlight = false;
 
+// Подсказка к ошибке push: её причина зависит от того, откуда берётся доступ.
+function pushFailureNote(via) {
+  if (via !== 'saved credentials') return '';
+  return '\nСейчас бот пушит через сохранённые в git креды. Если они пустые или отозванные (проверка: `gh auth status`), впиши fine-grained PAT с правами Contents: Write в GITHUB_PUSH_TOKEN в .env и перезапусти сервер.';
+}
+
 // Токен не обязателен: на машине, где git уже имеет доступ к репозиторию,
 // пуш идёт через сохранённые креды. Если GITHUB_PUSH_TOKEN задан — пуш идёт
 // явным URL, а remote в .git/config не переписывается, чтобы секрет не осел
@@ -775,7 +781,7 @@ async function publishCatalog(actorLabel) {
     const plan = publishPlan(process.env);
     const push = await runGit(plan.args);
     if (!push.ok) {
-      return { ok: false, committed: sha, error: `Коммит ${sha.slice(0, 7)} создан локально, но push не прошёл: ${push.err}\nВ репозиторий ничего не ушло; разберись с доступом и нажми кнопку ещё раз.` };
+      return { ok: false, committed: sha, error: `Коммит ${sha.slice(0, 7)} создан локально, но push не прошёл: ${push.err}\nВ репозиторий ничего не ушло; разберись с доступом и нажми кнопку ещё раз.${pushFailureNote(plan.via)}` };
     }
     return {
       ok: true,
@@ -1824,14 +1830,70 @@ function maxShopLinkButtons() {
   return [];
 }
 
-const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Сводка сайта'], ['Фото на стоках']];
+// Админов MAX может быть несколько, как в Telegram: ID через запятую в MAX_ADMIN_ID
+// плюс добавленные из бота. MAX в updates не отдаёт юзернейм, поэтому список собран
+// по числовым ID — свой ID клиент узнаёт командой /id.
+const maxExtraAdminIds = new Set();
+function maxAdminEnvIds() {
+  return String(process.env.MAX_ADMIN_ID || '').split(',').map((s) => s.trim()).filter(Boolean);
+}
+function maxAdminIdList() {
+  return [...new Set([...maxAdminEnvIds(), ...maxExtraAdminIds])];
+}
+function loadMaxAdminExtras() {
+  for (const part of String(getSetting('max_extra_admin_ids') || '').split(',')) {
+    const v = part.trim();
+    if (v) maxExtraAdminIds.add(v);
+  }
+}
+function saveMaxAdminExtras() {
+  setSetting('max_extra_admin_ids', [...maxExtraAdminIds].join(','));
+}
+// 'ok' | 'bad' | 'env' | 'none': админа из .env убрать нельзя, он база доступа
+function addMaxAdminId(raw) {
+  const v = String(raw || '').trim();
+  if (!/^\d{3,20}$/.test(v)) return 'bad';
+  if (maxAdminEnvIds().includes(v)) return 'env';
+  maxExtraAdminIds.add(v);
+  saveMaxAdminExtras();
+  return 'ok';
+}
+function removeMaxAdminId(raw) {
+  const v = String(raw || '').trim();
+  if (maxAdminEnvIds().includes(v)) return 'env';
+  if (!maxExtraAdminIds.delete(v)) return 'none';
+  saveMaxAdminExtras();
+  return 'ok';
+}
+function isMaxAdminId(senderId) {
+  const id = String(senderId || '').trim();
+  return !!id && maxAdminIdList().includes(id);
+}
+function maxAdminsText(selfId) {
+  const me = String(selfId || '');
+  const rows = [];
+  for (const id of maxAdminEnvIds()) rows.push(`• ID ${id} — из .env, убрать можно только правкой .env${id === me ? ' (это ты)' : ''}`);
+  for (const id of maxExtraAdminIds) rows.push(`• ID ${id} — добавлен через бота${id === me ? ' (это ты)' : ''}`);
+  return `Админы MAX (${rows.length}):\n${rows.join('\n') || '— пока никого —'}\n\nАдмин видит админ-меню и получает уведомления о заявках. Свой ID клиент узнаёт командой /id.`;
+}
+function maxAdminsKb() {
+  const removable = [...maxExtraAdminIds];
+  const rows = [];
+  for (let i = 0; i < removable.length; i += 2) rows.push(removable.slice(i, i + 2).map((id) => `Убрать ID ${id}`));
+  rows.push(['Добавить по ID']);
+  rows.push(['Отмена']);
+  return rows;
+}
+
+const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках']];
 const MAX_CANCEL = [['Отмена']];
 // Кнопки меню и навигации админки. Пока бот ждёт значение поля или шаг мастера,
 // нажатие такой кнопки обязано прервать ввод, а не уехать в него текстом.
-const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
+const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Админы', 'Добавить по ID', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
 function maxIsMenuCommand(text) {
   const t = String(text || '').trim();
   return MAX_MENU_COMMANDS.has(t)
+    || /^(?:Убрать ID \d+)$/.test(t)
     || /^Полка: .+$/.test(t)
     || /^Заказы: .+$/.test(t)
     || /^Товар #\d+$/i.test(t)
@@ -1951,8 +2013,10 @@ function maxOrdersKb(res, breakdown) {
 }
 
 async function maxNotifyAdmin(text, orderCode) {
-  if (!isValidEnv(process.env.MAX_ADMIN_ID)) return;
-  await sendMaxMessage(process.env.MAX_ADMIN_ID, text, orderCode ? maxOrderStatusKb(orderCode) : undefined);
+  const ids = maxAdminIdList();
+  if (!ids.length) return;
+  const kb = orderCode ? maxOrderStatusKb(orderCode) : undefined;
+  for (const id of ids) await sendMaxMessage(id, text, kb);
 }
 
 async function maxAdminMenu(userId, title) {
@@ -1986,7 +2050,7 @@ async function handleMaxUpdate(upd) {
   const photoUrl = findMaxPhotoUrl(msg.body?.attachments);
   const sess = maxSessions.get(senderId);
   const editingImage = sess?.step === 'max_field' && sess.field === 'image';
-  if (photoUrl && String(senderId) === String(process.env.MAX_ADMIN_ID) && (sess?.step === 'add_img' || editingImage)) {
+  if (photoUrl && isMaxAdminId(senderId) && (sess?.step === 'add_img' || editingImage)) {
     try {
       const resp = await fetch(photoUrl);
       if (!resp.ok) throw new Error(`MAX отдал ${resp.status}`);
@@ -2024,7 +2088,7 @@ function finishAddingProductMax(d, imageUrl) {
 }
 
 async function handleMaxMessage(senderId, senderName, text, upd) {
-  const isMaxAdmin = String(senderId) === String(process.env.MAX_ADMIN_ID);
+  const isMaxAdmin = isMaxAdminId(senderId);
 
   if (text === '/id') return sendMaxMessage(senderId, `Ваш MAX ID: ${senderId}`);
 
@@ -2079,7 +2143,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
       const items = JSON.parse(order.items_json || '[]');
       const list = items.map((i) => `• ${i.name} (${Number(i.price).toLocaleString('ru-RU')} ₽)`).join('\n');
       await sendMaxMessage(senderId, `Заказ ${code} принят!\n\n${list}\nК оплате: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\nРеквизиты:\n${getSetting('payment_details')}`);
-      if (isValidEnv(process.env.MAX_ADMIN_ID) && !isMaxAdmin) {
+      if (!isMaxAdmin) {
         await maxNotifyAdmin(`Клиент ${senderName} (${senderId}) в MAX по заказу ${code}:\n"${text}"`);
       }
       return;
@@ -2087,9 +2151,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   }
 
   if (!isMaxAdmin) {
-    if (isValidEnv(process.env.MAX_ADMIN_ID)) {
-      await maxNotifyAdmin(`Сообщение в MAX от ${senderName} (${senderId}):\n${text || '(без текста)'}`);
-    }
+    await maxNotifyAdmin(`Сообщение в MAX от ${senderName} (${senderId}):\n${text || '(без текста)'}`);
     return sendMaxMessage(senderId, 'Здравствуйте! Напишите номер заказа (например, TG-1176) или дождитесь менеджера.');
   }
 
@@ -2120,6 +2182,13 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
       setSetting(sess.key, cleanText(text));
       maxSessions.delete(senderId);
       return sendMaxMessage(senderId, 'Настройка сайта сохранена!', MAX_MENU);
+    }
+    if (sess.step === 'max_add_admin') {
+      const r = addMaxAdminId(cleanText(text));
+      maxSessions.delete(senderId);
+      if (r === 'bad') return sendMaxMessage(senderId, 'ID — это число из 3–20 цифр. Посмотреть его можно командой /id.', MAX_MENU);
+      if (r === 'env') return sendMaxMessage(senderId, `ID ${cleanText(text)} и так админ из .env.\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
+      return sendMaxMessage(senderId, `Добавили.\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
     }
     if (sess.step === 'max_import') {
       const parsed = parseImportTable(text);
@@ -2265,6 +2334,21 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     if (!res.ok) return sendMaxMessage(senderId, res.error, MAX_MENU);
     return sendMaxMessage(senderId, `Удалён #${res.id} «${res.name}». Проверь расхождение с файлом: «Экспорт каталога».`, MAX_MENU);
   }
+  if (text === 'Админы') {
+    return sendMaxMessage(senderId, maxAdminsText(senderId), maxAdminsKb());
+  }
+  if (text === 'Добавить по ID') {
+    maxSessions.set(senderId, { step: 'max_add_admin' });
+    return sendMaxMessage(senderId, 'Пришли числовой ID клиента — он узнаёт его командой /id:', MAX_CANCEL);
+  }
+  const admRm = text.match(/^Убрать ID (\d+)$/);
+  if (admRm) {
+    const r = removeMaxAdminId(admRm[1]);
+    const note = r === 'env' ? `ID ${admRm[1]} — админ из .env, убрать его можно только правкой .env.`
+      : r === 'none' ? `ID ${admRm[1]} и так не в списке.`
+      : `Убрали ID ${admRm[1]}: админ-меню и уведомления ему больше не уходят.`;
+    return sendMaxMessage(senderId, `${note}\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
+  }
   if (text === 'Сводка сайта') {
     return sendMaxMessage(senderId, adminSummary(db, { show_payment: getSetting('show_payment') }), MAX_MENU);
   }
@@ -2293,7 +2377,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     return sendMaxMessage(senderId, `Показ реквизитов: ${next === '1' ? 'Включен' : 'Выключен'}`, MAX_MENU);
   }
   if (text === 'Тексты и контакты') {
-    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН'], ['Отмена']]);
+    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН'], ['ОГРНИП', 'Отмена']]);
   }
   if (MAX_CFG_BUTTONS[text]) {
     const key = MAX_CFG_BUTTONS[text];
@@ -2385,5 +2469,6 @@ app.use((err, req, res, next) => {
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 loadTgAdminExtras();
+loadMaxAdminExtras();
 if (!tgAdminIdList().length && !tgAdminUsernameList().length) console.log('NOTE: TG_ADMIN_ID и TG_ADMIN_USERNAMES пусты — напишите боту /id и впишите свой ID в .env, иначе админка недоступна.');
 const server = app.listen(PORT, HOST, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`));

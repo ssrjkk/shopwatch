@@ -52,6 +52,8 @@ ${extractAdminBlock()}
 `;
     const driver = `
 ;return { handleMaxUpdate, maxNotifyAdmin, maxSessions, db, sent,
+  loadMaxAdminExtras, maxAdminIdList, MAX_CFG_BUTTONS, EDITABLE_SETTINGS,
+  allTo: (id) => sent.filter((s) => s.url.includes('user_id=' + id)),
   lastTo: (id) => [...sent].reverse().find((s) => s.url.includes('user_id=' + id)),
   upd: (uid, name, text) => ({ update_type: 'message_created', message: { sender: { user_id: uid, name }, body: { text } } }) };
 `;
@@ -202,6 +204,21 @@ ${extractAdminBlock()}
     assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='phone'").get().value, '+7-000');
   });
 
+  it('права админа: экран «Тексты и контакты» покрывает все настраиваемые поля', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Тексты и контакты'));
+    const kb = JSON.stringify(api.lastTo(999).body.attachments);
+    const labels = Object.keys(api.MAX_CFG_BUTTONS);
+    assert.ok(labels.length >= 9, `настроечных полей: ${labels.length}`);
+    for (const label of labels) assert.ok(kb.includes(label), `на экране нет кнопки «${label}»`);
+    const covered = new Set(Object.values(api.MAX_CFG_BUTTONS));
+    for (const key of api.EDITABLE_SETTINGS) {
+      assert.ok(covered.has(key) || key === 'payment_details' || key === 'show_payment', `ключ ${key} не открывается ни одним экраном`);
+    }
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'ОГРНИП'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '304362725400111'));
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='legal_ogrnip'").get().value, '304362725400111');
+  });
+
   it('order list + status buttons change status (not hijacked by order lookup)', async () => {
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Последние заказы'));
     assert.ok(api.lastTo(999).body.text.includes('TG-9000'));
@@ -269,5 +286,58 @@ ${extractAdminBlock()}
     assert.ok(JSON.stringify(preview.body.attachments).includes('Подтвердить экспорт'));
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Подтвердить экспорт'));
     assert.match(api.lastTo(999).body.text, /записано \d+ позиций/);
+  });
+
+  it('админы MAX: экран, добавление по ID, отзыв и запрет трогать .env', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Админы'));
+    const roster = api.lastTo(999);
+    assert.match(roster.body.text, /Админы MAX \(1\)/);
+    assert.match(roster.body.text, /ID 999 — из \.env/);
+    assert.ok(JSON.stringify(roster.body.attachments).includes('Добавить по ID'), 'кнопка добавления есть');
+
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Убрать ID 999'));
+    assert.match(api.lastTo(999).body.text, /правкой \.env/);
+    assert.ok(api.maxAdminIdList().includes('999'), 'админа из .env бота не убирается');
+
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Добавить по ID'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'не число'));
+    assert.match(api.lastTo(999).body.text, /цифр/, 'мусор не становится админом');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Добавить по ID'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '777'));
+    assert.match(api.lastTo(999).body.text, /Добавили/);
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='max_extra_admin_ids'").get().value, '777');
+
+    await api.handleMaxUpdate(api.upd(777, 'Second', '/start'));
+    assert.match(api.lastTo(777).body.text, /Админ-панель Watchop \(MAX\)/, 'новый админ получает меню');
+
+    const before999 = api.allTo(999).length;
+    const before777 = api.allTo(777).length;
+    await api.handleMaxUpdate(api.upd(555, 'Ivan', 'здравствуйте'));
+    assert.equal(api.allTo(999).length, before999 + 1, 'первый админ получил уведомление');
+    assert.equal(api.allTo(777).length, before777 + 1, 'второй админ получил то же уведомление');
+
+    await api.handleMaxUpdate(api.upd(777, 'Second', 'Убрать ID 777'));
+    assert.match(api.lastTo(777).body.text, /Убрали ID 777/);
+    assert.equal(api.maxAdminIdList().includes('777'), false);
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='max_extra_admin_ids'").get().value, '');
+    await api.handleMaxUpdate(api.upd(777, 'Second', 'Товары и цены'));
+    assert.match(api.lastTo(777).body.text, /Здравствуйте/, 'отозванный возвращается в режим клиента');
+  });
+
+  it('админы MAX переживают рестарт: список догружается из настроек', () => {
+    api.db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('max_extra_admin_ids', '888')").run();
+    api.loadMaxAdminExtras();
+    assert.ok(api.maxAdminIdList().includes('888'));
+  });
+
+  it('кнопка «Админы» прерывает ввод реквизитов, а не уезжает в него', async () => {
+    const payBefore = api.db.prepare("SELECT value FROM settings WHERE key='payment_details'").get().value;
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Реквизиты оплаты'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Изменить реквизиты'));
+    assert.ok(api.maxSessions.has('999'), 'шаг ввода реквизитов открыт');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Админы'));
+    assert.match(api.lastTo(999).body.text, /Админы MAX \(/);
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='payment_details'").get().value, payBefore, 'реквизиты не перезаписаны нажатием кнопки');
+    assert.ok(!api.maxSessions.has('999') && !api.maxSessions.has(999));
   });
 });
