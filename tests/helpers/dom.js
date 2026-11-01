@@ -22,15 +22,23 @@ function indexHearts(html) {
   }
 }
 const elements = {};
+// Карточка в сетке опознаётся по сердечку избранного: их ровно по одной на
+// каждую отрисованную позицию. Так тест может считать реальный размер DOM,
+// а не домысливать его.
+function cardsIn(html) {
+  const n = (String(html).match(/data-fav-heart="/g) || []).length;
+  return Array.from({ length: n }, () => ({ offsetHeight: 230 }));
+}
 function mkEl(id) {
   return {
-    _html: '', textContent: '', href: '',
+    _html: '', textContent: '', href: '', style: {}, offsetHeight: 0, children: [],
     value: id === 'sort-select' ? 'popular' : '',
     get innerHTML() { return this._html; },
-    set innerHTML(v) { this._html = v; if (id === 'products-grid') { hearts.clear(); indexHearts(v); } },
-    insertAdjacentHTML(pos, html) { this._html += html; if (id === 'products-grid') indexHearts(html); },
+    set innerHTML(v) { this._html = v; if (id === 'products-grid') { hearts.clear(); indexHearts(v); this.children = cardsIn(v); } },
+    insertAdjacentHTML(pos, html) { this._html += html; if (id === 'products-grid') { indexHearts(html); this.children = cardsIn(this._html); } },
     classList: makeClassList(),
-    getBoundingClientRect: () => ({ top: 10000 }),
+    // rect.top во вьюпорте: документный верх сетки минус прокрутка страницы
+    getBoundingClientRect: () => ({ top: (id === 'grid-window' ? 0 : 10000) - ((global.window && global.window.scrollY) || 0) }),
   };
 }
 global.document = {
@@ -41,7 +49,7 @@ global.document = {
   },
 };
 global.window = {
-  innerHeight: 800, scrollTo: () => {}, requestAnimationFrame: (fn) => fn(),
+  innerHeight: 800, scrollY: 0, scrollTo: () => {}, requestAnimationFrame: (fn) => fn(),
   IntersectionObserver: class { constructor(cb) { this.cb = cb; global.__obs = this; } observe() {} disconnect() {} },
   onhashchange: null,
 };
@@ -64,7 +72,7 @@ const EXPOSE = [
   'readStore', 'rememberOrder', 'lastOrder', 'showOrderSuccess', 'applyOrderToDom', 'suggestionCount', 'invalidateSugCounts', 'applySettingsToUI',
   'scrollToGrid', 'buildSugMap', 'sugMap', 'renderSuggestionsNow', 'scheduleSuggestions', 'sortedSug', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
   'catalogFp', 'syncCatalogFp',
-  'oldPriceHTML', 'productCardHTML', 'localOrders', 'pushLocalOrder', 'renderOrders', 'imgSrc',
+  'oldPriceHTML', 'productCardHTML', 'localOrders', 'pushLocalOrder', 'renderOrders', 'imgSrc', 'imgUrl', 'renderWindow', 'scheduleWindow', 'WINDOW_CARDS',
 ];
 
 // Монтирует фронтенд. seed — источник данных каталога (по PRODUCTS_DATA можно подменить файл).
@@ -73,7 +81,7 @@ function mountFrontend(opts = {}) {
   const seedSrc = fs.readFileSync(seedPath, 'utf8');
   const body = `(function(){ ${prelude(opts)}\n${seedSrc}\n${extractFrontendScript()}\n;return { ${EXPOSE.filter(
     (n) => /^[A-Z_]+$/.test(n) ? `get ${n}(){ return ${n}; }` : n
-  ).join(', ')}, get document() { return document; }, hearts }; })()`;
+  ).join(', ')}, get document() { return document; }, get window() { return window; }, hearts }; })()`;
   return eval(body);
 }
 

@@ -36,6 +36,69 @@ const uploadsDir = path.isAbsolute(process.env.UPLOADS_DIR || '')
   ? process.env.UPLOADS_DIR
   : path.join(publicDir, process.env.UPLOADS_DIR || 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+// ---------- Сжатие ответов ----------
+// GitHub Pages жмёт сам, а этот сервер (localhost, VPS, Docker) отдавал HTML и
+// JSON не сжатыми: /api/state — 135 КБ вместо 23 КБ, витрина — 96 КБ вместо
+// 27 КБ. Brotli, если клиент его принимает, иначе gzip. Картинки не трогаем:
+// они уже сжаты, а буферизация потока только вредит.
+const zlib = require('zlib');
+const COMPRESSIBLE_PATH = /(?:^\/$|\.(?:html?|js|mjs|css|json|txt|svg|map)$|\/api\/(?:state|order-status)$)/i;
+const COMPRESS_MIN_BYTES = 1024;
+
+function toBuffer(chunk, encoding) {
+  if (!chunk) return Buffer.alloc(0);
+  return Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8');
+}
+
+function isCompressibleType(res) {
+  const type = String(res.getHeader('Content-Type') || '').toLowerCase();
+  return !type || /json|javascript|text\/|html|css|svg/.test(type);
+}
+
+function compression(req, res, next) {
+  const accept = String(req.headers['accept-encoding'] || '');
+  const useBrotli = /(^|[,;\s])br($|[,;\s])/i.test(accept);
+  const useGzip = /(^|[,;\s])gzip($|[,;\s])/i.test(accept);
+  if ((!useBrotli && !useGzip) || !COMPRESSIBLE_PATH.test(req.path) || req.method === 'HEAD') return next();
+  const chunks = [];
+  const write = res.write.bind(res);
+  const end = res.end.bind(res);
+  res.write = (chunk, encoding, cb) => {
+    if (chunk && !res.headersSent) chunks.push(toBuffer(chunk, encoding));
+    if (typeof encoding === 'function') encoding();
+    else if (typeof cb === 'function') cb();
+    return true;
+  };
+  res.end = (chunk, encoding, cb) => {
+    if (chunk && !res.headersSent) chunks.push(toBuffer(chunk, encoding));
+    res.write = write;
+    res.end = end;
+    const body = Buffer.concat(chunks);
+    const status = res.statusCode || 200;
+    if ((status < 200 || status >= 300 || status === 204) || body.length < COMPRESS_MIN_BYTES || !isCompressibleType(res)) {
+      res.setHeader('Content-Length', body.length);
+      return end(body);
+    }
+    let out;
+    try {
+      out = useBrotli ? zlib.brotliCompressSync(body) : zlib.gzipSync(body, { level: 6 });
+    } catch (e) {
+      res.setHeader('Content-Length', body.length);
+      return end(body);
+    }
+    if (out.length >= body.length) {
+      res.setHeader('Content-Length', body.length);
+      return end(body);
+    }
+    res.setHeader('Content-Encoding', useBrotli ? 'br' : 'gzip');
+    res.setHeader('Vary', 'Accept-Encoding');
+    res.setHeader('Content-Length', out.length);
+    return end(out);
+  };
+  return next();
+}
+
+app.use(compression);
 app.use('/uploads', express.static(uploadsDir));
 app.use(express.static(publicDir));
 
@@ -161,6 +224,12 @@ try { db.exec('ALTER TABLE orders ADD COLUMN customer_json TEXT'); } catch (e) {
 try { db.exec('ALTER TABLE orders ADD COLUMN owner_tg TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN owner_max TEXT'); } catch (e) {}
 db.exec('CREATE TABLE IF NOT EXISTS seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
+// Админка и сводка постоянно группируют по полке и статусу, а кабинеты ищут
+// заявки по статусу и дате — без индексов это полный проход по каталогу.
+db.exec('CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_products_hit ON products(is_hit)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at)');
 
 const SEED_PRODUCTS = require('./public/products-data.js');
 {

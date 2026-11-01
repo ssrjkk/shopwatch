@@ -164,6 +164,46 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.equal(r2.status, 404);
   });
 
+  it('сжимает текст (brotli/gzip) и не трогает картинки', async () => {
+    const http = require('node:http');
+    const zlib = require('node:zlib');
+    const getRaw = (url, headers) => new Promise((resolve, reject) => {
+      const req = http.request(url, { headers, method: 'GET' }, (res) => {
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => resolve({ headers: res.headers, status: res.statusCode, body: Buffer.concat(chunks) }));
+      });
+      req.on('error', reject);
+      req.end();
+    });
+
+    const plain = await getRaw(`${BASE}/api/state`, {});
+    assert.equal(plain.status, 200);
+    assert.equal(plain.headers['content-encoding'], undefined, 'без Accept-Encoding — обычные байты');
+    assert.ok(JSON.parse(plain.body.toString('utf8')).products.length > 0);
+
+    const gz = await getRaw(`${BASE}/api/state`, { 'Accept-Encoding': 'gzip' });
+    assert.equal(gz.headers['content-encoding'], 'gzip');
+    assert.equal(gz.headers.vary, 'Accept-Encoding');
+    assert.ok(gz.body.length < plain.body.length * 0.4, `gzip ${gz.body.length} vs raw ${plain.body.length}`);
+    assert.deepEqual(JSON.parse(zlib.gunzipSync(gz.body).toString('utf8')).products.length, JSON.parse(plain.body.toString('utf8')).products.length);
+
+    const br = await getRaw(`${BASE}/`, { 'Accept-Encoding': 'br, gzip' });
+    assert.equal(br.headers['content-encoding'], 'br');
+    assert.ok(br.body.length < 30000, `брокер HTML после brotli: ${br.body.length}`);
+
+    const catalog = await getRaw(`${BASE}/products-data.js`, { 'Accept-Encoding': 'gzip' });
+    assert.equal(catalog.headers['content-encoding'], 'gzip', 'JS каталога тоже жмётся');
+    const missing = await getRaw(`${BASE}/uploads/nope.jpg`, { 'Accept-Encoding': 'gzip' });
+    assert.equal(missing.status, 404);
+    assert.equal(missing.headers['content-encoding'], undefined, '404 не оборачиваем');
+
+    const etag = plain.headers.etag;
+    assert.ok(etag, 'ETag должен остаться');
+    const conditional = await getRaw(`${BASE}/api/state`, { 'If-None-Match': etag });
+    assert.equal(conditional.status, 304, 'условный запрос экономит трафик');
+  });
+
   it('Trade-In: заявка без товаров, статус только по коду и телефону', async () => {
     const post = (body) => fetch(`${BASE}/api/order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     await new Promise((r) => setTimeout(r, 600));
