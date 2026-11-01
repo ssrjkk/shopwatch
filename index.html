@@ -370,7 +370,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
 <script src="products-data.js"></script>
 <script>
-const BUILD_ID='20261028c';try{if(typeof location!=='undefined'&&localStorage.getItem('watchop_build')!==BUILD_ID){localStorage.setItem('watchop_build',BUILD_ID);location.reload();}}catch(e){}
+const BUILD_ID='20261101a';try{if(typeof location!=='undefined'&&localStorage.getItem('watchop_build')!==BUILD_ID){localStorage.setItem('watchop_build',BUILD_ID);location.reload();}}catch(e){}
 const FALLBACK_PRODUCTS=(window.SEED_PRODUCTS||[]).map((p,i)=>({...p,id:Number(p.id)>0?Number(p.id):i+1}));
 function readStore(key,fallback){try{const raw=localStorage.getItem(key);if(!raw)return fallback;const val=JSON.parse(raw);return Array.isArray(val)?val:fallback;}catch(e){try{localStorage.removeItem(key);}catch(_){ }return fallback;}}
 // Корзина и избранное хранят только id. Пересборка каталога (экспорт из базы)
