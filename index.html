@@ -2455,6 +2455,7 @@ function getFiltered(){
 function onSearchInput(){
   try{showView('catalog');}catch(_){}
   const val=(document.getElementById('search-input')||{}).value||'';
+  try{openSearchDropdown(!!String(val).trim());}catch(_){}
   const clr=document.getElementById('search-clear-btn');
   if(clr){
     if(val.trim())clr.classList.remove('hidden');
@@ -3119,14 +3120,12 @@ function closePromoModal(){
 }
 function copyPromoCode(){
   try{
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText('WATCH10');
+    if(navigator.clipboard&&navigator.clipboard.writeText){const r=navigator.clipboard.writeText('WATCH10');if(r&&r.catch)r.catch(()=>{});}
   }catch(e){}
   const inp=document.getElementById('promo-input');
   if(inp)inp.value='WATCH10';
-  state.promoCode='WATCH10';
-  state.promoDiscount=10;
   closePromoModal();
-  showToast('Промокод WATCH10 скопирован и активирован (-10%)!');
+  applyPromoCode();
 }
 
 function renderCart(){
