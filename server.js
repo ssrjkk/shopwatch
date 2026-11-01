@@ -3,17 +3,18 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { execFile } = require('node:child_process');
 const DatabaseSync = require('node:sqlite').DatabaseSync;
 const { Telegraf, Markup, session } = require('telegraf');
 
 // Не даём токенам ботов попасть в логи: ошибки HTTP-клиентов содержат URL с токеном.
 function redactSecrets(value) {
   let out = String(value == null ? '' : value);
-  for (const key of ['TG_BOT_TOKEN', 'MAX_BOT_TOKEN']) {
+  for (const key of ['TG_BOT_TOKEN', 'MAX_BOT_TOKEN', 'GITHUB_PUSH_TOKEN']) {
     const token = process.env[key];
     if (token && token.length >= 8) out = out.split(token).join('***');
   }
-  return out.replace(/bot\d+:[A-Za-z0-9_-]{10,}/g, 'bot***');
+  return out.replace(/bot\d+:[A-Za-z0-9_-]{10,}/g, 'bot***').replace(/x-access-token:[^@\s]+@/g, 'x-access-token:***@');
 }
 
 const app = express();
@@ -521,6 +522,96 @@ function exportCatalog(force) {
   const res = commitCatalogFiles(CATALOG_FILES, text, validate);
   return { blocked: false, diff, written: res.written, failed: res.failed, aborted: res.aborted, rows: rows.length };
 }
+
+// ---------- Публикация на GitHub Pages ----------
+// Витрина без сервера читает каталог из products-data.js, поэтому правка админки
+// становится видимой покупателю только после коммита в репозиторий. Кнопка в
+// бота делает именно это: выгрузка, синхронизация зеркал, коммит и push.
+const PUBLISH_PATHS = ['products-data.js', 'public/products-data.js', 'index.html', 'public/index.html', 'uploads', 'public/uploads'];
+let publishInFlight = false;
+
+// Токен не обязателен: на машине, где git уже имеет доступ к репозиторию,
+// пуш идёт через сохранённые креды. Если GITHUB_PUSH_TOKEN задан — пуш идёт
+// явным URL, а remote в .git/config не переписывается, чтобы секрет не осел
+// на диске и не поехал вместе с репозиторием.
+function publishPlan(env) {
+  const remote = String(env.GITHUB_PUSH_REMOTE || 'https://github.com/ssrjkk/shopwatch.git');
+  const branch = String(env.GITHUB_PUSH_BRANCH || 'main');
+  const token = String(env.GITHUB_PUSH_TOKEN || '').trim();
+  if (!token) return { branch, args: ['push', 'origin', `HEAD:refs/heads/${branch}`], via: 'saved credentials' };
+  const url = remote.replace(/^(https?:\/\/)/, `$1x-access-token:${token}@`);
+  return { branch, args: ['push', url, `HEAD:refs/heads/${branch}`], via: 'GITHUB_PUSH_TOKEN' };
+}
+
+function runGit(args, timeoutMs) {
+  return new Promise((resolve) => {
+    execFile('git', args, { cwd: __dirname, windowsHide: true, timeout: timeoutMs || 120000, maxBuffer: 4 * 1024 * 1024 },
+      (err, stdout, stderr) => resolve({
+        ok: !err,
+        out: redactSecrets(String(stdout || '').trim()),
+        err: redactSecrets(String(stderr || (err && err.message) || '').trim()),
+      }));
+  });
+}
+
+function runSyncPages() {
+  return new Promise((resolve) => {
+    execFile(process.execPath, ['sync-pages.js'], { cwd: __dirname, windowsHide: true, timeout: 60000 },
+      (err, stdout, stderr) => resolve({ ok: !err, text: redactSecrets(`${String(stdout || '')}${String(stderr || '')}`.trim()) }));
+  });
+}
+
+// Что ушло бы в публикацию прямо сейчас. Ничего не пишет и не отправляет.
+async function publishPreview() {
+  const st = await runGit(['status', '--porcelain', '--', ...PUBLISH_PATHS]);
+  if (!st.ok && !st.out) return { ok: false, error: `git status не ответил: ${st.err || st.out}` };
+  const plan = publishPlan(process.env);
+  return {
+    ok: true,
+    files: st.out.split('\n').map((l) => l.trim()).filter(Boolean),
+    dbRows: catalogFromDb().length,
+    fileRows: fileCatalog().length,
+    branch: plan.branch,
+    via: plan.via,
+  };
+}
+
+async function publishCatalog(actorLabel) {
+  if (publishInFlight) return { ok: false, error: 'Публикация уже идёт — дождись завершения.' };
+  publishInFlight = true;
+  try {
+    const exp = exportCatalog(true);
+    if (exp.blocked) return { ok: false, error: exp.text };
+    if (exp.failed.length) return { ok: false, error: `Файл каталога не записан: ${exp.failed.join('; ')}` };
+    const sync = await runSyncPages();
+    if (!sync.ok) return { ok: false, error: `Зеркала не синхронизированы: ${sync.text}` };
+    const st = await runGit(['status', '--porcelain', '--', ...PUBLISH_PATHS]);
+    const files = st.out.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (!files.length) return { ok: true, nothing: true, text: 'Публиковать нечего: файлы каталога уже совпадают с репозиторием.' };
+    const add = await runGit(['add', '--', ...PUBLISH_PATHS]);
+    if (!add.ok) return { ok: false, error: `git add: ${add.err}` };
+    const msg = `data: publish catalog from the admin bot (${catalogFromDb().length} positions)` +
+      (actorLabel ? `\n\nRequested by ${actorLabel} from the bot admin menu.` : '');
+    const commit = await runGit(['commit', '-m', msg]);
+    if (!commit.ok) return { ok: false, error: `git commit: ${commit.err}` };
+    const sha = ((commit.out.match(/\[[\w\/-]+ ([0-9a-f]{7,40})\]/) || [])[1] || '');
+    const plan = publishPlan(process.env);
+    const push = await runGit(plan.args);
+    if (!push.ok) {
+      return { ok: false, committed: sha, error: `Коммит ${sha.slice(0, 7)} создан локально, но push не прошёл: ${push.err}\nВ репозиторий ничего не ушло; разберись с доступом и нажми кнопку ещё раз.` };
+    }
+    return {
+      ok: true,
+      sha,
+      branch: plan.branch,
+      files: files.length,
+      text: `Опубликовано: ${sha.slice(0, 7)} в ${plan.branch} (файлов: ${files.length}, через ${plan.via}). GitHub Pages пересоберёт витрину сам, обычно 1–2 минуты.`,
+    };
+  } finally {
+    publishInFlight = false;
+  }
+}
+// ---------- /Публикация ----------
 
 // ---------- API ----------
 let tgBot = null;
@@ -1069,8 +1160,30 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const preview = summarizeDiff(diffCatalog(fileCatalog(), catalogFromDb()));
     ctx.reply(
       `Выгрузка каталога из рабочей базы в products-data.js\n\n${preview}\n\nФайл перезапишется целиком, текущая копия уйдёт в products-data.js.bak.`,
-      Markup.inlineKeyboard([[Markup.button.callback('Выгрузить', 'tg_export_yes'), Markup.button.callback('Отмена', 'tg_export_no')]])
+      Markup.inlineKeyboard([
+        [Markup.button.callback('Выгрузить', 'tg_export_yes'), Markup.button.callback('Выгрузить и опубликовать', 'tg_export_publish')],
+        [Markup.button.callback('Отмена', 'tg_export_no')],
+      ])
     );
+  });
+  tgBot.action('tg_export_publish', async (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery('Готовлю публикацию');
+    const prev = await publishPreview();
+    if (!prev.ok) return ctx.reply(prev.error);
+    ctx.reply(
+      `Публикация на GitHub Pages\n\nВ базе: ${prev.dbRows}, в файле сейчас: ${prev.fileRows}.\nВетка: ${prev.branch}, доступ: ${prev.via}.\nИзменённые файлы (${prev.files.length}):\n${prev.files.map((f) => `  ${f}`).join('\n') || '  — пусто —'}\n\nБот выгрузит каталог, синхронизирует зеркала, сделает коммит и push. В коммит попадут только файлы каталога и фото, ничего другого в рабочем дереве не трогается.`,
+      Markup.inlineKeyboard([
+        [Markup.button.callback('Подтвердить публикацию', 'tg_publish_yes'), Markup.button.callback('Отмена', 'tg_export_no')],
+      ])
+    );
+  });
+  tgBot.action('tg_publish_yes', async (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery('Публикую');
+    const who = ctx.from.username ? `@${ctx.from.username}` : `id ${ctx.from.id}`;
+    const res = await publishCatalog(who);
+    ctx.reply(res.ok ? res.text : res.error);
   });
   tgBot.action('tg_export_no', (ctx) => {
     if (!isTgAdmin(ctx)) return;
@@ -1504,7 +1617,7 @@ const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['�
 const MAX_CANCEL = [['Отмена']];
 // Кнопки меню и навигации админки. Пока бот ждёт значение поля или шаг мастера,
 // нажатие такой кнопки обязано прервать ввод, а не уехать в него текстом.
-const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена']);
+const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
 function maxIsMenuCommand(text) {
   const t = String(text || '').trim();
   return MAX_MENU_COMMANDS.has(t)
@@ -1957,7 +2070,18 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   }
   if (text === 'Экспорт каталога' || text === '/export') {
     const preview = summarizeDiff(diffCatalog(fileCatalog(), catalogFromDb()));
-    return sendMaxMessage(senderId, `Выгрузка каталога из рабочей базы в products-data.js\n\n${preview}\n\nФайл перезапишется целиком, текущая копия уйдёт в products-data.js.bak.`, [['Подтвердить экспорт'], ['Отмена']]);
+    return sendMaxMessage(senderId, `Выгрузка каталога из рабочей базы в products-data.js\n\n${preview}\n\nФайл перезапишется целиком, текущая копия уйдёт в products-data.js.bak.`, [['Подтвердить экспорт', 'Выгрузить и опубликовать'], ['Отмена']]);
+  }
+  if (text === 'Выгрузить и опубликовать') {
+    const prev = await publishPreview();
+    if (!prev.ok) return sendMaxMessage(senderId, prev.error, MAX_MENU);
+    return sendMaxMessage(senderId,
+      `Публикация на GitHub Pages\n\nВ базе: ${prev.dbRows}, в файле сейчас: ${prev.fileRows}.\nВетка: ${prev.branch}, доступ: ${prev.via}.\nИзменённые файлы (${prev.files.length}):\n${prev.files.map((f) => `  ${f}`).join('\n') || '  — пусто —'}\n\nБот выгрузит каталог, синхронизирует зеркала, сделает коммит и push. В коммит попадут только файлы каталога и фото.`,
+      [['Подтвердить публикацию'], ['Отмена']]);
+  }
+  if (text === 'Подтвердить публикацию') {
+    const res = await publishCatalog(`MAX id ${senderId}`);
+    return sendMaxMessage(senderId, res.ok ? res.text : res.error, MAX_MENU);
   }
   if (text === 'Подтвердить экспорт') {
     const res = exportCatalog(true);

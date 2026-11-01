@@ -75,4 +75,22 @@ function extractAdminBlock() {
   return src.slice(start, end);
 }
 
-module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock, extractAdminBlock };
+function extractPublishBlock() {
+  const src = serverSrc();
+  const start = src.indexOf('// ---------- Публикация на GitHub Pages ----------');
+  const end = src.indexOf('// ---------- /Публикация ----------');
+  if (start < 0 || end < 0) throw new Error('Публикация block markers not found in server.js');
+  return src.slice(start, end);
+}
+
+function extractRedactFn() {
+  const src = serverSrc();
+  const start = src.indexOf('function redactSecrets');
+  if (start < 0) throw new Error('redactSecrets not found in server.js');
+  const tail = src.slice(start);
+  const m = /\n\}\n/.exec(tail);
+  if (!m) throw new Error('redactSecrets end not found');
+  return tail.slice(0, m.index + 2);
+}
+
+module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractPublishBlock, extractRedactFn };
