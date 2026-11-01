@@ -59,4 +59,12 @@ function extractDiscountFns() {
   return src.slice(start, end);
 }
 
-module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns };
+function extractImportBlock() {
+  const src = serverSrc();
+  const start = src.indexOf('// ---------- Импорт каталога ----------');
+  const end = src.indexOf('// ---------- /Импорт каталога ----------');
+  if (start < 0 || end < 0) throw new Error('Импорт каталога block markers not found in server.js');
+  return src.slice(start, end);
+}
+
+module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock };

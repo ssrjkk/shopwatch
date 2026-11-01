@@ -23,7 +23,7 @@ const db = memdb;
 const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?').get(k)?.value ?? '';
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
 function isValidEnv(val) { return val && typeof val === 'string' && val.trim() !== '' && !val.startsWith('ВСТАВЬ_'); }
-const tgBot = { telegram: { sendMessage: async (id, text) => { sent.push({ id, text }); } }, action: () => {} };
+const tgBot = { telegram: { sendMessage: async (id, text) => { sent.push({ id, text }); } }, action: () => {}, hears: () => {}, on: () => {}, command: () => {}, start: () => {}, use: () => {} };
 process.env.TG_ADMIN_ID = '1';
 const TI_COND_TEXT = { 1: 'новые, не носились', 2: 'отличное состояние', 3: 'рабочие, есть следы использования', 4: 'неисправны, на запчасти' };
 ${extractTgAdminBlock()}

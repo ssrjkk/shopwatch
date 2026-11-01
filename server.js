@@ -38,7 +38,7 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 app.use(express.static(publicDir));
 
-const { applySeed, commitCatalogFiles, normalizeRow, renderCatalogFile, readCatalogFile, diffCatalog, summarizeDiff } = require('./catalog-export.js');
+const { applySeed, commitCatalogFiles, normalizeRow, renderCatalogFile, readCatalogFile, diffCatalog, summarizeDiff, seedKey } = require('./catalog-export.js');
 
 function isValidEnv(val) {
   return val && typeof val === 'string' && val.trim() !== '' && !val.startsWith('ВСТАВЬ_');
@@ -61,7 +61,7 @@ function tgAdminMenuKb() {
     ['Добавить часы', 'Товары и цены'],
     ['Реквизиты оплаты', 'Тексты и контакты'],
     ['Последние заказы', 'Экспорт каталога'],
-    ['Админы']
+    ['Импорт товаров', 'Админы']
   ]).resize();
 }
 
@@ -198,6 +198,120 @@ function discountOff(row) {
   return { ok: true, price: stored };
 }
 // ---------- /Скидки ----------
+
+// ---------- Импорт каталога ----------
+// Набор категорий обязан совпадать с CAT_ORDER на витрине: полки фильтра
+// строятся по этому списку, и позиция с «своей» категорией осталась бы
+// недоступной нигде, кроме поиска. Тест следит, чтобы списки не разъехались.
+const IMPORT_CATEGORIES = ['Спортивные часы', 'Эхолоты', 'Велокомпьютеры', 'GPS навигаторы', 'Фитнес-трекеры', 'Дайвинг компьютеры', 'Охота и дрессировка', 'Пульсометры', 'Аксессуары'];
+const IMPORT_MAX_ROWS = 2000;
+
+function normalizeCategory(raw) {
+  const s = String(raw || '').trim().replace(/ё/g, 'е').toLowerCase();
+  if (!s) return null;
+  for (const c of IMPORT_CATEGORIES) {
+    if (c.replace(/ё/g, 'е').toLowerCase() === s) return c;
+  }
+  return null;
+}
+
+function parsePriceNumber(raw) {
+  const digits = String(raw == null ? '' : raw).replace(/[^\d]/g, '');
+  const n = Number(digits);
+  return Number.isFinite(n) ? Math.trunc(n) : 0;
+}
+
+function splitImportLine(line) {
+  const delim = line.includes(';') ? ';' : line.includes('\t') ? '\t' : ',';
+  return line.split(delim).map((c) => String(c).trim().replace(/^"(.*)"$/, '$1'));
+}
+
+// Столбцы: бренд;серия;категория;название;цена;описание;фото. Лишние хвосты
+// режем, нехватка описания и фото — не беда, без названия/цены/категории — ошибка строки.
+function parseImportTable(text) {
+  const rows = [];
+  const errors = [];
+  const seen = new Set();
+  const lines = String(text || '').split(/\r?\n/);
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
+    const n = idx + 1;
+    if (!line.trim()) continue;
+    const cells = splitImportLine(line);
+    const head = `${cells[0] || ''} ${cells.join(' ')}`.toLowerCase();
+    // \b с кириллицей в JS не работает (граница слова только для [A-Za-z0-9_])
+    if (/^(бренд|brand)/i.test((cells[0] || '').trim()) && /(цен|price)/i.test(head)) continue;
+    if (cells.length < 4) {
+      errors.push({ line: n, reason: 'столбцов меньше четырёх: бренд;серия;категория;название;цена' });
+      continue;
+    }
+    const [brand, series, category, name, priceRaw, specs, image] = cells;
+    if (!brand) { errors.push({ line: n, reason: 'пустой бренд' }); continue; }
+    if (!name || name.length < 3) { errors.push({ line: n, reason: 'название пустое или короче трёх знаков' }); continue; }
+    const cat = normalizeCategory(category);
+    if (!cat) { errors.push({ line: n, reason: `категории «${category || ''}» нет на витрине; можно: ${IMPORT_CATEGORIES.join(', ')}` }); continue; }
+    const price = parsePriceNumber(priceRaw);
+    if (!price) { errors.push({ line: n, reason: `цена «${priceRaw || ''}» не читается — нужно число` }); continue; }
+    const row = {
+      brand: brand.toUpperCase(),
+      series: series || '',
+      category: cat,
+      name: name.slice(0, 200),
+      price,
+      specs: String(specs || '').slice(0, 500),
+      image: /^https?:\/\//i.test(image || '') ? image.slice(0, 500) : '',
+    };
+    const key = seedKey(row);
+    if (seen.has(key)) { errors.push({ line: n, reason: 'такая строка уже была выше — дубликат' }); continue; }
+    seen.add(key);
+    rows.push(row);
+    if (rows.length > IMPORT_MAX_ROWS) {
+      errors.push({ line: n, reason: `больше ${IMPORT_MAX_ROWS} строк за раз не импортируем — разрежь файл` });
+      break;
+    }
+  }
+  return { rows, errors };
+}
+
+// Позиция считается уже имеющейся по тому же ключу, что и сид: бренд+серия+
+// категория+название. Цена не в ключе — иначе правка цены плодила бы дубль.
+function classifyImportRows(conn, rows) {
+  const knownKeys = new Set(conn.prepare('SELECT seed_key, brand, series, category, name FROM products').all()
+    .map((r) => r.seed_key || seedKey(r)));
+  const fresh = [];
+  const known = [];
+  for (const r of rows) (knownKeys.has(seedKey(r)) ? known : fresh).push(r);
+  return { fresh, known };
+}
+
+function importPreviewText(fresh, known, errors) {
+  const byCat = {};
+  for (const r of fresh) byCat[r.category] = (byCat[r.category] || 0) + 1;
+  const shelf = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]).map((c) => `  ${c} — ${byCat[c]}`).join('\n');
+  const lines = [
+    `Разобрал ${fresh.length + known.length + errors.length} строк.`,
+    `Новых позиций: ${fresh.length}.`,
+    shelf ? `По полкам:\n${shelf}` : '',
+    known.length ? `Уже есть в базе (не трогаем): ${known.length}.` : '',
+    errors.length ? `Не записались (${errors.length}), первые:\n${errors.slice(0, 5).map((e) => `  строка ${e.line}: ${e.reason}`).join('\n')}` : '',
+    fresh.length ? '' : 'Записывать нечего — поправь файл и пришли ещё раз.',
+  ].filter(Boolean);
+  return lines.join('\n');
+}
+
+function insertImportedRows(conn, rows) {
+  const ins = conn.prepare('INSERT INTO products (brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, 0, ?, ?, 0, ?)');
+  conn.exec('BEGIN');
+  try {
+    for (const r of rows) ins.run(r.brand, r.series, r.category, r.name, r.price, r.image, r.specs, seedKey(r));
+    conn.exec('COMMIT');
+  } catch (e) {
+    try { conn.exec('ROLLBACK'); } catch (_) { /* транзакции уже нет */ }
+    return { added: 0, error: e.message };
+  }
+  return { added: rows.length, error: '' };
+}
+// ---------- /Импорт каталога ----------
 
 function fileCatalog() {
   try {
@@ -719,6 +833,11 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
         Markup.inlineKeyboard([[Markup.button.callback('Снять скидку', `tg_disc_clear_${id}`)]])
       );
     }
+    if (s.step === 'wait_import') return runImportPreview(ctx, txt);
+    if (s.step === 'confirm_import') {
+      ctx.session = {};
+      return ctx.reply('Импорт подтверждается кнопкой «Записать» под разбором — текстом не принимаю, чтобы не записать случайно.', tgAdminMenuKb());
+    }
     if (s.step === 'add_brand') { s.draft.brand = txt.toUpperCase(); s.step = 'add_series'; return ctx.reply('Шаг 2/6. Серия (fenix, Forerunner, Apple Watch, Galaxy Watch, Suunto...):'); }
     if (s.step === 'add_series') { s.draft.series = txt; s.step = 'add_cat'; return ctx.reply('Шаг 3/6. Категория (Спортивные часы / Дайвинг компьютеры / Фитнес-трекеры):'); }
     if (s.step === 'add_cat') { s.draft.category = txt; s.step = 'add_name'; return ctx.reply('Шаг 4/6. Полное название:'); }
@@ -863,6 +982,93 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
     notifyTgAdmins(`Клиент ${tag} обратился по заказу ${code}`);
   }
+
+  tgBot.hears('Импорт товаров', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.session = { step: 'wait_import' };
+    ctx.reply(
+      'Пришли таблицу — текстом в чат или файлом .csv / .txt.\n\n' +
+      'Столбцы: бренд;серия;категория;название;цена;описание;фото\n' +
+      'Разделитель — ; или таб или запятая, первая строка-шапка распознаётся сама.\n\n' +
+      'Пример:\nGARMIN;fenix;Спортивные часы;Garmin Fenix 8 43 мм;58990;AMOLED, титан;https://…\n\n' +
+      `Категории (строго): ${IMPORT_CATEGORIES.join(', ')}\n\n` +
+      'Сначала покажу разбор: сколько новых, сколько уже есть, что не читается. В базу ничего не запишется без кнопки «Записать».',
+      Markup.inlineKeyboard([[Markup.button.callback('Отмена', 'imp_no')]])
+    );
+  });
+
+  function runImportPreview(ctx, body) {
+    const parsed = parseImportTable(body);
+    if (!parsed.rows.length) {
+      ctx.session = {};
+      return ctx.reply(
+        parsed.errors.length
+          ? `Ни одна строка не подошла. Ошибки:\n${parsed.errors.slice(0, 8).map((e) => `  строка ${e.line}: ${e.reason}`).join('\n')}\n\nФормат: бренд;серия;категория;название;цена`
+          : 'Пусто — не нашёл ни одной строки. Формат: бренд;серия;категория;название;цена',
+        Markup.inlineKeyboard([[Markup.button.callback('Ещё раз', 'imp_retry'), Markup.button.callback('Отмена', 'imp_no')]])
+      );
+    }
+    const cls = classifyImportRows(db, parsed.rows);
+    ctx.session = { step: 'confirm_import', rows: cls.fresh };
+    const kb = cls.fresh.length
+      ? Markup.inlineKeyboard([[Markup.button.callback(`Записать ${cls.fresh.length}`, 'imp_yes'), Markup.button.callback('Отмена', 'imp_no')]])
+      : Markup.inlineKeyboard([[Markup.button.callback('Понятно', 'imp_no')]]);
+    return ctx.reply(importPreviewText(cls.fresh, cls.known, parsed.errors), kb);
+  }
+
+  tgBot.action('imp_retry', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    ctx.session = { step: 'wait_import' };
+    ctx.reply('Хорошо, жду таблицу снова.');
+  });
+  tgBot.action('imp_no', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery('Отменено');
+    ctx.session = {};
+    ctx.reply('Импорт отменён. Выберите действие:', tgAdminMenuKb());
+  });
+  tgBot.action('imp_yes', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    const rows = (ctx.session && Array.isArray(ctx.session.rows)) ? ctx.session.rows : [];
+    ctx.session = {};
+    if (!rows.length) return ctx.answerCbQuery('Записывать нечего');
+    const res = insertImportedRows(db, rows);
+    ctx.answerCbQuery(res.error ? 'Ошибка' : `+${res.added}`);
+    if (res.error) return ctx.reply(`Импорт остановлен: ${res.error}. Ни одна строка не записана — транзакция откатана.`);
+    ctx.reply(
+      `Записано ${res.added} позиций. Проверить: «Товары и цены».\nЧтобы витрина без сервера их увидела: «Экспорт каталога» → коммит products-data.js.`,
+      tgAdminMenuKb()
+    );
+  });
+
+  tgBot.on('document', async (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    const s = ctx.session || {};
+    if (s.step !== 'wait_import') return;
+    const doc = ctx.message && ctx.message.document;
+    if (!doc) return;
+    const name = String(doc.file_name || '');
+    const mime = String(doc.mime_type || '');
+    if (/excel|spreadsheet|xlsx/i.test(mime) || /\.xlsx?$/i.test(name)) {
+      ctx.session = {};
+      return ctx.reply('Excel-файл не читаю — сохрани лист как CSV (Файл → Сохранить как → CSV) и пришли его.');
+    }
+    if (doc.file_size > 2000000) {
+      ctx.session = {};
+      return ctx.reply(`Файл ${(doc.file_size / 1048576).toFixed(1)} МБ — больше 2 МБ не берём, разрежь таблицу.`);
+    }
+    try {
+      const link = await ctx.telegram.getFileLink(doc.file_id);
+      const r = await fetch(String(link), { signal: AbortSignal.timeout(30000) });
+      if (!r.ok) return ctx.reply('Не удалось скачать файл из Telegram — попробуй ещё раз.');
+      ctx.session = { step: 'wait_import' };
+      return runImportPreview(ctx, await r.text());
+    } catch (e) {
+      ctx.session = {};
+      return ctx.reply(`Файл не разобрался: ${redactSecrets(e.message)}`);
+    }
+  });
 
   tgBot.action('adm_add_id', (ctx) => {
     if (!isTgAdmin(ctx)) return;
