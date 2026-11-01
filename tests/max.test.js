@@ -1,7 +1,7 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
 const { DatabaseSync } = require('node:sqlite');
-const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractEncodingBlock, extractSettingsGuard } = require('./helpers/load');
+const { extractMaxBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractEncodingBlock, extractSettingsGuard, extractPromoBlock } = require('./helpers/load');
 const { seedKey } = require('../catalog-export.js');
 
 describe('MAX bot (parity with Telegram)', () => {
@@ -12,7 +12,7 @@ describe('MAX bot (parity with Telegram)', () => {
     memdb = new DatabaseSync(':memory:');
     memdb.exec(`CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
-CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, owner_max TEXT);`);
+CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, owner_max TEXT, promo_code TEXT, discount INTEGER DEFAULT 0);`);
     const seed = { payment_details: 'PAY', show_payment: '1', hero_title: 'H', phone: 'P', email: 'E', address: 'A', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I' };
     for (const [k, v] of Object.entries(seed)) memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(k, v);
     memdb.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('GARMIN', 'fēnix', 'Спортивные часы', 'Fenix 8', 60000, 'img', 's');
@@ -49,6 +49,7 @@ ${extractEncodingBlock()}
 ${extractDiscountFns()}
 ${extractImportBlock()}
 ${extractAdminBlock()}
+${extractPromoBlock()}
 `;
     const driver = `
 ;return { handleMaxUpdate, maxNotifyAdmin, maxSessions, db, sent,
@@ -339,5 +340,45 @@ ${extractAdminBlock()}
     assert.match(api.lastTo(999).body.text, /Админы MAX \(/);
     assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='payment_details'").get().value, payBefore, 'реквизиты не перезаписаны нажатием кнопки');
     assert.ok(!api.maxSessions.has('999') && !api.maxSessions.has(999));
+  });
+
+  it('промокоды в MAX: список, добавление, отзыв и отказ на мусоре', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Промокоды'));
+    const list = api.lastTo(999).body.text.replace(/[\u00A0\u202F]/g, ' ');
+    assert.match(list, /Промокоды витрины \(3\)/);
+    assert.match(list, /• WATCH10 — −10%/);
+    assert.match(list, /• VIP15 — −15% \(от 50 000 ₽\)/);
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Добавить промокод'), 'кнопка добавления на экране');
+
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Добавить промокод'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'SALE7 7'));
+    assert.match(api.lastTo(999).body.text, /SALE7 сохранён/);
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='promo_codes'").get().value.includes('SALE7=7'), true);
+
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Промокоды'));
+    assert.match(api.lastTo(999).body.text, /• SALE7 — −7%/);
+
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Убрать промокод'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'SALE7'));
+    assert.match(api.lastTo(999).body.text, /SALE7 убран/);
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='promo_codes'").get().value.includes('SALE7'), false);
+
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Добавить промокод'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'BADCODE 500'));
+    assert.match(api.lastTo(999).body.text, /от 1 до 90%/, 'процент за пределом отсекается с текстом');
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='promo_codes'").get().value.includes('BADCODE'), false);
+
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Убрать промокод'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'НЕТТАКОГО'));
+    assert.match(api.lastTo(999).body.text, /нет/i, 'отзыв несуществующего кода — отказ, а не тихая ошибка');
+  });
+
+  it('кнопка «Промокоды» прерывает ввод, а не уезжает в него', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Реквизиты оплаты'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Изменить реквизиты'));
+    assert.ok(api.maxSessions.has('999'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Промокоды'));
+    assert.match(api.lastTo(999).body.text, /Промокоды витрины/);
+    assert.ok(!api.maxSessions.has('999') && !api.maxSessions.has(999), 'шаг закрыт');
   });
 });

@@ -268,4 +268,45 @@ describe('HTTP API (real server, temp DB)', () => {
     const missing = await fetch(`${BASE}/api/order-status?code=TG-999999&pt=0014`);
     assert.equal(missing.status, 404);
   });
+
+  it('промокод считает сервер: /api/promo-check и итог заказа со скидкой', async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    const post = (path, body) => fetch(`${BASE}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const st = await (await fetch(`${BASE}/api/state`)).json();
+    const p = st.products[0];
+    const expectDisc = Math.round(Math.round(p.price * 0.1) / 10) * 10;
+
+    const ok = await post('/api/promo-check', { code: 'watch10', items: [{ id: p.id, qty: 1 }] });
+    assert.equal(ok.status, 200);
+    const d = await ok.json();
+    assert.equal(d.code, 'WATCH10', 'код нормализуется к верхнему регистру');
+    assert.equal(d.percent, 10);
+    assert.equal(d.discount, expectDisc);
+    assert.equal(d.total, p.price - expectDisc);
+
+    const bad = await post('/api/promo-check', { code: 'NETAKOGO', items: [{ id: p.id, qty: 1 }] });
+    assert.equal(bad.status, 400);
+    assert.match((await bad.json()).error, /не найден или истёк/);
+
+    const empty = await post('/api/promo-check', { code: 'WATCH10', items: [] });
+    assert.equal(empty.status, 400);
+
+    // цены для расчёта берутся из базы: подставленный в items price игнорируется
+    const hacked = await post('/api/promo-check', { code: 'WATCH10', items: [{ id: p.id, qty: 1, price: 10 }] });
+    assert.equal((await hacked.json()).discount, expectDisc, 'скидка считается от цены базы, а не из запроса');
+
+    await new Promise((r) => setTimeout(r, 600));
+    const ord = await post('/api/order', { items: [{ id: p.id, qty: 1 }], total: p.price, promo: 'WATCH10', customer: { fio: 'Промо Тест', phone: '+7 900 000-00-02' } });
+    assert.equal(ord.status, 200);
+    const od = await ord.json();
+    assert.match(od.orderCode, /^TG-\d+$/);
+    assert.equal(od.promo, 'WATCH10');
+    assert.equal(od.discount, expectDisc);
+    assert.equal(od.total, p.price - expectDisc, 'покупателю и в заявке уходит сумма после скидки');
+
+    await new Promise((r) => setTimeout(r, 600));
+    const badOrder = await post('/api/order', { items: [{ id: p.id, qty: 1 }], total: p.price, promo: 'NETAKOGO', customer: { fio: 'Промо Тест', phone: '+7 900 000-00-03' } });
+    assert.equal(badOrder.status, 400, 'несуществующий код не оформляет заказ молча');
+    assert.match((await badOrder.json()).error, /не найден/);
+  });
 });

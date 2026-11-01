@@ -79,6 +79,7 @@ const EXPOSE = [
   'SPEC_FACETS', 'facetOf', 'facetCount', 'specHit', 'allBrands', 'toggleBrand', 'toggleSpec', 'renderBrandPills', 'renderSpecPills',
   'COMPARE_MAX', 'toggleCompare', 'clearCompare', 'compareItems', 'inCompare', 'updateCompareBar', 'openCompareModal', 'closeCompareModal',
   'recordRecent', 'clearRecentViewed', 'recentItems', 'renderRecent', 'RECENT_MAX', 'productJsonLd', 'setProductJsonLd', 'applyHashFilters',
+  'deepLinkPromo', 'promoInputValue', 'cartItemsForApi', 'applyPromoCode', 'clearPromo', 'renderPromoRow',
 ];
 
 // Монтирует фронтенд. seed — источник данных каталога (по PRODUCTS_DATA можно подменить файл).

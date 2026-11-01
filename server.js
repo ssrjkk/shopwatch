@@ -188,7 +188,8 @@ function tgAdminMenuKb() {
     ['Реквизиты оплаты', 'Тексты и контакты'],
     ['Последние заказы', 'Экспорт каталога'],
     ['Импорт товаров', 'Админы'],
-    ['Сводка сайта', 'Фото на стоках']
+    ['Сводка сайта', 'Фото на стоках'],
+    ['Промокоды']
   ]).resize();
 }
 
@@ -208,6 +209,21 @@ function showTgAdminsPanel(ctx) {
   ctx.reply(
     `Админы бота (${lines.length}):\n${lines.join('\n')}\n\nАдмин видит админ-меню и получает все уведомления о заявках. Добавленный по юзернейму становится полным админом при первом сообщении боту.`,
     tgAdminsPanelKb()
+  );
+}
+
+function tgPromoKb() {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('Добавить промокод', 'promo_add'), Markup.button.callback('Убрать промокод', 'promo_rm')],
+    [Markup.button.callback('Обновить список', 'promo_list')]
+  ]);
+}
+
+function showTgPromoPanel(ctx, note) {
+  const list = promoRulesText(getSetting('promo_codes'));
+  ctx.reply(
+    `${note ? note + '\n\n' : ''}${list}\n\nПравило задаётся строкой «КОД ПРОЦЕНТ [БРЕНД] [minСУММА]» — например «VIP20 20 GARMIN min100000». Скидку считает сервер по ценам своей базы, а клиент присылает только код: подделать сумму с сайта нельзя.`,
+    tgPromoKb()
   );
 }
 
@@ -292,6 +308,8 @@ try { db.exec('ALTER TABLE products ADD COLUMN seed_key TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN customer_json TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN owner_tg TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN owner_max TEXT'); } catch (e) {}
+try { db.exec('ALTER TABLE orders ADD COLUMN promo_code TEXT'); } catch (e) {}
+try { db.exec('ALTER TABLE orders ADD COLUMN discount INTEGER DEFAULT 0'); } catch (e) {}
 db.exec('CREATE TABLE IF NOT EXISTS seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
 // Админка и сводка постоянно группируют по полке и статусу, а кабинеты ищут
 // заявки по статусу и дате — без индексов это полный проход по каталогу.
@@ -338,6 +356,105 @@ function discountOff(row) {
   return { ok: true, price: stored };
 }
 // ---------- /Скидки ----------
+
+// ---------- Промокоды ----------
+// Правила хранятся в settings.promo_codes строкой «КОД=ПРОЦЕНТ[:БРЕНД][:minСУММА]»
+// через запятую. Клиент присылает только код: сумму и право на скидку сервер
+// считает сам по ценам из своей базы, поэтому подделать скидку нельзя.
+const DEFAULT_PROMO_RULES = 'WATCH10=10,GARMIN5=5:GARMIN,VIP15=15:min50000';
+function parsePromoRules(raw) {
+  const src = String(raw == null || raw === '' ? DEFAULT_PROMO_RULES : raw);
+  const map = new Map();
+  for (const part of src.split(/[;,\n]+/)) {
+    const s = part.trim();
+    if (!s) continue;
+    const m = s.match(/^([A-Za-z0-9_-]{2,24})\s*[=:]\s*(\d{1,2})(?::(.+))?$/);
+    if (!m) continue;
+    const code = m[1].toUpperCase();
+    const percent = Math.trunc(Number(m[2]));
+    if (percent < 1 || percent > 90) continue;
+    let brand = '';
+    let minTotal = 0;
+    for (const token of String(m[3] || '').split(':')) {
+      const t = token.trim();
+      if (/^min(\d{3,9})$/i.test(t)) minTotal = Math.trunc(Number(t.replace(/\D/g, ''))) || 0;
+      else if (t) brand = t.toUpperCase();
+    }
+    map.set(code, { code, percent, brand, minTotal });
+  }
+  return map;
+}
+function serializePromoRules(map) {
+  const out = [];
+  for (const r of map.values()) {
+    let s = `${r.code}=${r.percent}`;
+    if (r.brand) s += `:${r.brand}`;
+    if (r.minTotal > 0) s += `:min${r.minTotal}`;
+    out.push(s);
+  }
+  return out.join(',');
+}
+function evaluatePromo(rulesRaw, codeRaw, items, lookupProduct) {
+  const code = cleanText(codeRaw).toUpperCase();
+  const rules = parsePromoRules(rulesRaw);
+  let subtotal = 0;
+  let eligible = 0;
+  for (const it of items || []) {
+    const qty = Math.min(Math.max(Math.trunc(Number(it.qty)) || 1, 1), 99);
+    const p = typeof lookupProduct === 'function' ? lookupProduct(Number(it.id)) : it;
+    if (!p || !(Number(p.price) > 0)) continue;
+    const line = Math.trunc(Number(p.price)) * qty;
+    subtotal += line;
+    const rule = rules.get(code);
+    if (rule && (!rule.brand || String(p.brand || '').toUpperCase() === rule.brand)) eligible += line;
+  }
+  const none = (error) => ({ ok: false, error, code, percent: 0, subtotal, discountRub: 0, total: subtotal });
+  if (!code) return none('Промокод не указан');
+  const rule = rules.get(code);
+  if (!rule) return none('Промокод не найден или истёк');
+  if (rule.minTotal > 0 && subtotal < rule.minTotal) return none(`Промокод ${rule.code} действует при заказе от ${rule.minTotal.toLocaleString('ru-RU')} ₽`);
+  if (rule.brand && eligible === 0) return none(`Промокод ${rule.code} действует только на бренд ${rule.brand}`);
+  const discountRub = Math.min(subtotal, Math.round(Math.round((eligible * rule.percent) / 100) / 10) * 10);
+  return { ok: true, code: rule.code, percent: rule.percent, brand: rule.brand, minTotal: rule.minTotal, subtotal, discountRub, total: Math.max(0, subtotal - discountRub) };
+}
+function upsertPromoRule(rulesRaw, input) {
+  const parts = cleanText(input).split(/\s+/);
+  const code = String(parts[0] || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  const percent = Math.trunc(Number(String(parts[1] || '').replace(/[^\d]/g, '')));
+  if (code.length < 2 || code.length > 24) return { ok: false, error: 'Код — от 2 до 24 символов' };
+  if (!Number.isFinite(percent) || percent < 1 || percent > 90) return { ok: false, error: 'Скидка — от 1 до 90%' };
+  let brand = '';
+  let minTotal = 0;
+  for (const tok of parts.slice(2)) {
+    if (/^(?:min|от)?(\d{3,9})$/i.test(tok)) minTotal = Math.trunc(Number(tok.replace(/\D/g, '')));
+    else if (/^[A-Za-zА-Яа-я]{2,20}$/.test(tok)) brand = tok.toUpperCase();
+  }
+  const map = parsePromoRules(rulesRaw);
+  map.set(code, { code, percent, brand, minTotal });
+  return { ok: true, code, percent, brand, minTotal, serialized: serializePromoRules(map) };
+}
+function removePromoRule(rulesRaw, codeRaw) {
+  const code = cleanText(codeRaw).toUpperCase();
+  const map = parsePromoRules(rulesRaw);
+  if (!map.has(code)) return { ok: false, error: `Промокода ${code || '—'} нет` };
+  map.delete(code);
+  return { ok: true, code, serialized: serializePromoRules(map) };
+}
+function promoRulesText(rulesRaw) {
+  const map = parsePromoRules(rulesRaw);
+  if (!map.size) return 'Активных промокодов нет.';
+  const lines = [`Промокоды витрины (${map.size}):`];
+  for (const r of map.values()) {
+    const cond = [];
+    if (r.brand) cond.push(`только ${r.brand}`);
+    if (r.minTotal > 0) cond.push(`от ${r.minTotal.toLocaleString('ru-RU')} ₽`);
+    lines.push(`• ${r.code} — −${r.percent}%${cond.length ? ` (${cond.join(', ')})` : ''}`);
+  }
+  return lines.join('\n');
+}
+// ---------- /Промокоды ----------
+
+initSettingStmt.run('promo_codes', getSetting('promo_codes') || DEFAULT_PROMO_RULES);
 
 // ---------- Импорт каталога ----------
 // Набор категорий обязан совпадать с CAT_ORDER на витрине: полки фильтра
@@ -580,7 +697,7 @@ function ordersPage(conn, opts) {
 }
 
 function orderCardText(conn, code) {
-  const o = conn.prepare('SELECT order_code, items_json, total, status, created_at, customer_json, owner_tg FROM orders WHERE order_code = ?').get(String(code || '').toUpperCase());
+  const o = conn.prepare('SELECT order_code, items_json, total, status, created_at, customer_json, owner_tg, promo_code, discount FROM orders WHERE order_code = ?').get(String(code || '').toUpperCase());
   if (!o) return null;
   let items = [];
   let cust = {};
@@ -592,6 +709,7 @@ function orderCardText(conn, code) {
     `Состав, позиций: ${items.length}`,
     ...items.map((i, n) => `  ${n + 1}. ${i.name} × ${i.qty} = ${Number(i.price).toLocaleString('ru-RU')} ₽`),
     `Итого: ${Number(o.total).toLocaleString('ru-RU')} ₽`,
+    ...(o.promo_code ? [`Промокод ${o.promo_code}${Number(o.discount) > 0 ? `: −${Number(o.discount).toLocaleString('ru-RU')} ₽` : ': скидка 0 ₽ (условия не выполнены)'}`] : []),
   ];
   if (cust.fio || cust.phone) lines.push(`Клиент: ${cust.fio || '—'} · ${cust.phone || '—'}`);
   if (cust.email) lines.push(`Почта: ${cust.email}`);
@@ -925,6 +1043,31 @@ app.get('/api/order-status', (req, res) => {
   res.json({ code, status: order.status, createdAt: order.created_at });
 });
 
+app.post('/api/promo-check', (req, res) => {
+  try {
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const code = cleanText(typeof body.code === 'string' ? body.code : body.promo).slice(0, 24);
+    if (!code) return res.status(400).json({ error: 'Введите промокод' });
+    const rawItems = Array.isArray(body.items) ? body.items.slice(0, 50) : [];
+    if (!rawItems.length) return res.status(400).json({ error: 'Корзина пуста' });
+    const items = [];
+    for (const it of rawItems) {
+      const id = Number(it && it.id);
+      const qty = Number(it && it.qty);
+      if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ error: 'Bad item id' });
+      if (!Number.isSafeInteger(qty) || qty < 1 || qty > 99) return res.status(400).json({ error: 'Bad item quantity' });
+      items.push({ id, qty });
+    }
+    // Цены для расчёта берутся из базы, а не из запроса: иначе код можно применить
+    // к подставленной сумме.
+    const ev = evaluatePromo(getSetting('promo_codes'), code, items, (id) => db.prepare('SELECT id, brand, price FROM products WHERE id = ?').get(id));
+    if (!ev.ok) return res.status(400).json({ error: ev.error });
+    res.json({ code: ev.code, percent: ev.percent, subtotal: ev.subtotal, discount: ev.discountRub, total: ev.total });
+  } catch (e) {
+    res.status(400).json({ error: 'Некорректный запрос' });
+  }
+});
+
 app.get('/healthz', (req, res) => {
   try {
     const products = db.prepare('SELECT COUNT(*) AS c FROM products').get().c;
@@ -1023,6 +1166,15 @@ async function handleApiOrder(req, res) {
   }
   if (!cleanItems.length) return res.status(400).json({ error: 'Пустой заказ' });
   const serverTotal = cleanItems.reduce((s, i) => s + i.price * i.qty, 0);
+  // Промокод проверяется по ценам базы, а не по сумме клиента: из запроса берётся
+  // только сам код, а право на скидку, бренд и минимальный чек считает сервер.
+  const promoRaw = typeof req.body.promo === 'string' ? cleanText(req.body.promo).slice(0, 24) : '';
+  const promoEval = promoRaw
+    ? evaluatePromo(getSetting('promo_codes'), promoRaw, cleanItems, (id) => db.prepare('SELECT id, brand, price FROM products WHERE id = ?').get(id))
+    : null;
+  if (promoEval && !promoEval.ok) return res.status(400).json({ error: promoEval.error });
+  const discountRub = promoEval ? promoEval.discountRub : 0;
+  const finalTotal = Math.max(0, serverTotal - discountRub);
 
   // Мини-апп может приложить initData для проверки подписи; без него — обычный веб-заказ.
   let tgUser = null;
@@ -1032,13 +1184,19 @@ async function handleApiOrder(req, res) {
   }
 
   const orderCode = allocateOrderCode();
-  db.prepare('INSERT INTO orders (order_code, items_json, total, status, customer_json, owner_tg) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(orderCode, JSON.stringify(cleanItems), serverTotal, ti ? 'Trade-In' : 'Новый', JSON.stringify(customer), tgUser ? String(tgUser.id) : null);
+  db.prepare('INSERT INTO orders (order_code, items_json, total, status, customer_json, owner_tg, promo_code, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(orderCode, JSON.stringify(cleanItems), finalTotal, ti ? 'Trade-In' : 'Новый', JSON.stringify(customer), tgUser ? String(tgUser.id) : null, promoEval ? promoEval.code : null, discountRub);
 
   const itemsText = cleanItems.map((i, idx) => `${idx + 1}. ${i.name} — ${i.qty} шт. x ${Number(i.price).toLocaleString('ru-RU')} ₽`).join('\n');
+  const promoLine = promoEval && discountRub > 0
+    ? `\nПромокод ${promoEval.code}: −${promoEval.percent}% (${Number(discountRub).toLocaleString('ru-RU')} ₽)`
+    : (promoEval ? `\nПромокод ${promoEval.code}: скидка не применилась (0 ₽)` : '');
+  const totalLine = discountRub > 0
+    ? `Итого: ${Number(finalTotal).toLocaleString('ru-RU')} ₽ (до скидки ${Number(serverTotal).toLocaleString('ru-RU')} ₽)`
+    : `Итого: ${Number(serverTotal).toLocaleString('ru-RU')} ₽`;
   const clientTag = tgUser ? `\nКлиент TG: @${tgUser.username || tgUser.first_name} (id ${tgUser.id})` : '';
   const custLine = `\n👤 ${customer.fio}\n📞 ${customer.phone}${customer.email ? `\n✉️ ${customer.email}` : ''}\n📍 ${customer.address || '—'}\n🚚 ${customer.delivery}`;
-  const notifyMsg = `НОВАЯ ЗАЯВКА ${orderCode}\n\nСостав:\n${itemsText}\n\nИтого: ${Number(serverTotal).toLocaleString('ru-RU')} ₽${clientTag}${custLine}\nРеквизиты:\n${getSetting('payment_details')}`;
+  const notifyMsg = `НОВАЯ ЗАЯВКА ${orderCode}\n\nСостав:\n${itemsText}\n\n${totalLine}${promoLine}${clientTag}${custLine}\nРеквизиты:\n${getSetting('payment_details')}`;
 
   notifyTgAdmins(notifyMsg, {
     ...Markup.inlineKeyboard([
@@ -1049,7 +1207,7 @@ async function handleApiOrder(req, res) {
 
   maxNotifyAdmin(notifyMsg, orderCode).catch((e) => console.error('MAX Send Error:', redactSecrets(e.message)));
 
-  res.json({ orderCode, total: serverTotal });
+  res.json({ orderCode, total: finalTotal, discount: discountRub, promo: promoEval ? promoEval.code : '' });
 }
 
 // ---------- Telegram bot ----------
@@ -1489,6 +1647,22 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       if (r === 'env') return ctx.reply('Этот юзернейм уже админ из .env.', tgAdminsPanelKb());
       return showTgAdminsPanel(ctx);
     }
+    if (txt === 'Промокоды' || txt === '/promo') { ctx.session = {}; return showTgPromoPanel(ctx); }
+    if (s.step === 'wait_promo_add') {
+      const r = upsertPromoRule(getSetting('promo_codes'), txt);
+      ctx.session = {};
+      if (!r.ok) return ctx.reply(r.error, tgPromoKb());
+      setSetting('promo_codes', r.serialized);
+      const cond = [r.brand ? `только ${r.brand}` : '', r.minTotal ? `от ${r.minTotal.toLocaleString('ru-RU')} ₽` : ''].filter(Boolean).join(', ');
+      return showTgPromoPanel(ctx, `Промокод ${r.code} сохранён: −${r.percent}%${cond ? ` (${cond})` : ''}.`);
+    }
+    if (s.step === 'wait_promo_rm') {
+      const r = removePromoRule(getSetting('promo_codes'), txt);
+      ctx.session = {};
+      if (!r.ok) return ctx.reply(r.error, tgPromoKb());
+      setSetting('promo_codes', r.serialized);
+      return showTgPromoPanel(ctx, `Промокод ${r.code} убран.`);
+    }
     if (s.step === 'wait_pay') { setSetting('payment_details', txt); ctx.session = {}; return ctx.reply('Реквизиты обновлены!'); }
     if (s.step === 'wait_cfg') {
       if (!isEditableSetting(s.key)) { ctx.session = {}; return ctx.reply('Эта настройка из бота не меняется.'); }
@@ -1555,8 +1729,11 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const items = [];
     const unknown = [];
     const stale = [];
+    let promo = '';
     const byId = (id) => db.prepare('SELECT id, name, price FROM products WHERE id = ?').get(id);
     for (const part of rest) {
+      const promoPart = part.match(/^PROMO([A-Za-z0-9_-]{1,24})$/);
+      if (promoPart) { promo = promoPart[1].toUpperCase(); continue; }
       const tiPart = part.match(/^TI(\d+)x(\d+)x(.+)$/);
       if (tiPart) {
         const cond = TI_COND_TEXT[tiPart[1]] ? tiPart[1] : '3';
@@ -1593,7 +1770,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       if (prod) items.push({ id: prod.id, name: String(prod.name).slice(0, 200), price: prod.price, qty: 1 });
       else unknown.push(rest[0]);
     }
-    return { items, unknown, stale };
+    return { items, unknown, stale, promo };
   }
 
   function samePayload(order, items) {
@@ -1626,24 +1803,37 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     // не совпал — берём свободный номер и говорим об этом админу.
     if (order && parsed.items.length && !samePayload(order, parsed.items)) order = null;
     if (!order && parsed.items.length) {
-      const total = parsed.items.reduce((s, i) => s + i.price * i.qty, 0);
+      const subtotal = parsed.items.reduce((s, i) => s + i.price * i.qty, 0);
+      // Промокод из deep link витрины проверяется здесь же: ссылка может быть
+      // отредактирована, поэтому скидку считает сервер по ценам базы.
+      const promoCode = String(parsed.promo || '').trim();
+      const promoEval = promoCode
+        ? evaluatePromo(getSetting('promo_codes'), promoCode, parsed.items, (id) => db.prepare('SELECT id, brand, price FROM products WHERE id = ?').get(id))
+        : null;
+      const discountRub = promoEval && promoEval.ok ? promoEval.discountRub : 0;
+      const total = Math.max(0, subtotal - discountRub);
       const taken = (c) => !!db.prepare('SELECT 1 AS x FROM orders WHERE order_code = ?').get(c);
       let wanted = taken(code) ? allocateOrderCode() : code;
       const siteStatus = parsed.items.some((i) => i.ti) ? 'Trade-In (сайт)' : 'Новый (сайт)';
+      const insertSite = (c) => db.prepare('INSERT INTO orders (order_code, items_json, total, status, owner_tg, promo_code, discount) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .run(c, JSON.stringify(parsed.items), total, siteStatus, String(ctx.from.id), promoCode || null, discountRub);
       try {
-        db.prepare('INSERT INTO orders (order_code, items_json, total, status, owner_tg) VALUES (?, ?, ?, ?, ?)')
-          .run(wanted, JSON.stringify(parsed.items), total, siteStatus, String(ctx.from.id));
+        insertSite(wanted);
       } catch (e) {
         wanted = allocateOrderCode();
-        db.prepare('INSERT INTO orders (order_code, items_json, total, status, owner_tg) VALUES (?, ?, ?, ?, ?)')
-          .run(wanted, JSON.stringify(parsed.items), total, siteStatus, String(ctx.from.id));
+        insertSite(wanted);
       }
       order = db.prepare('SELECT * FROM orders WHERE order_code = ?').get(wanted);
       if (order) {
         const clientTag = ctx.from.username ? `@${ctx.from.username}` : (ctx.from.first_name || 'Клиент');
         const list = parsed.items.map((i) => `• ${i.name} × ${i.qty}`).join('\n');
+        const promoNote = promoCode
+          ? (discountRub > 0
+            ? `\n🎟 Промокод ${promoCode}: −${Number(discountRub).toLocaleString('ru-RU')} ₽`
+            : `\n🎟 Промокод ${promoCode} не применён: ${promoEval ? promoEval.error : 'не проверен'}`)
+          : '';
         notifyTgAdmins(
-          `🔔 НОВАЯ ЗАЯВКА С САЙТА ${wanted}${wanted === code ? '' : ' (витрина предложила занятый номер ' + code + ')'}\n👤 Клиент: ${clientTag} (ID: ${ctx.from.id})\n📦\n${list}\n💰 ${Number(order.total).toLocaleString('ru-RU')} ₽`
+          `🔔 НОВАЯ ЗАЯВКА С САЙТА ${wanted}${wanted === code ? '' : ' (витрина предложила занятый номер ' + code + ')'}\n👤 Клиент: ${clientTag} (ID: ${ctx.from.id})\n📦\n${list}\n💰 ${Number(total).toLocaleString('ru-RU')} ₽${promoNote}`
         );
       }
     }
@@ -1762,6 +1952,23 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     }
   });
 
+  tgBot.action('promo_add', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    ctx.session = { step: 'wait_promo_add' };
+    ctx.reply('Пришлите правило одной строкой: КОД ПРОЦЕНТ [БРЕНД] [minСУММА].\nПример: VIP20 20 GARMIN min100000', tgPromoKb());
+  });
+  tgBot.action('promo_rm', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    ctx.session = { step: 'wait_promo_rm' };
+    ctx.reply('Какой промокод убрать? Пришлите его код.', tgPromoKb());
+  });
+  tgBot.action('promo_list', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    showTgPromoPanel(ctx);
+  });
   tgBot.action('adm_add_id', (ctx) => {
     if (!isTgAdmin(ctx)) return;
     ctx.answerCbQuery();
@@ -1885,11 +2092,15 @@ function maxAdminsKb() {
   return rows;
 }
 
-const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках']];
+function maxPromoKb() {
+  return [['Добавить промокод', 'Убрать промокод'], ['Отмена']];
+}
+
+const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках'], ['Промокоды']];
 const MAX_CANCEL = [['Отмена']];
 // Кнопки меню и навигации админки. Пока бот ждёт значение поля или шаг мастера,
 // нажатие такой кнопки обязано прервать ввод, а не уехать в него текстом.
-const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Админы', 'Добавить по ID', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
+const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Админы', 'Добавить по ID', 'Промокоды', 'Добавить промокод', 'Убрать промокод', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
 function maxIsMenuCommand(text) {
   const t = String(text || '').trim();
   return MAX_MENU_COMMANDS.has(t)
@@ -2190,6 +2401,20 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
       if (r === 'env') return sendMaxMessage(senderId, `ID ${cleanText(text)} и так админ из .env.\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
       return sendMaxMessage(senderId, `Добавили.\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
     }
+    if (sess.step === 'max_promo_add') {
+      const r = upsertPromoRule(getSetting('promo_codes'), cleanText(text));
+      maxSessions.delete(senderId);
+      if (!r.ok) return sendMaxMessage(senderId, r.error, maxPromoKb());
+      setSetting('promo_codes', r.serialized);
+      return sendMaxMessage(senderId, `Промокод ${r.code} сохранён.\n\n${promoRulesText(getSetting('promo_codes'))}`, maxPromoKb());
+    }
+    if (sess.step === 'max_promo_rm') {
+      const r = removePromoRule(getSetting('promo_codes'), cleanText(text));
+      maxSessions.delete(senderId);
+      if (!r.ok) return sendMaxMessage(senderId, r.error, maxPromoKb());
+      setSetting('promo_codes', r.serialized);
+      return sendMaxMessage(senderId, `Промокод ${r.code} убран.\n\n${promoRulesText(getSetting('promo_codes'))}`, maxPromoKb());
+    }
     if (sess.step === 'max_import') {
       const parsed = parseImportTable(text);
       if (!parsed.rows.length) {
@@ -2336,6 +2561,17 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   }
   if (text === 'Админы') {
     return sendMaxMessage(senderId, maxAdminsText(senderId), maxAdminsKb());
+  }
+  if (text === 'Промокоды') {
+    return sendMaxMessage(senderId, `${promoRulesText(getSetting('promo_codes'))}\n\nПравило задаётся строкой «КОД ПРОЦЕНТ [БРЕНД] [minСУММА]», например «VIP20 20 GARMIN min100000». Скидку считает сервер по ценам своей базы, клиент присылает только код.`, maxPromoKb());
+  }
+  if (text === 'Добавить промокод') {
+    maxSessions.set(senderId, { step: 'max_promo_add' });
+    return sendMaxMessage(senderId, 'Пришли правило одной строкой: КОД ПРОЦЕНТ [БРЕНД] [minСУММА]', MAX_CANCEL);
+  }
+  if (text === 'Убрать промокод') {
+    maxSessions.set(senderId, { step: 'max_promo_rm' });
+    return sendMaxMessage(senderId, 'Какой промокод убрать? Пришли его код.', MAX_CANCEL);
   }
   if (text === 'Добавить по ID') {
     maxSessions.set(senderId, { step: 'max_add_admin' });

@@ -101,6 +101,14 @@ function extractEncodingBlock() {
   return src.slice(start, end).replace(/app\.use\([\s\S]*$/, '');
 }
 
+function extractPromoBlock() {
+  const src = serverSrc();
+  const start = src.indexOf('// ---------- Промокоды ----------');
+  const end = src.indexOf('// ---------- /Промокоды ----------');
+  if (start < 0 || end < 0) throw new Error('Промокоды block markers not found in server.js');
+  return src.slice(start, end);
+}
+
 function extractSettingsGuard() {
   const src = serverSrc();
   const start = src.indexOf('const EDITABLE_SETTINGS');
@@ -109,4 +117,4 @@ function extractSettingsGuard() {
   return src.slice(start, end);
 }
 
-module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractPublishBlock, extractRedactFn, extractEncodingBlock, extractSettingsGuard };
+module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractPublishBlock, extractRedactFn, extractEncodingBlock, extractSettingsGuard, extractPromoBlock };

@@ -1,7 +1,7 @@
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
 const { DatabaseSync } = require('node:sqlite');
-const { serverSrc, extractOrderCodeFn, extractTgAdminBlock } = require('./helpers/load');
+const { serverSrc, extractOrderCodeFn, extractTgAdminBlock, extractPromoBlock, extractEncodingBlock } = require('./helpers/load');
 
 describe('TG deep-link orders (Pages without backend)', () => {
   let api;
@@ -10,7 +10,7 @@ describe('TG deep-link orders (Pages without backend)', () => {
     const memdb = new DatabaseSync(':memory:');
     memdb.exec(`CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0);
-CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, owner_max TEXT);`);
+CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, owner_max TEXT, promo_code TEXT, discount INTEGER DEFAULT 0);`);
     memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('payment_details', 'PAY');
     memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('last_order_num', '1175');
     memdb.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('GARMIN', 'fēnix', 'Спортивные часы', 'Fenix 8', 60000, 'img', 's');
@@ -27,6 +27,8 @@ const tgBot = { telegram: { sendMessage: async (id, text) => { sent.push({ id, t
 process.env.TG_ADMIN_ID = '1';
 const TI_COND_TEXT = { 1: 'новые, не носились', 2: 'отличное состояние', 3: 'рабочие, есть следы использования', 4: 'неисправны, на запчасти' };
 ${extractTgAdminBlock()}
+${extractEncodingBlock()}
+${extractPromoBlock()}
 ${extractOrderCodeFn()}
 const mkCtx = (id) => ({ from: { username: 'ivan', first_name: 'Ivan', id: id || 555 }, reply: (t) => { replies.push(t); return t; } });
 `;
@@ -153,5 +155,35 @@ const mkCtx = (id) => ({ from: { username: 'ivan', first_name: 'Ivan', id: id ||
     assert.equal(api.db.prepare('SELECT 1 AS x FROM orders WHERE order_code = ?').get(code), undefined);
     api.db.prepare('INSERT INTO orders (order_code, items_json, total) VALUES (?,?,?)').run(code, '[]', 0);
     assert.notEqual(api.allocateOrderCode(), code);
+  });
+
+  it('промокод из deep link считает скидку сервер, а не витрина', () => {
+    const parsed = api.parseOrderPayload('TG-20050_1x1x60000_PROMOWATCH10');
+    assert.equal(parsed.promo, 'WATCH10', 'парсер вытаскивает код из payload');
+    assert.equal(parsed.items.length, 1);
+
+    api.clear();
+    api.handleSiteOrderPayload(api.mkCtx(555), 'TG-20050', 'TG-20050_1x1x60000_PROMOWATCH10');
+    const row = api.db.prepare('SELECT total, promo_code, discount FROM orders WHERE order_code = ?').get('TG-20050');
+    assert.equal(row.promo_code, 'WATCH10');
+    assert.equal(row.discount, 6000, '10% от 60 000 ₽');
+    assert.equal(row.total, 54000, 'в заявке лежит сумма после скидки');
+    const note = api.sent().map((s) => s.text).join('\n').replace(/[\u00A0\u202F]/g, ' ');
+    assert.match(note, /Промокод WATCH10: −6 000 ₽/);
+  });
+
+  it('мусорный промокод не убивает заявку: сумма остаётся полной, админ видит причину', () => {
+    api.clear();
+    api.handleSiteOrderPayload(api.mkCtx(555), 'TG-20051', 'TG-20051_1x1x60000_PROMONOSUCHESTO');
+    const row = api.db.prepare('SELECT total, promo_code, discount FROM orders WHERE order_code = ?').get('TG-20051');
+    assert.equal(row.total, 60000, 'без скидки');
+    assert.equal(row.discount, 0);
+    assert.equal(row.promo_code, 'NOSUCHESTO', 'код сохранён — менеджер видит, что покупатель его вводил');
+    assert.match(api.sent().map((s) => s.text).join('\n'), /не применён/);
+  });
+
+  it('кириллица и пустой хвост не разбираются как промокод', () => {
+    assert.equal(api.parseOrderPayload('TG-1_1x1x60000_PROMOСКИДКА').promo, '', 'кириллица в коде не проходит');
+    assert.equal(api.parseOrderPayload('TG-1_1x1x60000_PROMO').promo, '', 'пустой хвост — не код');
   });
 });

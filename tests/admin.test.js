@@ -15,7 +15,7 @@ const flat = (s) => String(s).replace(/[  ]/g, ' ');
 
 function memdb() {  const db = new DatabaseSync(':memory:');
   db.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, seed_key TEXT);
-CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT);`);
+CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, promo_code TEXT, discount INTEGER DEFAULT 0);`);
   const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?,?,?,?,?,?,?,?,?,?)');
   [
     ['GARMIN', 'fenix', 'Спортивные часы', 'Garmin Fenix 8 43 мм', 58990, 0, 'https://images.unsplash.com/photo-A?w=600&q=80', 'AMOLED, титан', 1],
@@ -138,6 +138,20 @@ describe('Админка: заказы', () => {
     assert.match(text, /Клиент: Иванов Иван · \+7 900 111-22-33/);
     assert.match(text, /Доставка: СДЭК/);
     assert.equal(api.orderCardText(db, 'TG-9999'), null);
+  });
+
+  it('карточка заявки показывает промокод и скидку', () => {
+    db.prepare('INSERT INTO orders (order_code, items_json, total, status, promo_code, discount) VALUES (?,?,?,?,?,?)')
+      .run('TG-1004', '[{"name":"Garmin Fenix 8 43 мм","price":58990,"qty":1}]', 52990, 'Новый', 'WATCH10', 6000);
+    const text = flat(api.orderCardText(db, 'TG-1004'));
+    assert.match(text, /Итого: 52 990 ₽/, 'админ видит сумму после скидки');
+    assert.match(text, /Промокод WATCH10: −6 000 ₽/);
+
+    db.prepare('INSERT INTO orders (order_code, items_json, total, status, promo_code, discount) VALUES (?,?,?,?,?,?)')
+      .run('TG-1005', '[]', 34900, 'Новый', 'VIP15', 0);
+    assert.match(flat(api.orderCardText(db, 'TG-1005')), /Промокод VIP15: скидка 0 ₽ \(условия не выполнены\)/, 'код без скидки не выглядит применённым');
+
+    assert.equal(flat(api.orderCardText(db, 'TG-1001')).includes('Промокод'), false, 'без кода лишней строки в карточке нет');
   });
 
   it('статус меняется только на известный и только у существующей заявки', () => {

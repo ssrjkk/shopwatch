@@ -354,4 +354,42 @@ describe('фильтры по бренду и характеристикам, с
     assert.equal(reloaded.state.compare.length, 0, 'список сравнения сброшен вместе с остальными');
     globalThis.__pstore = undefined;
   });
+
+  it('промокод: с сервером сумму считает сервер, без сервера код только передаётся', async () => {
+    const srv = mountFrontend({ fetch: "async () => ({ ok: true, json: async () => ({ code: 'WATCH10', percent: 10, subtotal: 100000, discount: 10000, total: 90000 }) })" });
+    srv.document.getElementById('promo-input').value = 'watch10';
+    srv.applyPromoCode();
+    await new Promise((r) => setTimeout(r, 30));
+    assert.equal(srv.state.promo, 'WATCH10');
+    assert.equal(srv.state.promoDiscount, 10000, 'скидку вернул сервер, витрина её только показывает');
+    assert.match(srv.document.getElementById('cart-promo-note').textContent.replace(/[  ]/g, ' '), /−10 000 ₽/);
+    assert.equal(srv.document.getElementById('cart-promo-note').classList.contains('hidden'), false);
+    srv.clearPromo();
+    assert.equal(srv.state.promo, '', 'сброс чистит и код, и скидку');
+    assert.equal(srv.state.promoDiscount, 0);
+
+    const rejected = mountFrontend({ fetch: "async () => ({ ok: false, status: 400, json: async () => ({ error: 'Промокод не найден или истёк' }) })" });
+    rejected.document.getElementById('promo-input').value = 'NETAKOGO';
+    rejected.applyPromoCode();
+    await new Promise((r) => setTimeout(r, 30));
+    assert.equal(rejected.state.promo, '', 'отклонённый код не остаётся в корзине');
+    assert.equal(rejected.state.promoDiscount, 0);
+    assert.match(rejected.document.getElementById('cart-promo-note').textContent, /не найден/);
+  });
+
+  it('на статической витрине промокод не выдумывает скидку, а уходит в deep link', () => {
+    const pages = mountFrontend({ location: { hostname: 'ssrjkk.github.io', protocol: 'https:' }, fetch: "async () => ({ ok: false })" });
+    assert.equal(pages.IS_STATIC_DEMO, true, 'хост *.github.io опознан как статический');
+    pages.document.getElementById('promo-input').value = 'watch10';
+    pages.applyPromoCode();
+    assert.equal(pages.state.promo, 'WATCH10');
+    assert.equal(pages.state.promoDiscount, 0, 'без сервера скидку не рисуем — посчитает сервер в боте');
+    assert.match(pages.document.getElementById('cart-promo-note').textContent, /итог посчитает сервер/);
+    assert.equal(pages.deepLinkPromo(), 'WATCH10');
+    const link = pages.tgOrderLink('TG-1234', [{ id: 5, qty: 1, price: 1000 }]);
+    assert.match(link, /\?start=TG-1234_5x1x1000_PROMOWATCH10$/, link);
+    pages.clearPromo();
+    assert.equal(pages.tgOrderLink('TG-1234', [{ id: 5, qty: 1, price: 1000 }]).includes('PROMO'), false, 'без кода в ссылке его нет');
+    assert.equal(pages.deepLinkPromo(), '', 'мусорный код в deep link не кладём');
+  });
 });
