@@ -103,7 +103,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 </div>
 </div>
 
-<div>
+<div id="hits-section">
 <div class="flex items-center justify-between mb-2">
 <h2 class="text-base font-bold">Хиты продаж</h2>
 <a href="#/catalog" onclick="setTimeout(scrollToGrid,60)" class="text-xs text-[#0E9F6E] font-semibold">Все товары →</a>
@@ -429,7 +429,7 @@ function setSeries(s){state.activeSeries=s;renderFilters();renderCatalog();}
 function matchIn(list,tokens,min,max){const cat=state.activeCategory;const ser=state.activeSeries;return list.filter((p)=>{if(cat!=='Все товары'&&p.category!==cat)return false;if(ser!=='Все модели'&&p.series!==ser)return false;if(min&&Number(p.price)<min)return false;if(max&&Number(p.price)>max)return false;if(tokens.length){const h=hayOf(p);for(let i=0;i<tokens.length;i++){if(!tokenHit(h,tokens[i]))return false;}}return true;});}
 function matchProducts(tokens,min,max){return matchIn(state.products,tokens,min,max);}
 function getFiltered(){const{tokens,min,max}=parseSearch(document.getElementById('search-input').value);const sort=document.getElementById('sort-select').value;let list=matchProducts(tokens,min,max);if(!list.length){const num=tokens.find((t)=>/^\d{4,7}$/.test(t));if(num){const v=Number(num);list=matchProducts(tokens.filter((t)=>t!==num),Math.floor(v*0.95),Math.ceil(v*1.05));}}if(sort==='asc')list.sort((a,b)=>Number(a.price)-Number(b.price));else if(sort==='desc')list.sort((a,b)=>Number(b.price)-Number(a.price));else if(tokens.length){const v=new Map();for(const p of list)v.set(p,relScore(p,tokens));list.sort((a,b)=>(v.get(b)-v.get(a))||(isHit(b)-isHit(a))||(Number(a.id)-Number(b.id)));}else list.sort((a,b)=>(isHit(b)-isHit(a))||(Number(a.id)-Number(b.id)));return list;}
-function renderCatalog(){if(gridObserver){gridObserver.disconnect();gridObserver=null;}state.filtered=getFiltered();state.shownCount=0;document.getElementById('products-grid').innerHTML='';appendChunk();updateGridStatus();observeSentinel();pumpGrid();renderDrawer();toggleSearchClear();updateFilterChrome();}
+function renderCatalog(){try{const sec=document.getElementById('hits-section');if(sec)sec.classList.toggle('hidden',!!searchQuery());}catch(e){}if(gridObserver){gridObserver.disconnect();gridObserver=null;}state.filtered=getFiltered();state.shownCount=0;document.getElementById('products-grid').innerHTML='';appendChunk();updateGridStatus();observeSentinel();pumpGrid();renderDrawer();toggleSearchClear();updateFilterChrome();}
 function appendChunk(){const grid=document.getElementById('products-grid');const next=state.filtered.slice(state.shownCount,state.shownCount+PAGE_SIZE);if(!next.length)return false;grid.insertAdjacentHTML('beforeend',next.map(p=>productCardHTML(p)).join(''));state.shownCount+=next.length;updateGridStatus();return state.shownCount<state.filtered.length;}
 function updateGridStatus(){const total=state.filtered.length;const fc=document.getElementById('found-count');if(fc)fc.textContent=`Найдено: ${total}`;const st=document.getElementById('grid-status');const rst=document.getElementById('grid-reset');if(!total){if(st)st.textContent='Ничего не найдено. Попробуйте короче: «Fenix», «эхолот», «чехол» или «до 60000».';if(rst)rst.classList.remove('hidden');}else{if(st)st.textContent=state.shownCount<total?`Показано ${state.shownCount} из ${total} — листайте вниз`:(total>PAGE_SIZE?`Показаны все ${total}`:'');if(rst)rst.classList.add('hidden');}}
 function searchQuery(){try{return String(document.getElementById('search-input').value||'').trim();}catch(e){return '';}}

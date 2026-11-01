@@ -308,6 +308,18 @@ describe('витрина: подсказки, шторка фильтров и �
     assert.ok(g.state.filtered.some((p) => /Fenix 8 47 мм AMOLED Black/.test(p.name)), 'изменённая цена учитывается');
   });
 
+  it('пока человек ищет, «Хиты продаж» не встают над выдачей', () => {
+    const sec = g.document.getElementById('hits-section');
+    type('fenix');
+    assert.equal(g.searchQuery(), 'fenix');
+    assert.ok(sec.classList.contains('hidden'), 'при запросе хиты скрыты');
+    type('');
+    assert.ok(!sec.classList.contains('hidden'), 'без запроса хиты на месте');
+    g.setCategory('Эхолоты');
+    assert.ok(!sec.classList.contains('hidden'), 'фильтр по категории хиты не прячет');
+    g.resetFilters();
+  });
+
   it('после смены каталога подсказки пересобираются, а не берутся из старого списка', () => {
     type('descent');
     const before = g.state.suggest.map((s) => s.label);
