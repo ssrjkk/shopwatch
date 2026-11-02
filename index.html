@@ -1335,7 +1335,7 @@ body.dark-theme .brand-marquee-container {
 
 <!-- ПЛАВАЮЩИЙ СТЕК БЫСТРЫХ ДЕЙСТВИЙ -->
 <div class="fixed bottom-5 right-5 z-30 flex flex-col items-end gap-2">
-  <button id="to-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Наверх" class="hidden w-10 h-10 rounded-full bg-[#0E121B]/90 backdrop-blur shadow-lg border border-white/15 text-[#E2E8F0] font-bold hover:border-[#38BDF8] transition-all">↑</button>
+  <button id="to-top-btn" onclick="window.scrollTo({top:0,behavior:'auto'})" aria-label="Наверх" class="hidden w-10 h-10 rounded-full bg-[#0E121B]/90 backdrop-blur shadow-lg border border-white/15 text-[#E2E8F0] font-bold hover:border-[#38BDF8] transition-all">↑</button>
   <a href="#/cart" aria-label="Открыть корзину" title="Перейти в корзину" class="w-11 h-11 rounded-full bg-[#0E121B] border border-white/15 shadow-lg flex items-center justify-center text-[#E2E8F0] hover:border-[#38BDF8] transition-colors">
     <svg class="w-4 h-4 shrink-0 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
   </a>
@@ -1489,7 +1489,7 @@ function ensureCatalogIndex(){
       };
     }
     if(p.stock===undefined){
-      p.stock=p.price>=150000?2:p.hit?5:4;
+      p.stock=p.price>=150000?2:isHit(p)?5:4;
     }
   }
 }
@@ -1532,7 +1532,7 @@ function showToast(msg){
 
 function scrollToCatalog(){
   const el=document.getElementById('catalog-anchor');
-  if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth'});
+  if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'auto',block:'start'});
 }
 
 // Слайдер Hero (из второго варианта с автопрокруткой и плавным переключением)
@@ -1607,7 +1607,7 @@ async function initApp(){
 }
 
 function updateCollectionChipCounts(){
-  const hits=state.products.filter(p=>p.hit).length;
+  const hits=state.products.filter(p=>isHit(p)).length;
   const prem=state.products.filter(p=>Number(p.price)>=60000).length;
   const val=state.products.filter(p=>Number(p.price)<=35000).length;
   const elH=document.getElementById('chip-count-hits');
@@ -1668,7 +1668,7 @@ function showView(tab){
   if(tab==='checkout')renderCheckout();
   if(tab==='catalog')requestAnimationFrame(function(){try{renderWindow();}catch(e){}});
   syncMiniAppNav(tab);
-  if(typeof window!=='undefined'&&window.scrollTo)window.scrollTo({top:0,behavior:'smooth'});
+  if(typeof window!=='undefined'&&window.scrollTo)window.scrollTo({top:0,behavior:'auto'});
 }
 
 function switchTab(tab){
@@ -2031,7 +2031,7 @@ function renderDrawer(){
 }
 
 function renderHits(){
-  const flagged=state.products.filter(p=>p.hit);
+  const flagged=state.products.filter(p=>isHit(p));
   const hits=(flagged.length?flagged:state.products).slice(0,8);
   const box=document.getElementById('hits-grid');
   if(box)box.innerHTML=hits.map(p=>productCardHTML(p)).join('');
@@ -2188,7 +2188,7 @@ function getFiltered(){
     if(state.activeCategory!=='Все товары'&&p.category!==state.activeCategory)return false;
     if(state.activeSeries!=='Все модели'&&p.series!==state.activeSeries)return false;
     if(state.activeBrand!=='ALL'&&p.brand!==state.activeBrand)return false;
-    if(curPreset==='hits'&&!p.hit)return false;
+    if(curPreset==='hits'&&!isHit(p))return false;
     if(curPreset==='premium'&&Number(p.price)<60000)return false;
     if(curPreset==='value'&&Number(p.price)>35000)return false;
     if(state.activeSpecs&&state.activeSpecs.length){
@@ -2572,7 +2572,7 @@ function productCardHTML(p){
   const stk=getStockInfo(p);
   const pal=getWatchPalette(p);
   const splitPrice=Math.round(Number(p.price)/4).toLocaleString('ru-RU');
-  const hitBadge=p.hit?`<span class="px-2.5 py-0.5 rounded-full bg-[#38BDF8]/15 text-[#F1F5F9] border border-[#38BDF8]/40 text-[9px] font-extrabold uppercase tracking-[0.14em]">Flagship</span>`:'';
+  const hitBadge=isHit(p)?`<span class="px-2.5 py-0.5 rounded-full bg-[#38BDF8]/15 text-[#F1F5F9] border border-[#38BDF8]/40 text-[9px] font-extrabold uppercase tracking-[0.14em]">Flagship</span>`:'';
   return `<div class="watch-card group rounded-[26px] p-4 flex flex-col justify-between relative overflow-hidden">
     <div class="relative overflow-hidden rounded-[20px] watch-stage aspect-[4/4.1] mb-3.5">
       <a href="#/p/${p.id}" class="absolute inset-0 block cursor-pointer" aria-label="${esc(p.name)}"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" width="600" height="600" decoding="async" fetchpriority="low" draggable="false" referrerpolicy="no-referrer" loading="lazy" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')" class="watch-bg-photo absolute inset-0 w-full h-full object-cover transition-transform duration-300 img-skeleton" onload="this.classList.remove('img-skeleton')" /></a>
