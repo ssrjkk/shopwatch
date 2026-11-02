@@ -275,8 +275,19 @@ describe('витрина: поиск, фильтры и оформление н�
     const fs = require('fs');
     const from = path.join(__dirname, '..', 'public', 'uploads');
     const to = path.join(__dirname, '..', 'uploads');
-    const names = fs.existsSync(from) ? fs.readdirSync(from) : [];
-    const mirrored = fs.existsSync(to) ? fs.readdirSync(to) : [];
+    const walk = (dir, base = '') => {
+      let out = [];
+      if (!fs.existsSync(dir)) return out;
+      for (const n of fs.readdirSync(dir)) {
+        const full = path.join(dir, n);
+        const rel = base ? base + '/' + n : n;
+        if (fs.statSync(full).isDirectory()) out = out.concat(walk(full, rel));
+        else out.push(rel);
+      }
+      return out;
+    };
+    const names = walk(from);
+    const mirrored = walk(to);
     assert.deepEqual(mirrored.slice().sort(), names.slice().sort(),
       `в корне uploads/ не те файлы, что в public/uploads — выполните npm run sync:pages`);
     for (const n of names) {

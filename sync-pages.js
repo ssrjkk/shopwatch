@@ -27,30 +27,46 @@ for (const [from, to] of pairs) {
   }
 }
 
-// Фото, загруженные через админку, сервер отдаёт из public/uploads по пути
-// /uploads/... . У Pages корень — репозиторий, значит там тот же путь обязан
-// существовать как uploads/..., иначе карточка на витрине без сервера выходит
-// с битой картинкой. Каталог файлов зеркалится целиком, лишнее вычищается.
+// Фото, загруженные через админку, и локальный каталог студийных кадров сервер
+// отдаёт из public/uploads по пути /uploads/... . У Pages корень — репозиторий,
+// значит там тот же путь обязан существовать как uploads/..., иначе карточка на
+// витрине без сервера выходит с битой картинкой. Дерево зеркалится рекурсивно,
+// лишнее вычищается.
 const uploadsFrom = path.join(__dirname, 'public', 'uploads');
 const uploadsTo = path.join(__dirname, 'uploads');
 let uploadsDirty = 0;
-const wanted = fs.existsSync(uploadsFrom) ? fs.readdirSync(uploadsFrom) : [];
+function listFilesRecursive(dir, base = '') {
+  let out = [];
+  if (!fs.existsSync(dir)) return out;
+  for (const name of fs.readdirSync(dir)) {
+    const full = path.join(dir, name);
+    const rel = base ? base + '/' + name : name;
+    if (fs.statSync(full).isDirectory()) out = out.concat(listFilesRecursive(full, rel));
+    else out.push(rel);
+  }
+  return out;
+}
+const wanted = listFilesRecursive(uploadsFrom);
 if (wanted.length && !fs.existsSync(uploadsTo)) fs.mkdirSync(uploadsTo, { recursive: true });
-for (const name of wanted) {
-  const a = fs.readFileSync(path.join(uploadsFrom, name));
+for (const rel of wanted) {
+  const src = path.join(uploadsFrom, rel);
+  const dst = path.join(uploadsTo, rel);
+  const a = fs.readFileSync(src);
   let b = null;
-  try { b = fs.readFileSync(path.join(uploadsTo, name)); } catch (e) { /* нет зеркала — скопировать */ }
+  try { b = fs.readFileSync(dst); } catch (e) { /* нет зеркала — скопировать */ }
   if (!b || !a.equals(b)) {
-    fs.writeFileSync(path.join(uploadsTo, name), a);
-    console.log(`synced: uploads/${name} (${a.length} bytes)`);
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    fs.writeFileSync(dst, a);
+    console.log(`synced: uploads/${rel} (${a.length} bytes)`);
     uploadsDirty++;
   }
 }
-for (const name of fs.existsSync(uploadsTo) ? fs.readdirSync(uploadsTo) : []) {
-  if (wanted.includes(name)) continue;
-  fs.rmSync(path.join(uploadsTo, name));
-  console.log(`pruned: uploads/${name} — в public/uploads такого файла нет`);
+for (const rel of listFilesRecursive(uploadsTo)) {
+  if (wanted.includes(rel)) continue;
+  fs.rmSync(path.join(uploadsTo, rel));
+  console.log(`pruned: uploads/${rel} — в public/uploads такого файла нет`);
   uploadsDirty++;
 }
 if (!uploadsDirty) console.log(`ok: uploads/ == public/uploads/ (${wanted.length} фото)`);
+try { require("./vibe-clean.js").syncReadmeCompressionMetrics(); } catch (e) {}
 process.exit(0);

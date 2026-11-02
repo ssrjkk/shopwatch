@@ -1,8 +1,12 @@
 node_modules/
 watchop.db
+*.db-wal
+*.db-shm
 backups/
+tests/backups/
 .env
 *.log
-.DS_Store
 *.bak
+*.tmp
+.DS_Store
 .scratch/

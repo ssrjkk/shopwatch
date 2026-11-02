@@ -97,15 +97,22 @@ function applySeed(db, rows) {
   const insWithId = db.prepare('INSERT INTO products (id, brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   const empty = db.prepare('SELECT COUNT(*) AS c FROM products').get().c === 0;
   let added = 0;
-  for (const x of rows) {
-    const key = seedKey(x);
-    if (!empty && marked.has(key)) continue;
-    const hit = Number(x.hit || x.is_hit) > 0 ? 1 : 0;
-    const oldPrice = Math.trunc(Number(x.old_price)) || 0;
-    if (empty && Number(x.id) > 0) insWithId.run(Number(x.id), x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key);
-    else ins.run(x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key);
-    mark.run(key);
-    added++;
+  db.exec("SAVEPOINT apply_seed");
+  try {
+    for (const x of rows) {
+      const key = seedKey(x);
+      if (!empty && marked.has(key)) continue;
+      const hit = Number(x.hit || x.is_hit) > 0 ? 1 : 0;
+      const oldPrice = Math.trunc(Number(x.old_price)) || 0;
+      if (empty && Number(x.id) > 0) insWithId.run(Number(x.id), x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key);
+      else ins.run(x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key);
+      mark.run(key);
+      added++;
+    }
+    db.exec("RELEASE SAVEPOINT apply_seed");
+  } catch (e) {
+    try { db.exec("ROLLBACK TO SAVEPOINT apply_seed"); db.exec("RELEASE SAVEPOINT apply_seed"); } catch (_) {}
+    throw e;
   }
   return { added, empty, seeded: rows.length };
 }

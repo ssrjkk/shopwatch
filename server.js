@@ -18,6 +18,7 @@ function redactSecrets(value) {
 }
 
 const app = express();
+if (typeof app.set === 'function') app.set('trust proxy', 1);
 // --- Защита: лимит тела, security-заголовки, закрытый CORS по умолчанию ---
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -259,6 +260,7 @@ function verifyTelegramInitData(initData) {
 
 // ---------- DB ----------
 const db = new DatabaseSync(process.env.DB_PATH || 'watchop.db');
+try { db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000;'); } catch (e) {}
 
 // ---------- Бекапы и целостность ----------
 // ---------- Backups & DB integrity ----------
@@ -412,6 +414,29 @@ const SEED_PRODUCTS = require('./public/products-data.js');
   const res = applySeed(db, SEED_PRODUCTS);
   if (res.added) console.log(res.empty ? `Catalog seeded: ${res.added} products` : `Catalog upgraded: +${res.added} products`);
 }
+// Разовый refresh фото из файла-источника: у позиций, чьи фото ещё на чужих
+// CDN (Unsplash/Wikimedia/PiterGSM), подтягиваем локальные кадры из
+// public/uploads/catalog. Свои загрузки (/uploads/...) и ручные правки не трогаем.
+try {
+  const OLD_HOSTS = ['images.unsplash.com', 'upload.wikimedia.org', 'thumb.wikimedia.org', 'pitergsm.ru'];
+  const wantByKey = new Map(SEED_PRODUCTS.map((p) => [seedKey(p), String(p.image || '')]));
+  const updImg = db.prepare('UPDATE products SET image = ? WHERE id = ?');
+  let refreshed = 0;
+  db.exec('SAVEPOINT img_refresh');
+  try {
+    for (const r of db.prepare('SELECT id, image, seed_key FROM products').all()) {
+      const cur = String(r.image || '');
+      if (!OLD_HOSTS.some((h) => cur.includes(h))) continue;
+      const want = wantByKey.get(r.seed_key);
+      if (want && want !== cur) { updImg.run(want, r.id); refreshed++; }
+    }
+    db.exec('RELEASE SAVEPOINT img_refresh');
+  } catch (e) {
+    try { db.exec('ROLLBACK TO SAVEPOINT img_refresh'); db.exec('RELEASE SAVEPOINT img_refresh'); } catch (_) {}
+    throw e;
+  }
+  if (refreshed) console.log(`Catalog images refreshed: ${refreshed}`);
+} catch (e) { console.error('Image refresh failed:', e.message); }
 
 
 // ---------- Экспорт каталога из базы в файл-источник ----------
@@ -1368,6 +1393,15 @@ setInterval(() => {
     if (fresh.length) lookupRateLimit.set(ip, fresh);
     else lookupRateLimit.delete(ip);
   }
+  if (typeof orderRateLimit !== "undefined") {
+    for (const [ip, ts] of orderRateLimit) {
+      if (now - ts > 300000) orderRateLimit.delete(ip);
+    }
+  }
+  if (typeof maxSessions !== "undefined" && maxSessions.size > 500) {
+    const firstKey = maxSessions.keys().next().value;
+    if (firstKey !== undefined) maxSessions.delete(firstKey);
+  }
 }, 30000).unref?.();
 function lookupAllowed(ip, limit) {
   const now = Date.now();
@@ -1574,6 +1608,27 @@ function allocateOrderCode() {
 
 // Маяк «начал оформление»: только случайный sessionId, id/qty и сумма —
 // никаких телефонов и имён. На статике без сервера шлём в пустоту (catch на фронте).
+
+app.post('/api/lead', (req, res) => {
+  const lip = req.ip || req.socket.remoteAddress || 'unknown';
+  if (!lookupAllowed(lip, 30)) return res.status(429).json({ error: 'Слишком много запросов. Попробуйте позже.' });
+  try {
+    const b = req.body && typeof req.body === 'object' ? req.body : {};
+    const type = cleanText(b.type || 'callback').slice(0, 24);
+    const name = cleanText(b.name || '').slice(0, 100);
+    const contact = cleanText(b.contact || '').slice(0, 80);
+    const details = cleanText(b.details || '').slice(0, 300);
+    if (!name || !contact) return res.status(400).json({ error: 'Укажите имя и контакт для связи' });
+    const label = type === 'tradein' ? `Trade-In оценка: ${name} (${details || 'без деталей'})` : `Обратный звонок: ${details || 'Консультация'}`;
+    const msg = `🔔 НОВАЯ ЗАЯВКА НА СВЯЗЬ (${type === 'tradein' ? 'Trade-In' : 'Звонок'})\n👤 ${name}\n📞 ${contact}\n💬 ${details || '—'}`;
+    notifyTgAdmins(msg);
+    maxNotifyAdmin(msg).catch(() => {});
+    res.json({ ok: true, label });
+  } catch (e) {
+    res.status(500).json({ error: 'Не удалось отправить заявку' });
+  }
+});
+
 app.post('/api/checkout-started', (req, res) => {
   const lip = req.ip || req.socket.remoteAddress || 'unknown';
   if (!lookupAllowed(lip, 60)) return res.status(429).json({ error: 'Слишком много запросов.' });
@@ -2341,7 +2396,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     if (s.step === 'add_price') { s.draft.price = parseInt(txt.replace(/\D/g, ''), 10) || 0; s.step = 'add_specs'; return ctx.reply('Шаг 5.5/6. Описание/характеристики:'); }
     if (s.step === 'add_specs') { s.draft.specs = txt; s.step = 'add_img'; return ctx.reply('Шаг 6/6. Отправьте ФОТО с телефона или ссылку (или - для стандартного):'); }
     if (s.step === 'add_img') {
-      const img = txt.startsWith('http') ? txt : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80';
+      const img = txt.startsWith('http') ? txt : 'https://pitergsm.ru/upload/iblock/3a6/dro4iv6iw9lyxqshlw9bxyi7npov6jt8.jpg';
       finishAddingProductTg(ctx, img);
     }
   });
@@ -3308,7 +3363,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     if (sess.step === 'add_price') { sess.draft.price = parseInt(text.replace(/\D/g, ''), 10) || 0; sess.step = 'add_specs'; maxSessions.set(senderId, sess); return sendMaxMessage(senderId, 'Шаг 5.5/6. Краткое описание/характеристики:'); }
     if (sess.step === 'add_specs') { sess.draft.specs = text; sess.step = 'add_img'; maxSessions.set(senderId, sess); return sendMaxMessage(senderId, 'Шаг 6/6. Отправьте ФОТО часов или ссылку на картинку (или - для стандартного фото):'); }
     if (sess.step === 'add_img') {
-      const img = text.startsWith('http') ? text : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80';
+      const img = text.startsWith('http') ? text : 'https://pitergsm.ru/upload/iblock/3a6/dro4iv6iw9lyxqshlw9bxyi7npov6jt8.jpg';
       const id = finishAddingProductMax(sess.draft, img);
       maxSessions.delete(senderId);
       return sendMaxMessage(senderId, `Часы "${sess.draft.name}" (${Number(sess.draft.price).toLocaleString('ru-RU')} ₽) добавлены! ID: ${id}`, MAX_MENU);
@@ -3552,7 +3607,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     if (parts.length < 4) return sendMaxMessage(senderId, 'Формат: /add GARMIN | fēnix | Название | 62320', MAX_MENU);
     const [brand, series, name, priceStr] = parts;
     const price = parseInt(priceStr.replace(/\D/g, ''), 10) || 0;
-    const id = finishAddingProductMax({ brand: brand.toUpperCase(), series, category: 'Спортивные часы', name, price, specs: '' }, 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80');
+    const id = finishAddingProductMax({ brand: brand.toUpperCase(), series, category: 'Спортивные часы', name, price, specs: '' }, 'https://pitergsm.ru/upload/iblock/3a6/dro4iv6iw9lyxqshlw9bxyi7npov6jt8.jpg');
     return sendMaxMessage(senderId, `Добавлено! ID: ${id}`, MAX_MENU);
   }
 
@@ -3577,5 +3632,12 @@ try {
   const last = getSetting('last_backup_at');
   if (!last || Date.now() - Date.parse(last) > 24 * 3600 * 1000) runBackup('startup: старше суток');
 } catch (e) { console.error('Backup check failed:', e.message); }
-setInterval(() => runBackup('scheduled: раз в сутки'), 24 * 3600 * 1000);
-const server = app.listen(PORT, HOST, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`));
+setInterval(() => runBackup('scheduled: раз в сутки'), 24 * 3600 * 1000).unref?.();
+const server = process.env.HOST ? app.listen(PORT, HOST, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`)) : app.listen(PORT, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`));
+
+function gracefulShutdown() {
+  try { if (server && server.close) server.close(); } catch (e) {}
+  try { db.exec("PRAGMA wal_checkpoint(TRUNCATE)"); db.close(); } catch (e) {}
+}
+process.once("SIGINT", gracefulShutdown);
+process.once("SIGTERM", gracefulShutdown);
