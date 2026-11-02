@@ -169,31 +169,6 @@ img { -webkit-user-drag: none; }
   50% { transform: scale(1.45); opacity: 0.5; }
 }
 .stock-dot-pulse { opacity: 1; }
-@keyframes spinTourbillon {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-.tourbillon-cage {
-  transform-origin: 100px 131px;
-  animation: spinTourbillon 8s linear infinite;
-}
-
-.watch-dial-svg {
-  border-radius: 9999px;
-  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.78);
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.watch-dial-svg:hover {
-  transform: scale(1.035);
-}
-#dial-bezel-ring {
-  transform-origin: 100px 100px;
-  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-#dial-hour-hand, #dial-min-hand, #dial-sec-hand {
-  transform-origin: 100px 100px;
-}
-
 .hero-obsidian {
   background-color: #06080E;
   background-image:
@@ -351,8 +326,7 @@ body.classic-edition .text-slate-200 {
   color: #0B0F17 !important;
 }
 body.classic-edition .hero-obsidian .text-white,
-body.classic-edition .hero-obsidian .text-slate-200,
-body.classic-edition #live-watch-dial .text-white {
+body.classic-edition .hero-obsidian .text-slate-200 {
   color: #F8FAFC !important;
 }
 body.classic-edition .text-slate-300,
@@ -408,15 +382,6 @@ body.classic-edition .hero-obsidian {
 body.classic-edition .hero-obsidian .text-white,
 body.classic-edition .hero-obsidian .text-slate-200 {
   color: #0F172A !important;
-}
-body.classic-edition #live-watch-dial {
-  background: #0B0F17 !important;
-  border-color: #1E293B !important;
-}
-body.classic-edition #live-watch-dial .text-white,
-body.classic-edition #live-watch-dial .text-slate-200,
-body.classic-edition #live-watch-dial .text-slate-300 {
-  color: #F8FAFC !important;
 }
 body.classic-edition .brand-marquee-container {
   mask-image: none !important;
@@ -928,8 +893,8 @@ body.classic-edition #bot-sim-drawer {
     <div class="absolute inset-0 pointer-events-none opacity-25" style="background-image: radial-gradient(circle at 75% 50%, rgba(56,189,248,0.22) 1px, transparent 1px); background-size: 28px 28px;"></div>
 
     <!-- Слайд 1: Flagship Haute Horlogerie & Garmin MARQ -->
-    <div id="hero-slide-0" class="hero-slide relative w-full h-full min-h-[340px] sm:min-h-[380px] flex flex-col md:flex-row items-center justify-between gap-8 p-6 sm:p-10">
-      <div class="relative z-10 max-w-xl text-white space-y-4">
+    <div id="hero-slide-0" class="hero-slide relative w-full h-full min-h-[280px] sm:min-h-[300px] flex flex-col justify-center gap-6 p-6 sm:p-10">
+      <div class="relative z-10 max-w-3xl text-white space-y-4">
         <div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-[#38BDF8]/35 text-[#E2E8F0] text-[10.5px] font-bold uppercase tracking-[0.16em]">
           <span class="w-2 h-2 rounded-full bg-[#10B981] stock-dot-pulse"></span>
           <span id="hero-dispatch-badge">Официальная гарантия 12 мес. • Отправка СДЭК в день заказа</span>
@@ -949,234 +914,9 @@ body.classic-edition #bot-sim-drawer {
         </div>
       </div>
 
-      <!-- 3D МАСТЕР-ХРОНОГРАФ С ОТКРЫТЫМ БАЛАНСОМ (ТУРБИЙОНОМ) И САПФИРОВЫМ КУПОЛОМ -->
-      <div id="live-watch-dial" class="relative z-10 flex flex-col items-center bg-gradient-to-b from-white/[0.06] to-white/[0.02] backdrop-blur-2xl border border-white/12 rounded-[32px] px-6 py-5 text-white select-none shrink-0 shadow-2xl">
-        <div class="text-[9px] font-mono uppercase tracking-[0.24em] text-[#38BDF8] mb-1.5">CALIBRE CHRONOGRAPH • 60 FPS</div>
-        <svg id="watch-dial-svg" onclick="cycleWatchDialMode()" viewBox="0 0 200 200" class="w-48 h-48 sm:w-56 sm:h-56 watch-dial-svg cursor-pointer" title="Нажмите для смены мануфактурного калибра">
-          <defs>
-            <linearGradient id="caseMetal" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#94A3B8" />
-              <stop offset="30%" stop-color="#475569" />
-              <stop offset="65%" stop-color="#0F172A" />
-              <stop offset="100%" stop-color="#64748B" />
-            </linearGradient>
-            <radialGradient id="dialBgGrad" cx="50%" cy="50%" r="50%">
-              <stop id="dial-grad-start" offset="0%" stop-color="#161F30" />
-              <stop id="dial-grad-end" offset="100%" stop-color="#05070B" />
-            </radialGradient>
-            <linearGradient id="sapphireGlare" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.20" />
-              <stop offset="40%" stop-color="#38BDF8" stop-opacity="0.05" />
-              <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
-            </linearGradient>
-          </defs>
+          </div>
 
-          <!-- Массивные титановые ушки корпуса (Sculpted Lugs) -->
-          <path d="M62 2 L138 2 L148 24 L52 24 Z" fill="url(#caseMetal)" stroke="#475569" stroke-width="0.8" />
-          <path d="M52 176 L148 176 L138 198 L62 198 Z" fill="url(#caseMetal)" stroke="#475569" stroke-width="0.8" />
-
-          <!-- Заводная головка с накаткой и кнопки хронографа -->
-          <rect x="191" y="90" width="7" height="20" rx="2.5" fill="url(#st-gold)" stroke="#475569" stroke-width="0.9" />
-          <rect x="185" y="58" width="7" height="13" rx="2.5" transform="rotate(24 188 64)" fill="url(#caseMetal)" stroke="#38BDF8" stroke-width="1" />
-          <rect x="185" y="129" width="7" height="13" rx="2.5" transform="rotate(-24 188 135)" fill="url(#caseMetal)" stroke="#64748B" stroke-width="0.9" />
-
-          <!-- Внешний титановый корпус с 8 шестигранными винтами -->
-          <circle cx="100" cy="100" r="95" fill="url(#caseMetal)" stroke="#94A3B8" stroke-width="1.2" />
-          <circle cx="100" cy="100" r="86" fill="#080B12" stroke="#38BDF8" stroke-width="0.9" stroke-opacity="0.6" />
-          <g>
-            <g transform="rotate(22.5 100 100)"><circle cx="100" cy="9.5" r="2.7" fill="#1E293B" stroke="#94A3B8" stroke-width="0.8"/><line x1="98.2" y1="9.5" x2="101.8" y2="9.5" stroke="#64748B" stroke-width="0.9"/></g>
-            <g transform="rotate(67.5 100 100)"><circle cx="100" cy="9.5" r="2.7" fill="#1E293B" stroke="#94A3B8" stroke-width="0.8"/><line x1="98.2" y1="9.5" x2="101.8" y2="9.5" stroke="#64748B" stroke-width="0.9"/></g>
-            <g transform="rotate(112.5 100 100)"><circle cx="100" cy="9.5" r="2.7" fill="#1E293B" stroke="#94A3B8" stroke-width="0.8"/><line x1="98.2" y1="9.5" x2="101.8" y2="9.5" stroke="#64748B" stroke-width="0.9"/></g>
-            <g transform="rotate(157.5 100 100)"><circle cx="100" cy="9.5" r="2.7" fill="#1E293B" stroke="#94A3B8" stroke-width="0.8"/><line x1="98.2" y1="9.5" x2="101.8" y2="9.5" stroke="#64748B" stroke-width="0.9"/></g>
-            <g transform="rotate(202.5 100 100)"><circle cx="100" cy="9.5" r="2.7" fill="#1E293B" stroke="#94A3B8" stroke-width="0.8"/><line x1="98.2" y1="9.5" x2="101.8" y2="9.5" stroke="#64748B" stroke-width="0.9"/></g>
-            <g transform="rotate(247.5 100 100)"><circle cx="100" cy="9.5" r="2.7" fill="#1E293B" stroke="#94A3B8" stroke-width="0.8"/><line x1="98.2" y1="9.5" x2="101.8" y2="9.5" stroke="#64748B" stroke-width="0.9"/></g>
-            <g transform="rotate(292.5 100 100)"><circle cx="100" cy="9.5" r="2.7" fill="#1E293B" stroke="#94A3B8" stroke-width="0.8"/><line x1="98.2" y1="9.5" x2="101.8" y2="9.5" stroke="#64748B" stroke-width="0.9"/></g>
-            <g transform="rotate(337.5 100 100)"><circle cx="100" cy="9.5" r="2.7" fill="#1E293B" stroke="#94A3B8" stroke-width="0.8"/><line x1="98.2" y1="9.5" x2="101.8" y2="9.5" stroke="#64748B" stroke-width="0.9"/></g>
-          </g>
-
-          <!-- Вращающийся керамический 24-часовой безель GMT / Тахиметр -->
-          <g id="dial-bezel-ring">
-            <circle cx="100" cy="100" r="85" fill="#0B0F19" stroke="#334155" stroke-width="1.5" />
-            <circle id="dial-solar-ring" cx="100" cy="100" r="81" fill="none" stroke="#38BDF8" stroke-width="1.6" stroke-opacity="0.85" />
-            <polygon points="100,14 96,7 104,7" fill="#38BDF8" />
-            <text x="189" y="102" text-anchor="middle" fill="#E2E8F0" font-size="5.5" font-weight="800" font-family="monospace">06</text>
-            <text x="100" y="193" text-anchor="middle" fill="#E2E8F0" font-size="5.5" font-weight="800" font-family="monospace">12</text>
-            <text x="11" y="102" text-anchor="middle" fill="#E2E8F0" font-size="5.5" font-weight="800" font-family="monospace">18</text>
-          </g>
-
-          <!-- Основное гильошированное поле циферблата -->
-          <circle cx="100" cy="100" r="80" fill="url(#dialBgGrad)" />
-          <circle cx="100" cy="100" r="68" fill="none" stroke="#38BDF8" stroke-width="0.4" stroke-opacity="0.4" />
-          <circle cx="100" cy="100" r="56" fill="none" stroke="#334155" stroke-width="0.4" stroke-dasharray="1.5 2.5" />
-
-          <!-- 60 прецизионных делений и 12 золотых накладных часовых меток -->
-          <g>
-            <g transform="rotate(0 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(6 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(12 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(18 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(24 100 100)"/>
-            <g transform="rotate(30 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(36 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(42 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(48 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(54 100 100)"/>
-            <g transform="rotate(60 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(66 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(72 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(78 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(84 100 100)"/>
-            <g transform="rotate(90 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(96 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(102 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(108 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(114 100 100)"/>
-            <g transform="rotate(120 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(126 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(132 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(138 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(144 100 100)"/>
-            <g transform="rotate(150 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(156 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(162 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(168 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(174 100 100)"/>
-            <g transform="rotate(180 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(186 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(192 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(198 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(204 100 100)"/>
-            <g transform="rotate(210 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(216 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(222 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(228 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(234 100 100)"/>
-            <g transform="rotate(240 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(246 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(252 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(258 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(264 100 100)"/>
-            <g transform="rotate(270 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(276 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(282 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(288 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(294 100 100)"/>
-            <g transform="rotate(300 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(306 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(312 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(318 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(324 100 100)"/>
-            <g transform="rotate(330 100 100)"><line x1="100" y1="20" x2="100" y2="23" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round"/><rect x="98.4" y="24.5" width="3.2" height="7.5" rx="1" fill="#F8FAFC" stroke="#38BDF8" stroke-width="0.6"/></g>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(336 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(342 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(348 100 100)"/>
-            <line x1="100" y1="20.5" x2="100" y2="23.5" stroke="#64748B" stroke-width="0.8" transform="rotate(354 100 100)"/>
-          </g>
-
-          <!-- Левый суб-циферблат (9 часов — пульс и секунды) -->
-          <circle cx="62" cy="100" r="15.5" fill="#070A12" stroke="#38BDF8" stroke-width="0.8" stroke-opacity="0.55" />
-          <circle cx="62" cy="100" r="13" fill="none" stroke="#334155" stroke-width="0.5" stroke-dasharray="1 2" />
-          <line x1="62" y1="100" x2="62" y2="88" stroke="#10B981" stroke-width="1.3" stroke-linecap="round" />
-          <circle cx="62" cy="100" r="1.8" fill="#38BDF8" />
-
-          <!-- Правый суб-циферблат (3 часа — запас хода и Solar) -->
-          <circle cx="138" cy="100" r="15.5" fill="#070A12" stroke="#38BDF8" stroke-width="0.8" stroke-opacity="0.55" />
-          <circle cx="138" cy="100" r="13" fill="none" stroke="#334155" stroke-width="0.5" stroke-dasharray="1 2" />
-          <line x1="138" y1="100" x2="148" y2="94" stroke="#E2E8F0" stroke-width="1.3" stroke-linecap="round" />
-          <circle cx="138" cy="100" r="1.8" fill="#38BDF8" />
-
-          <!-- Открытый мост турбийона / балансового колеса на 6 часах -->
-          <circle cx="100" cy="131" r="14" fill="#04060A" stroke="#38BDF8" stroke-width="0.9" stroke-opacity="0.7" />
-          <g class="tourbillon-cage">
-            <circle cx="100" cy="131" r="10.5" fill="none" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="6 4" />
-            <line x1="89" y1="131" x2="111" y2="131" stroke="#38BDF8" stroke-width="1.1" />
-            <line x1="100" y1="120" x2="100" y2="142" stroke="#38BDF8" stroke-width="1.1" />
-            <circle cx="100" cy="131" r="3" fill="#10B981" stroke="#E2E8F0" stroke-width="1" />
-          </g>
-          <line x1="82" y1="131" x2="118" y2="131" stroke="url(#st-gold)" stroke-width="1.8" stroke-linecap="round" />
-
-          <!-- Мануфактурная маркировка и апертура цифрового хронометра -->
-          <text id="dial-brand-label" x="100" y="51" text-anchor="middle" fill="#E2E8F0" font-size="8" font-weight="800" letter-spacing="2">GARMIN AMOLED</text>
-          <text id="dial-telemetry-top" x="100" y="62" text-anchor="middle" fill="#94A3B8" font-size="6.2" font-weight="700" font-family="monospace">♥ 72 BPM • ☀ 99%</text>
-
-          <rect x="70" y="70" width="60" height="14" rx="4" fill="#050811" fill-opacity="0.85" stroke="#38BDF8" stroke-width="0.6" stroke-opacity="0.45" />
-          <text id="dial-digital-time" x="100" y="79.5" text-anchor="middle" fill="#F8FAFC" font-family="monospace" font-size="8.5" font-weight="800" letter-spacing="1.2">12:00:00</text>
-          <text id="dial-sub-label" x="100" y="156" text-anchor="middle" fill="#E2E8F0" font-size="5.8" font-weight="800" letter-spacing="1.5">SAT-IQ • SAPPHIRE</text>
-
-          <!-- 3D Граненые мечевидные стрелки Dauphine с люминофором Super-LumiNova -->
-          <g id="dial-hour-hand">
-            <polygon points="96.5,107 100,52 103.5,107" fill="#F8FAFC" stroke="#94A3B8" stroke-width="0.5" />
-            <line x1="100" y1="96" x2="100" y2="62" stroke="#E2E8F0" stroke-width="1.6" stroke-linecap="round" />
-          </g>
-          <g id="dial-min-hand">
-            <polygon points="97.2,110 100,31 102.8,110" fill="#E2E8F0" stroke="#64748B" stroke-width="0.5" />
-            <line x1="100" y1="96" x2="100" y2="42" stroke="#10B981" stroke-width="1.3" stroke-linecap="round" />
-          </g>
-          <g id="dial-sec-hand">
-            <line x1="100" y1="118" x2="100" y2="24" stroke="#E2E8F0" stroke-width="1.4" stroke-linecap="round" />
-            <polygon points="100,28 97.8,35 102.2,35" fill="#10B981" stroke="#E2E8F0" stroke-width="0.5" />
-          </g>
-          <circle cx="100" cy="100" r="5" fill="#0F172A" stroke="#38BDF8" stroke-width="2" />
-          <circle cx="100" cy="100" r="1.8" fill="#F8FAFC" />
-
-          <!-- Сапфировый антибликовый купол -->
-          <path d="M 32 54 A 82 82 0 0 1 158 38 A 76 76 0 0 0 42 146 Z" fill="url(#sapphireGlare)" pointer-events="none" />
-        </svg>
-
-        <!-- Селектор калибров -->
-        <div class="flex items-center gap-1.5 mt-3 bg-black/50 p-1 rounded-full border border-white/10">
-          <button id="dial-mode-tactical" onclick="setWatchDialMode('tactical')" class="px-3 py-1 rounded-full btn-luxury-gold text-[10px] font-extrabold tracking-wider">MARQ</button>
-          <button id="dial-mode-gmt" onclick="setWatchDialMode('gmt')" class="px-3 py-1 rounded-full bg-white/5 text-slate-300 text-[10px] font-bold tracking-wider">SEIKO GMT</button>
-          <button id="dial-mode-dive" onclick="setWatchDialMode('dive')" class="px-3 py-1 rounded-full bg-white/5 text-slate-300 text-[10px] font-bold tracking-wider">DESCENT</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Слайд 2: Японская и швейцарская механика -->
-    <div id="hero-slide-1" class="hero-slide hidden relative w-full h-full min-h-[340px] sm:min-h-[380px] flex flex-col justify-end p-6 sm:p-10">
-      <img src="https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=1100&q=85" alt="Seiko 5 GMT и Tissot PRX" class="absolute inset-0 w-full h-full object-cover brightness-[0.32]" />
-      <div class="relative z-10 max-w-2xl text-white space-y-3.5">
-        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#38BDF8]/20 border border-[#38BDF8]/45 text-[#E2E8F0] text-[10.5px] font-extrabold uppercase tracking-[0.18em]">
-          <span>Мануфактурная Механика • Swiss &amp; Japan</span>
-        </div>
-        <h2 class="font-display text-2xl sm:text-4xl font-extrabold leading-tight">Seiko 5 Sports GMT, Tissot PRX Powermatic 80 и Continental Swiss</h2>
-        <p class="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed">Автоматические калибры с запасом хода до 80 часов, гильошированные циферблаты Tapisserie, интегрированные стальные браслеты и сапфировое стекло.</p>
-        <div class="flex flex-wrap gap-3 pt-1">
-          <button onclick="setSeries('Seiko 5 GMT');scrollToCatalog()" class="btn-luxury-gold font-extrabold text-xs px-6 py-3 rounded-full">Коллекция Seiko GMT</button>
-          <button onclick="setSeries('Tissot PRX');scrollToCatalog()" class="bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 text-white font-semibold text-xs px-5 py-3 rounded-full">Tissot PRX &amp; Continental</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Слайд 3: Экспедиции и Морская Навигация -->
-    <div id="hero-slide-2" class="hero-slide hidden relative w-full h-full min-h-[340px] sm:min-h-[380px] flex flex-col justify-end p-6 sm:p-10">
-      <img src="https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=1100&q=85" alt="Garmin Fenix 8 и Эхолоты" class="absolute inset-0 w-full h-full object-cover brightness-[0.32]" />
-      <div class="relative z-10 max-w-2xl text-white space-y-3.5">
-        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 text-[10.5px] font-extrabold uppercase tracking-[0.18em]">
-          <span>Экспедиционный и Морской Дивизион</span>
-        </div>
-        <h2 class="font-display text-2xl sm:text-4xl font-extrabold leading-tight">Garmin fēnix 8 Titanium, эхолоты Striker Vivid и дайвинг Descent Mk3i</h2>
-        <p class="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed">Титан Grade-5, подводная телеметрия SubWave до 200 метров и предпродажная загрузка топографических карт России.</p>
-        <div class="flex flex-wrap gap-3 pt-1">
-          <button onclick="setCategory('Эхолоты');scrollToCatalog()" class="btn-luxury-gold font-extrabold text-xs px-6 py-3 rounded-full">Морские эхолоты</button>
-          <button onclick="setCategory('Дайвинг компьютеры');scrollToCatalog()" class="bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 text-white font-semibold text-xs px-5 py-3 rounded-full">Дайвинг Descent</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Стрелки и индикаторы слайдера -->
-    <div class="absolute top-5 right-5 z-20 flex items-center gap-2">
-      <button id="prev-slide" onclick="heroStep(-1)" aria-label="Предыдущий слайд" class="w-9 h-9 rounded-full bg-black/40 hover:bg-black/65 border border-white/15 text-white backdrop-blur flex items-center justify-center text-xs transition-colors">←</button>
-      <button id="next-slide" onclick="heroStep(1)" aria-label="Следующий слайд" class="w-9 h-9 rounded-full bg-black/40 hover:bg-black/65 border border-white/15 text-white backdrop-blur flex items-center justify-center text-xs transition-colors">→</button>
-    </div>
-    <div class="absolute bottom-4 left-8 z-20 flex items-center gap-2">
-      <button id="hero-dot-0" onclick="heroGoTo(0)" aria-label="Слайд 1" class="w-7 h-1.5 rounded-full bg-[#38BDF8] transition-all"></button>
-      <button id="hero-dot-1" onclick="heroGoTo(1)" aria-label="Слайд 2" class="w-2 h-1.5 rounded-full bg-white/30 transition-all"></button>
-      <button id="hero-dot-2" onclick="heroGoTo(2)" aria-label="Слайд 3" class="w-2 h-1.5 rounded-full bg-white/30 transition-all"></button>
-    </div>
-  </div>
-
-  <!-- БЕГУЩАЯ ЛЕНТА МАНУФАКТУР -->
+    <!-- БЕГУЩАЯ ЛЕНТА МАНУФАКТУР -->
   <div class="brand-marquee-container bg-[#0B0F18] rounded-2xl py-3 px-4 border border-white/[0.07]">
     <div class="brand-marquee-track items-center text-[11px] font-extrabold tracking-[0.2em] text-slate-400 uppercase">
       <button onclick="selectSearchTag('GARMIN')" class="hover:text-[#E2E8F0] px-3 transition-colors">GARMIN</button><span class="text-[#38BDF8]">◆</span>
@@ -1750,6 +1490,7 @@ function pauseHeroAuto(flag){
 }
 function startHeroAuto(){
   if(heroTimer)clearInterval(heroTimer);
+  try{if(document.querySelectorAll('.hero-slide').length<2)return;}catch(e){return;}
   if(typeof document==='undefined'||typeof document.querySelector!=='function')return;
   heroTimer=setInterval(()=>{
     if(!state.heroPaused)heroStep(1);
@@ -1786,7 +1527,6 @@ async function initApp(){
   applySettingsToUI();
   initRevealObserver();
   startHeroAuto();
-  try{ if(typeof startWatchDialClock==='function')startWatchDialClock(); }catch(e){}
   updateCollectionChipCounts();
   renderFilters();
   renderCatalog();
@@ -4224,79 +3964,6 @@ function updateProductJsonLd(p){setProductJsonLd(p);}
 
 
 state.activeSpecs=[];
-state.dialMode='tactical';
-let dialTimer=null;
-
-const DIAL_MODES={
-  tactical:{brand:'GARMIN AMOLED',telemetry:'♥ 72 BPM • ☀ 99%',sub:'SAT-IQ • SAPPHIRE',accent:'#10B981',bgStart:'#1E293B',bgEnd:'#090D16',bezelRot:0},
-  gmt:{brand:'SEIKO 5 GMT',telemetry:'AUTO 4R34 • 24H GMT',sub:'100M • HARDLEX',accent:'#38BDF8',bgStart:'#172554',bgEnd:'#090D16',bezelRot:45},
-  dive:{brand:'DESCENT MK3i',telemetry:'SUBWAVE • 200M DIVE',sub:'N2O • DECO STOP OK',accent:'#F59E0B',bgStart:'#064E3B',bgEnd:'#090D16',bezelRot:120}
-};
-
-function updateWatchDialHands(customDate){
-  const now=customDate instanceof Date ? customDate : new Date();
-  const hrs=now.getHours();
-  const mins=now.getMinutes();
-  const secs=now.getSeconds();
-  const ms=now.getMilliseconds();
-  const secAngle=(secs+ms/1000)*6;
-  const minAngle=(mins+secs/60)*6;
-  const hourAngle=((hrs%12)+mins/60)*30;
-
-  const hEl=document.getElementById('dial-hour-hand');
-  const mEl=document.getElementById('dial-min-hand');
-  const sEl=document.getElementById('dial-sec-hand');
-  const dEl=document.getElementById('dial-digital-time');
-  if(hEl&&hEl.setAttribute)hEl.setAttribute('transform',`rotate(${hourAngle.toFixed(1)} 100 100)`);
-  if(mEl&&mEl.setAttribute)mEl.setAttribute('transform',`rotate(${minAngle.toFixed(1)} 100 100)`);
-  if(sEl&&sEl.setAttribute)sEl.setAttribute('transform',`rotate(${secAngle.toFixed(1)} 100 100)`);
-  if(dEl){
-    const pad=n=>String(n).padStart(2,'0');
-    dEl.textContent=`${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
-  }
-  return {hourAngle,minAngle,secAngle};
-}
-
-function setWatchDialMode(mode){
-  const cfg=DIAL_MODES[mode]||DIAL_MODES.tactical;
-  state.dialMode=DIAL_MODES[mode]?mode:'tactical';
-  const bLbl=document.getElementById('dial-brand-label');
-  const tTop=document.getElementById('dial-telemetry-top');
-  const sLbl=document.getElementById('dial-sub-label');
-  const secH=document.getElementById('dial-sec-hand');
-  const sRing=document.getElementById('dial-solar-ring');
-  const gStart=document.getElementById('dial-grad-start');
-  const bz=document.getElementById('dial-bezel-ring');
-  if(bLbl){bLbl.textContent=cfg.brand;if(bLbl.setAttribute)bLbl.setAttribute('fill',cfg.accent);}
-  if(tTop)tTop.textContent=cfg.telemetry;
-  if(sLbl)sLbl.textContent=cfg.sub;
-  if(secH&&secH.setAttribute)secH.setAttribute('stroke',cfg.accent);
-  if(sRing&&sRing.setAttribute)sRing.setAttribute('stroke',cfg.accent);
-  if(gStart&&gStart.setAttribute)gStart.setAttribute('stop-color',cfg.bgStart);
-  if(bz&&bz.setAttribute)bz.setAttribute('transform',`rotate(${cfg.bezelRot} 100 100)`);
-  ['tactical','gmt','dive'].forEach(k=>{
-    const btn=document.getElementById('dial-mode-'+k);
-    if(btn){
-      btn.className=k===state.dialMode
-        ?'px-3 py-1 rounded-full btn-luxury-gold text-[10px] font-extrabold tracking-wider'
-        :'px-3 py-1 rounded-full bg-white/5 text-slate-300 text-[10px] font-bold tracking-wider';
-    }
-  });
-}
-
-function cycleWatchDialMode(){
-  const order=['tactical','gmt','dive'];
-  const next=order[(order.indexOf(state.dialMode)+1)%order.length];
-  setWatchDialMode(next);
-}
-
-function startWatchDialClock(){
-  updateWatchDialHands();
-  if(dialTimer)clearInterval(dialTimer);
-  if(typeof document==='undefined'||typeof document.querySelector!=='function')return;
-  dialTimer=setInterval(()=>updateWatchDialHands(),1000);
-}
-
 function getDispatchCountdown(nowOverride){
   const now=nowOverride instanceof Date ? nowOverride : new Date();
   const h=now.getHours();
@@ -4360,7 +4027,6 @@ function copyCartShareLink(){
 }
 
 applyTheme(state.theme);
-startWatchDialClock();
 setupMiniApp();
 initApp();
 
