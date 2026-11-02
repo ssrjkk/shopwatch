@@ -125,4 +125,12 @@ function extractBackupBlock() {
   return src.slice(start, end);
 }
 
-module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractPublishBlock, extractRedactFn, extractEncodingBlock, extractSettingsGuard, extractPromoBlock, extractBackupBlock };
+function extractOwnerBlock() {
+  const src = serverSrc();
+  const start = src.indexOf('// ---------- Владелец: статистика, журнал, дайджест ----------');
+  const end = src.indexOf('// ---------- /Владелец ----------');
+  if (start < 0 || end < 0) throw new Error('Owner block markers not found in server.js');
+  return src.slice(start, end);
+}
+
+module.exports = { ROOT, serverSrc, extractMaxBlock, extractVerifyFn, extractOrderCodeFn, extractFrontendScript, extractTgAdminBlock, extractDiscountFns, extractImportBlock, extractAdminBlock, extractPublishBlock, extractRedactFn, extractEncodingBlock, extractSettingsGuard, extractPromoBlock, extractBackupBlock, extractOwnerBlock };

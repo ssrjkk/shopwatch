@@ -75,13 +75,13 @@ const EXPOSE = [
   'readStore', 'rememberOrder', 'lastOrder', 'showOrderSuccess', 'applyOrderToDom', 'suggestionCount', 'invalidateSugCounts', 'applySettingsToUI',
   'scrollToGrid', 'buildSugMap', 'sugMap', 'renderSuggestionsNow', 'scheduleSuggestions', 'sortedSug', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
   'catalogFp', 'syncCatalogFp',
-  'oldPriceHTML', 'productCardHTML', 'localOrders', 'pushLocalOrder', 'renderOrders', 'imgSrc', 'imgUrl', 'renderWindow', 'scheduleWindow', 'WINDOW_CARDS', 'renderFavorites',
+  'oldPriceHTML', 'productCardHTML', 'safeCardHTML', 'gallerySrc', 'productGallery', 'openLightboxAt', 'openLightboxPrev', 'openLightboxNext', 'localOrders', 'pushLocalOrder', 'renderOrders', 'imgSrc', 'imgUrl', 'renderWindow', 'scheduleWindow', 'WINDOW_CARDS', 'renderFavorites',
   'PRESETS', 'presetOf', 'presetBounds', 'presetCount', 'applyPreset', 'applyPriceRange', 'priceRangeFromInputs', 'priceRangeLabel',
   'effectivePriceRange', 'applyPickTo', 'renderPresets', 'openLightbox', 'closeLightbox', 'safeImageSrc', 'absoluteUrl',
   'SPEC_FACETS', 'facetOf', 'facetCount', 'specHit', 'allBrands', 'toggleBrand', 'toggleSpec', 'renderBrandPills', 'renderSpecPills',
   'COMPARE_MAX', 'toggleCompare', 'clearCompare', 'compareItems', 'inCompare', 'updateCompareBar', 'openCompareModal', 'closeCompareModal',
   'recordRecent', 'clearRecentViewed', 'recentItems', 'renderRecent', 'RECENT_MAX', 'productJsonLd', 'setProductJsonLd', 'applyHashFilters',
-  'deepLinkPromo', 'promoInputValue', 'cartItemsForApi', 'applyPromoCode', 'clearPromo', 'renderPromoRow', 'renderDeliveryOptions',
+  'deepLinkPromo', 'promoInputValue', 'cartItemsForApi', 'applyPromoCode', 'clearPromo', 'renderPromoRow', 'renderDeliveryOptions', 'beaconCheckoutStarted', 'checkoutSid',
 ];
 
 // Монтирует фронтенд. seed — источник данных каталога (по PRODUCTS_DATA можно подменить файл).

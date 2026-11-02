@@ -171,6 +171,17 @@ Without tokens the server still runs in demo mode. `.env` is not committed (see 
 - DB backups: nightly VACUUM INTO into BACKUP_DIR (next to the DB by default), BACKUP_KEEP rotation, integrity_check on startup, a «Backup» button in both bots (Telegram also sends the file).
 - Publishing to GitHub Pages: 3 push attempts with backoff plus rebase on non-fast-forward.
 - Prices and promos are always computed by the server from its own DB: a forged price or code in a deep link gives no discount; a storefront/DB catalog mismatch rejects the order instead of filing the wrong one.
+- Resubmitting the form does not duplicate orders (`X-Idempotency-Key`); stock is decremented atomically in one transaction with the order; `/health` checks the DB, integrity, disk, backup freshness, last publish and catalog drift.
+
+### Restoring from backup (runbook)
+
+1. Stop the service (`systemctl stop watchop` or `docker stop ...`).
+2. Set the broken file aside, do not delete it: `cp watchop.db watchop.db.broken.$(date +%F)`.
+3. Pick a fresh `backups/watchop-*.db`: `sqlite3 <file> "PRAGMA integrity_check;"` → expect `ok`.
+4. Put it in place as `watchop.db` (same `DB_PATH` as in `.env`), mode `640`, owned by the service user.
+5. Sanity-check: `SELECT COUNT(*) FROM orders/products/settings`, `SELECT value FROM settings WHERE key='last_order_num'`; place a test order and cancel it.
+6. Duplicate order numbers are impossible by construction: the `last_order_num` counter plus skipping taken codes plus `UNIQUE(order_code)`.
+7. Start the service, check `curl /health` (all `ok`), the storefront and `/id` in the bots. If the storefront lags — «Экспорт каталога» from the bot, then push.
 
 ## MAX bot (the same admin screens as Telegram)
 
@@ -207,7 +218,7 @@ neither corrupt the working file nor overwrite the backup.
 
 Measured against the working catalog of 347 products, not eyeballed:
 
-- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 283 852 B → 53 590 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 116 661 B → 9 898 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
+- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 292 789 B → 55 674 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 123 388 B → 10 279 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
 - **Windowed catalog grid.** Never more than 60 cards in the DOM, however far you scroll: spacers above and below hold the height of what is hidden, so the scrollbar does not jump. Before this the grid only ever grew — after scrolling to the end it held 347 cards and 3470 nodes instead of 60 and 600. The numeric check is in `tests/virtual.test.js`.
 - **Images sized to their slot.** The database baked in `w=600` although a card in the `max-w-md` layout is 181 px and a cart thumbnail is 64 px. The storefront now asks for `w=400` on a card, `w=700` on the product page and `w=160`/`w=140` for thumbnails. Unsplash URLs also get `fm=webp`, verified by fact — `Content-Type: image/webp`, a `RIFF…WEBP` signature, 7 786 B instead of 10 882 B per card (−28%). Other hosts (Wikimedia) are left as they are: they do not understand the width parameter.
 - **Photo cache.** `/uploads/...` is served with `Cache-Control: public, max-age=31536000, immutable` — the file name is unique per upload, so it cannot go stale. The storefront HTML itself cannot be cached forever (`max-age=0`), otherwise a price change would not appear until the visitor cleared the cache.

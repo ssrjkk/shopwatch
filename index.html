@@ -55,6 +55,19 @@ h1, h2, .font-display {
 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
+/* Капитальная виртуализация: карточка никогда не схлопывается и не толкает сетку,
+   даже если фото нет, оно битое или грузится медленно. */
+.watch-card { content-visibility: auto; contain-intrinsic-size: auto 460px; contain: layout style paint; }
+.watch-stage { aspect-ratio: 4 / 4.1; }
+.watch-stage img.watch-bg-photo { aspect-ratio: 1 / 1; background: #0B0E17; }
+.watch-card h3 { min-height: 38px; }
+img { -webkit-user-drag: none; }
+.img-skeleton { background: linear-gradient(110deg, #141926 8%, #1E2533 18%, #141926 33%); background-size: 200% 100%; animation: img-shimmer 1.2s linear infinite; }
+@keyframes img-shimmer { to { background-position: -200% 0; } }
+#products-grid, #favorites-grid, #hits-grid { content-visibility: auto; }
+.gal-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; border: 1px solid rgba(255,255,255,.14); opacity: .7; }
+.gal-thumb.active { opacity: 1; border-color: #38BDF8; }
+
 /* Золотые и платиновые кнопки бутика */
 .btn-luxury-gold {
   background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 55%, #CBD5E1 100%);
@@ -782,8 +795,14 @@ body.classic-edition #bot-sim-drawer {
 <div id="lightbox-modal" onclick="closeLightbox()" class="fixed inset-0 bg-black/92 backdrop-blur-md z-50 hidden items-center justify-center p-4 cursor-zoom-out">
   <div class="relative max-w-2xl w-full text-center space-y-3" onclick="event.stopPropagation()">
     <button onclick="closeLightbox()" class="absolute -top-3 -right-2 w-9 h-9 rounded-full bg-white/10 text-white font-bold shadow-lg flex items-center justify-center">✕</button>
-    <img id="lightbox-img" src="https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=900&q=85" alt="" class="w-full max-h-[75vh] object-contain rounded-2xl bg-black/40 mx-auto" />
+    <div class="relative">
+    <img id="lightbox-img" src="https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=900&q=85" alt="Фотография модели" width="1200" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" class="w-full max-h-[75vh] object-contain rounded-2xl bg-black/40 mx-auto" style="aspect-ratio:4/3" />
+      <button onclick="event.stopPropagation();openLightboxPrev()" aria-label="Предыдущее фото" class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg font-bold">‹</button>
+      <button onclick="event.stopPropagation();openLightboxNext()" aria-label="Следующее фото" class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg font-bold">›</button>
+    </div>
     <div id="lightbox-caption" class="text-white text-sm font-bold"></div>
+    <div id="lightbox-counter" class="text-slate-400 text-[11px] font-mono"></div>
+    <div id="lightbox-thumbs" class="flex items-center justify-center gap-2 mt-1" onclick="event.stopPropagation()"></div>
   </div>
 </div>
 
@@ -2552,6 +2571,12 @@ function renderCatalog(){
   }
 }
 
+function safeCardHTML(p){
+  try{
+    if(!p||typeof p!=='object'||!Number.isSafeInteger(Number(p.id)))return '';
+    return productCardHTML(p);
+  }catch(e){return '';}
+}
 function appendChunk(){
   const grid=document.getElementById('products-grid');
   const next=state.filtered.slice(state.shownCount,state.shownCount+PAGE_SIZE);
@@ -2559,7 +2584,7 @@ function appendChunk(){
     updateGridStatus();
     return false;
   }
-  grid.insertAdjacentHTML('beforeend',next.map(p=>productCardHTML(p)).join(''));
+  grid.insertAdjacentHTML('beforeend',next.map(p=>safeCardHTML(p)).join(''));
   state.shownCount+=next.length;
   updateGridStatus();
   return state.shownCount<state.filtered.length;
@@ -2606,8 +2631,43 @@ function getStockInfo(p){
   return {code:'in',label:`В наличии (${st} шт.) • Отправка сегодня`,dotClass:'bg-[#10B981] stock-dot-pulse',textClass:'text-emerald-700 bg-emerald-50'};
 }
 
-function handleImgError(imgEl,brand){
+function gallerySrc(base, view, w){
+  const s = String(base || '');
+  if (!/images\.unsplash\.com\//.test(s)) return imgUrl(s, w || 1200);
+  const widths = { front: (w || 1200), detail: 1000, strap: 1000 };
+  const crops = { front: '', detail: '&crop=entropy', strap: '&crop=top' };
+  const ww = widths[view] || (w || 1200);
+  let out = s.replace(/([?&])w=\d+/, '$1w=' + ww);
+  if (!/[?&]q=\d+/.test(out)) out += (out.includes('?') ? '&' : '?') + 'q=85';
+  out += (crops[view] || '');
+  if (!/[?&]fm=webp/.test(out)) out += '&fm=webp';
+  if (!/[?&]auto=format/.test(out)) out += '&auto=format';
+  if (!/[?&]fit=crop/.test(out)) out += '&fit=crop';
+  return out;
+}
+function productGallery(p){
+  if (!p) return [];
+  const base = imgSrc(p.image);
+  return [
+    { src: gallerySrc(base, 'front', 1200), label: 'Общий план' },
+    { src: gallerySrc(base, 'detail', 1000), label: 'Циферблат крупно' },
+    { src: gallerySrc(base, 'strap', 1000), label: 'Корпус и ремешок' },
+  ];
+}
+function handleImgError(imgEl,brand,cat){
   if(!imgEl||imgEl.dataset.fallbackApplied)return;
+  // Этап 1: эталонное фото своей категории в том же студийном стиле — карточка не пустеет.
+  const c = String(cat || imgEl.dataset.cat || '');
+  const pool = {
+    'Эхолоты': 'https://upload.wikimedia.org/wikipedia/commons/0/02/Deeper_Fishfinder_-_Smart_Wireless_Sonar.png',
+    'Велокомпьютеры': 'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Garmin_Edge_1040_Solar_07.jpg/960px-Garmin_Edge_1040_Solar_07.jpg',
+    'GPS навигаторы': 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cb/Garmin_eTrex_20.jpg/960px-Garmin_eTrex_20.jpg',
+    'Охота и дрессировка': 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cb/Garmin_eTrex_20.jpg/960px-Garmin_eTrex_20.jpg',
+    'Пульсометры': 'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ac/Polar_RS400_Heart_Rate_Monitor.jpg/960px-Polar_RS400_Heart_Rate_Monitor.jpg',
+  };
+  const fb = pool[c];
+  if (fb && imgEl.src !== fb) { imgEl.dataset.fallbackApplied = '1'; imgEl.src = fb; return; }
+  // Этап 2: векторная заглушка — геометрия карточки сохраняется всегда.
   imgEl.dataset.fallbackApplied='1';
   const label=String(brand||'WATCHOP').slice(0,12);
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#0F172A"/><circle cx="100" cy="100" r="68" fill="#1E293B" stroke="#10B981" stroke-width="3"/><line x1="100" y1="100" x2="100" y2="55" stroke="#F8FAFC" stroke-width="4" stroke-linecap="round"/><line x1="100" y1="100" x2="132" y2="100" stroke="#10B981" stroke-width="3" stroke-linecap="round"/><text x="100" y="138" text-anchor="middle" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="bold">${label}</text></svg>`;
@@ -2802,7 +2862,7 @@ function productCardHTML(p){
   const studioSvg=renderModelStudioSVG(p);
   return `<div class="watch-card group rounded-[26px] p-4 flex flex-col justify-between relative overflow-hidden">
     <div class="relative overflow-hidden rounded-[20px] watch-stage aspect-[4/4.1] mb-3.5 flex items-center justify-center p-4">
-      <img src="${esc(imgSrc(p.image))}" alt="" loading="lazy" onerror="handleImgError(this,'${esc(p.brand)}')" class="watch-bg-photo absolute inset-0 w-full h-full object-cover opacity-[0.18] group-hover:opacity-[0.26] transition-transform duration-300 pointer-events-none" />
+            <img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" width="600" height="600" decoding="async" fetchpriority="low" draggable="false" referrerpolicy="no-referrer" loading="lazy" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')" class="watch-bg-photo absolute inset-0 w-full h-full object-cover opacity-[0.18] group-hover:opacity-[0.26] transition-transform duration-300 pointer-events-none img-skeleton" onload="this.classList.remove('img-skeleton')" />
       <div class="watch-stage-overlay absolute inset-0 bg-gradient-to-b from-[#080B12]/35 via-transparent to-[#080B12]/85 pointer-events-none"></div>
 
       <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5">
@@ -3170,6 +3230,7 @@ function goCheckout(){
     switchTab('catalog');
     return;
   }
+  try{beaconCheckoutStarted();}catch(e){}
   switchTab('checkout');
 }
 
@@ -3186,10 +3247,37 @@ function renderCheckout(){
   document.getElementById('checkout-total').textContent=`${cartTotal().toLocaleString('ru-RU')} ₽`;
 }
 
+function checkoutSid(){
+  try{
+    let sid=null;
+    try{ sid=sessionStorage.getItem('watchop_sid'); }catch(e){ sid=null; }
+    if(!/^[A-Za-z0-9-]{8,64}$/.test(sid||'')){
+      sid=(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():'sid-'+Date.now()+'-'+Math.floor(Math.random()*1e9);
+      try{ sessionStorage.setItem('watchop_sid',sid); }catch(e){}
+    }
+    return sid;
+  }catch(e){ return 'sid-'+Date.now(); }
+}
+let lastCheckoutBeaconFp='';
+function beaconCheckoutStarted(){
+  try{
+    if(typeof IS_STATIC_DEMO!=='undefined'&&IS_STATIC_DEMO) return;
+    if(typeof fetch!=='function') return;
+    const lines=state.cart.map(l=>({l,p:state.products.find(x=>x.id===l.id)})).filter(x=>x.p);
+    if(!lines.length) return;
+    const fp=lines.map(({l,p})=>p.id+'x'+l.qty).sort().join('_');
+    if(fp===lastCheckoutBeaconFp) return;
+    lastCheckoutBeaconFp=fp;
+    const cart=lines.map(({l,p})=>({id:p.id,qty:l.qty}));
+    const total=lines.reduce((s,{l,p})=>s+Number(p.price||0)*l.qty,0);
+    fetch(API_PREFIX+'/checkout-started',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:checkoutSid(),cart,total})}).catch(()=>{});
+  }catch(e){}
+}
 async function submitOrder(){
   const errBox=document.getElementById('cart-error');
   const showErr=m=>{errBox.textContent=m;errBox.classList.remove('hidden');};
   errBox.classList.add('hidden');
+  if(state.submitInFlight){showToast('Заказ уже отправляется — подождите…');return;}
   const lines=state.cart.map(l=>({l,p:state.products.find(x=>x.id===l.id)})).filter(x=>x.p);
   if(!lines.length){showErr('Корзина пуста — добавьте товары из каталога.');return;}
   const customer={
@@ -3217,23 +3305,43 @@ async function submitOrder(){
   const items=lines.map(({l,p})=>({id:p.id,name:p.name,price:p.price,qty:l.qty}));
   const total=items.reduce((s,i)=>s+i.price*i.qty,0);
   let orderCode='TG-'+(20000+Math.floor(Math.random()*9999));
+  let idemKey='';
+  try{
+    if(typeof crypto!=='undefined'&&crypto.randomUUID)idemKey=crypto.randomUUID();
+    else idemKey='id-'+Date.now()+'-'+Math.floor(Math.random()*1e9);
+  }catch(e){idemKey='id-'+Date.now()+'-'+Math.floor(Math.random()*1e9);}
+  try{const s=sessionStorage.getItem('watchop_idem_key');if(s)idemKey=s;else sessionStorage.setItem('watchop_idem_key',idemKey);}catch(e){}
+  state.submitInFlight=true;
   try{
     if(!IS_STATIC_DEMO&&typeof fetch==='function'){
-      const res=await fetch(API_PREFIX+'/order',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({items,total,customer,...(deepLinkPromo()?{promo:deepLinkPromo()}:{}),...(typeof window!=='undefined'&&window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData?{initData:window.Telegram.WebApp.initData}:{})})
-      });
+      const ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+      const t=ctl?setTimeout(()=>{try{ctl.abort();}catch(e){}},15000):null;
+      let res=null;
+      try{
+        res=await fetch(API_PREFIX+'/order',{
+          method:'POST',
+          signal:ctl?ctl.signal:undefined,
+          headers:{'Content-Type':'application/json','X-Idempotency-Key':idemKey},
+          body:JSON.stringify({items,total,customer,idemKey,sid:checkoutSid(),...(deepLinkPromo()?{promo:deepLinkPromo()}:{}),...(typeof window!=='undefined'&&window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData?{initData:window.Telegram.WebApp.initData}:{})})
+        });
+      }finally{ if(t)clearTimeout(t); }
       if(res&&res.ok){
         const d=await res.json();
         if(d.orderCode)orderCode=d.orderCode;
+        try{sessionStorage.removeItem('watchop_idem_key');}catch(e){}
         try{if(window.Telegram&&window.Telegram.WebApp)window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');}catch(e){}
       }else if(res&&res.status===429){
         showErr('Слишком быстро. Попробуйте ещё раз.');
+        state.submitInFlight=false;
         return;
+      }else if(res&&res.status===409&&res.json){
+        const d=await res.json().catch(()=>({}));
+        if(d.orderCode)orderCode=d.orderCode;
+        else{showErr(d.error||'Такой заказ уже создан.');state.submitInFlight=false;return;}
       }else if(res&&res.status>=400&&res.status<500&&res.status!==404){
         const d=await res.json().catch(()=>({}));
         showErr(d.error||'Не удалось оформить заказ. Проверьте данные.');
+        state.submitInFlight=false;
         return;
       }
     }
@@ -3249,6 +3357,7 @@ async function submitOrder(){
   document.getElementById('order-max-btn').href=state.settings.max_link;
   recordMyOrder(orderCode,items,total,'Новый');
   saveSessionOrder({orderCode,summary:document.getElementById('order-item-summary').textContent,tgHref:tgOrderLink(orderCode,items),maxHref:state.settings.max_link});
+  state.submitInFlight=false;
   switchTab('order-success');
 }
 
@@ -3711,14 +3820,45 @@ function loadSessionOrder(){
   return false;
 }
 
+let lightboxGallery = [];
+let lightboxIndex = 0;
+function paintLightbox(){
+  const img=document.getElementById('lightbox-img');
+  const cap=document.getElementById('lightbox-caption');
+  const cnt=document.getElementById('lightbox-counter');
+  const th=document.getElementById('lightbox-thumbs');
+  const cur=lightboxGallery[lightboxIndex];
+  if(!cur)return;
+  if(img){img.src=cur.src;img.alt=String(cur.title||'')+' — '+(cur.label||'фото');}
+  if(cap)cap.textContent=String(cur.title||'');
+  if(cnt)cnt.textContent=lightboxGallery.length>1?((lightboxIndex+1)+' / '+lightboxGallery.length+' · '+cur.label):'';
+  if(th){
+    th.innerHTML=lightboxGallery.map((g,i)=>`<img src="${esc(g.src)}" alt="${esc(g.label||('Фото '+(i+1)))}" loading="lazy" decoding="async" width="112" height="112" onclick="openLightboxAt(${i})" class="gal-thumb${i===lightboxIndex?' active':''}" style="aspect-ratio:1/1" />`).join('');
+  }
+}
+function openLightboxAt(i){
+  if(!lightboxGallery.length)return;
+  lightboxIndex=Math.max(0,Math.min(lightboxGallery.length-1,Number(i)||0));
+  paintLightbox();
+}
+function openLightboxPrev(){ if(!lightboxGallery.length)return; lightboxIndex=(lightboxIndex-1+lightboxGallery.length)%lightboxGallery.length; paintLightbox(); }
+function openLightboxNext(){ if(!lightboxGallery.length)return; lightboxIndex=(lightboxIndex+1)%lightboxGallery.length; paintLightbox(); }
 function openLightbox(url,caption){
   let targetUrl = url;
   let targetCap = caption;
   if(!targetUrl){
     const p=state.products.find((x)=>x.id===state.currentProductId);
     if(!p)return;
-    targetUrl=imgUrl(p.image,1200);
+    try{
+      lightboxGallery=productGallery(p).map((g)=>({src:g.src,label:g.label,title:p.name}));
+    }catch(e){ lightboxGallery=[]; }
+    if(!lightboxGallery.length) lightboxGallery=[{src:imgUrl(p.image,1200),label:'Фото',title:p.name}];
+    lightboxIndex=0;
+    targetUrl=lightboxGallery[0].src;
     targetCap=p.name;
+  } else {
+    lightboxGallery=[{src:targetUrl,label:'Фото',title:caption||''}];
+    lightboxIndex=0;
   }
   const src=safeImageSrc(targetUrl);
   if(!src)return;
@@ -3726,6 +3866,7 @@ function openLightbox(url,caption){
   const cap=document.getElementById('lightbox-caption');
   if(img){img.src=src;img.alt=String(targetCap||'')+' — фотография';}
   if(cap)cap.textContent=String(targetCap||'');
+  try{ paintLightbox(); }catch(e){}
   for(const id of ['lightbox','lightbox-modal']){
     const m=document.getElementById(id);
     if(m){m.classList.remove('hidden');m.classList.add('flex');}

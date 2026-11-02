@@ -25,6 +25,14 @@ describe('HTTP API (real server, temp DB)', () => {
       });
       child.on('error', reject);
     });
+    // Атомарное списание остатков включено: тестовые заявки многократно берут id 1,
+    // поднимаем сток временной базы, чтобы проверять логику заказов, а не остатки.
+    try {
+      const { DatabaseSync } = require('node:sqlite');
+      const seedDb = new DatabaseSync(path.join(tmp, 'watchop.db'));
+      try { seedDb.exec('UPDATE products SET stock = 1000'); } catch (e) {}
+      seedDb.close();
+    } catch (e) {}
   });
 
   after(async () => {

@@ -191,6 +191,7 @@ function tgAdminMenuKb() {
     ['Импорт товаров', 'Админы'],
     ['Сводка сайта', 'Фото на стоках'],
     ['Промокоды', 'Дизайн'],
+    ['Статистика', 'Журнал'],
     ['Бекап БД']
   ]).resize();
 }
@@ -365,6 +366,39 @@ try { db.exec('ALTER TABLE orders ADD COLUMN owner_max TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN promo_code TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN discount INTEGER DEFAULT 0'); } catch (e) {}
 db.exec('CREATE TABLE IF NOT EXISTS seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
+// Защита заказов: повторная отправка формы не плодит дубли, остатки уходят атомарно.
+db.exec('CREATE TABLE IF NOT EXISTS idempotency_keys (key TEXT PRIMARY KEY, order_code TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_idempotency_created ON idempotency_keys(created_at)');
+// Журнал действий: кто/что/когда поменял. Пишем только факты, без секретов и PII.
+db.exec(`CREATE TABLE IF NOT EXISTS audit_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+  actor TEXT NOT NULL DEFAULT 'system',
+  entity TEXT NOT NULL,
+  entity_id TEXT NOT NULL DEFAULT '',
+  action TEXT NOT NULL,
+  old_value TEXT,
+  new_value TEXT,
+  source TEXT NOT NULL DEFAULT 'api'
+)`);
+db.exec('CREATE INDEX IF NOT EXISTS idx_audit_ts ON audit_log(ts)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity, entity_id)');
+// Брошенные оформления: только id товаров, сумма и случайный session_id — никаких телефонов.
+db.exec(`CREATE TABLE IF NOT EXISTS checkout_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT NOT NULL,
+  tg_id TEXT,
+  cart_json TEXT NOT NULL DEFAULT '[]',
+  total INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'started',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  reminded_at DATETIME,
+  order_code TEXT
+)`);
+db.exec('CREATE INDEX IF NOT EXISTS idx_checkout_status ON checkout_events(status, updated_at)');
+// Миграция для баз, созданных до появления order_code в checkout_events.
+try { db.exec('ALTER TABLE checkout_events ADD COLUMN order_code TEXT'); } catch (e) {}
 // Админка и сводка постоянно группируют по полке и статусу, а кабинеты ищут
 // заявки по статусу и дате — без индексов это полный проход по каталогу.
 db.exec('CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)');
@@ -1205,6 +1239,8 @@ const TI_COND_TEXT = { 1: 'новые, не носились', 2: 'отличн�
 // телефона покупателя ничего не отдаём: номера TG-XXXX идут подряд, перебирать
 // их без второго фактора не нужно давать никому.
 app.get('/api/order-status', (req, res) => {
+  const lip = req.ip || req.socket.remoteAddress || 'unknown';
+  if (!lookupAllowed(lip, 60)) return res.status(429).json({ error: 'Слишком много запросов. Попробуйте позже.' });
   const code = String(req.query.code || '').trim().toUpperCase();
   const pt = String(req.query.pt || '').replace(/\D/g, '');
   if (!/^TG-\d+$/.test(code) || pt.length < 4) return res.status(400).json({ error: 'Нужны код заявки и последние 4 цифры телефона' });
@@ -1217,6 +1253,8 @@ app.get('/api/order-status', (req, res) => {
 });
 
 app.post('/api/promo-check', (req, res) => {
+  const lip = req.ip || req.socket.remoteAddress || 'unknown';
+  if (!lookupAllowed(lip, 60)) return res.status(429).json({ error: 'Слишком много запросов. Попробуйте позже.' });
   try {
     const body = req.body && typeof req.body === 'object' ? req.body : {};
     const code = cleanText(typeof body.code === 'string' ? body.code : body.promo).slice(0, 24);
@@ -1251,6 +1289,274 @@ app.get('/healthz', (req, res) => {
   }
 });
 
+// Развёрнутая самодиагностика: база, целостность, диск, свежесть бекапа,
+// последняя публикация и рассинхрон витрина↔база. 503 при любой проблеме.
+app.get('/health', (req, res) => {
+  const checks = {};
+  try { db.prepare('SELECT 1 AS x').get(); checks.db = 'ok'; }
+  catch (e) { checks.db = 'FAIL: ' + maskPhone(redactSecrets(e.message)).slice(0, 120); }
+  try {
+    const r = db.prepare('PRAGMA quick_check').get();
+    const v = r ? Object.values(r)[0] : null;
+    checks.integrity = (v === 'ok' || v === 'OK') ? 'ok' : 'FAIL: ' + String(v).slice(0, 80);
+  } catch (e) { checks.integrity = 'FAIL: ' + maskPhone(redactSecrets(e.message)).slice(0, 120); }
+  try {
+    const dir = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : __dirname;
+    const st = fs.statfsSync(dir);
+    const freeMb = Math.floor(Number(st.bavail) * Number(st.bsize) / 1048576);
+    checks.disk_mb_free = freeMb;
+    checks.disk = freeMb > 500 ? 'ok' : 'LOW';
+  } catch (e) { checks.disk = 'unknown'; }
+  try {
+    const last = getSetting('last_backup_at');
+    const ageH = last ? (Date.now() - Date.parse(last)) / 3600000 : 9999;
+    checks.backup_age_h = Math.round(ageH * 10) / 10;
+    checks.backup = ageH < 26 ? 'ok' : 'STALE';
+  } catch (e) { checks.backup = 'unknown'; }
+  try {
+    const p = JSON.parse(getSetting('publish_last') || 'null');
+    checks.publish = p && p.ok === false ? ('FAIL: ' + String(p.error || 'unknown')).slice(0, 160) : 'ok';
+  } catch (e) { checks.publish = 'unknown'; }
+  try {
+    const dbCount = db.prepare('SELECT COUNT(*) AS c FROM products').get().c;
+    let fileCount = -1;
+    try {
+      const { readCatalogFile } = require('./catalog-export.js');
+      const rows = readCatalogFile(fs.readFileSync(path.join(__dirname, 'public', 'products-data.js'), 'utf8'));
+      if (rows) fileCount = rows.length;
+    } catch (e) {}
+    checks.catalog_db = dbCount;
+    checks.catalog_file = fileCount;
+    checks.catalog = (fileCount >= 0 && fileCount !== dbCount) ? 'DRIFT' : 'ok';
+  } catch (e) { checks.catalog = 'unknown'; }
+  const bad = Object.entries(checks).filter(([, v]) => /FAIL|LOW|STALE|DRIFT/.test(String(v)));
+  res.status(bad.length ? 503 : 200).json({ ok: bad.length === 0, checks, uptime: Math.round(process.uptime()) });
+});
+
+// ---------- Защита заказов: идемпотентность, остатки, аудит, маскировка ----------
+function maskPhone(value) {
+  return String(value == null ? '' : value).replace(/(?:\+7|8)[\s-]?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}/g, '+7 (***) ***-**-**');
+}
+function claimIdempotencyKey(key) {
+  if (typeof key !== 'string' || !/^[A-Za-z0-9-]{8,64}$/.test(key)) return { ok: false };
+  try {
+    const hit = db.prepare('SELECT order_code, total FROM orders WHERE order_code = (SELECT order_code FROM idempotency_keys WHERE key = ?)').get(key);
+    if (hit) return { ok: true, duplicate: true, orderCode: hit.order_code, total: hit.total };
+  } catch (e) { return { ok: false }; }
+  return { ok: true, duplicate: false };
+}
+function rememberIdempotencyKey(key, orderCode) {
+  try { db.prepare('INSERT OR IGNORE INTO idempotency_keys (key, order_code) VALUES (?, ?)').run(key, orderCode); } catch (e) {}
+}
+function auditLog(entry) {
+  try {
+    const cut = (v) => {
+      if (v == null) return null;
+      const s = typeof v === 'string' ? v : JSON.stringify(v);
+      return s.length > 2000 ? s.slice(0, 2000) + '…' : s;
+    };
+    db.prepare('INSERT INTO audit_log (actor, entity, entity_id, action, old_value, new_value, source) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(String(entry.actor || 'system').slice(0, 60), String(entry.entity || '').slice(0, 30), String(entry.entityId || '').slice(0, 100), String(entry.action || '').slice(0, 30), cut(entry.oldV), cut(entry.neW), String(entry.source || 'api').slice(0, 20));
+  } catch (e) { console.error('audit failed:', redactSecrets(e.message)); }
+}
+// Лёгкий sliding-window лимит для читающих ручек (статус заявки, промокод): до 60/мин с IP.
+const lookupRateLimit = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, arr] of lookupRateLimit) {
+    const fresh = arr.filter((t) => now - t < 60000);
+    if (fresh.length) lookupRateLimit.set(ip, fresh);
+    else lookupRateLimit.delete(ip);
+  }
+}, 30000).unref?.();
+function lookupAllowed(ip, limit) {
+  const now = Date.now();
+  const arr = (lookupRateLimit.get(ip) || []).filter((t) => now - t < 60000);
+  if (arr.length >= (limit || 60)) return false;
+  arr.push(now);
+  lookupRateLimit.set(ip, arr);
+  return true;
+}
+
+// ---------- Владелец: статистика, журнал, дайджест ----------
+// Чистые функции на conn (тестируются без ботов): вся правда только из базы.
+function fmtMoney(n) {
+  return Number(n || 0).toLocaleString('ru-RU') + ' ₽';
+}
+function salesStats(conn, days, back) {
+  const d = Math.max(1, Math.min(366, Math.trunc(Number(days)) || 1));
+  const b = Math.max(0, Math.min(366, Math.trunc(Number(back)) || 0));
+  const r = conn.prepare(`SELECT COUNT(*) AS c, COALESCE(SUM(total),0) AS s,
+    COALESCE(SUM(CASE WHEN status = 'Оплачен' THEN 1 ELSE 0 END),0) AS pc,
+    COALESCE(SUM(CASE WHEN status = 'Оплачен' THEN total ELSE 0 END),0) AS ps
+    FROM orders WHERE date(created_at) BETWEEN date('now', '-' || ? || ' days') AND date('now', '-' || ? || ' days')`).get(b + d - 1, b);
+  const avg = r.c ? Math.round(r.s / r.c) : 0;
+  return { count: r.c, sum: r.s, paid_count: r.pc, paid_sum: r.ps, avg, conv: r.c ? Math.round((100 * r.pc) / r.c) : 0 };
+}
+function topProducts(conn, days, lim, back) {
+  const d = Math.max(1, Math.min(366, Math.trunc(Number(days)) || 1));
+  const b = Math.max(0, Math.min(366, Math.trunc(Number(back)) || 0));
+  const rows = conn.prepare(`SELECT items_json FROM orders WHERE date(created_at) BETWEEN date('now', '-' || ? || ' days') AND date('now', '-' || ? || ' days') AND status != 'Отменен' AND status != 'Отменён'`).all(b + d - 1, b);
+  const agg = new Map();
+  for (const r of rows) {
+    let items = [];
+    try { items = JSON.parse(r.items_json || '[]'); } catch (e) { items = []; }
+    for (const it of items) {
+      const id = Number(it && it.id) || 0;
+      if (!id) continue;
+      const k = id + '|' + String(it.name || '');
+      const a = agg.get(k) || { id, name: String(it.name || ''), qty: 0, sum: 0 };
+      a.qty += Number(it.qty) || 0;
+      a.sum += (Number(it.price) || 0) * (Number(it.qty) || 0);
+      agg.set(k, a);
+    }
+  }
+  return [...agg.values()].sort((x, y) => y.sum - x.sum).slice(0, Math.max(1, Math.min(20, lim || 5)));
+}
+function topCategories(conn, days, lim, back) {
+  const d = Math.max(1, Math.min(366, Math.trunc(Number(days)) || 1));
+  const b = Math.max(0, Math.min(366, Math.trunc(Number(back)) || 0));
+  const byId = new Map(conn.prepare('SELECT id, category FROM products').all().map((p) => [Number(p.id), p.category || 'Без категории']));
+  const rows = conn.prepare(`SELECT items_json FROM orders WHERE date(created_at) BETWEEN date('now', '-' || ? || ' days') AND date('now', '-' || ? || ' days') AND status != 'Отменен' AND status != 'Отменён'`).all(b + d - 1, b);
+  const agg = new Map();
+  for (const r of rows) {
+    let items = [];
+    try { items = JSON.parse(r.items_json || '[]'); } catch (e) { items = []; }
+    for (const it of items) {
+      if (!Number(it && it.id)) continue;
+      const cat = byId.get(Number(it.id)) || 'Без категории';
+      const a = agg.get(cat) || { cat, qty: 0, sum: 0 };
+      a.qty += Number(it.qty) || 0;
+      a.sum += (Number(it.price) || 0) * (Number(it.qty) || 0);
+      agg.set(cat, a);
+    }
+  }
+  return [...agg.values()].sort((x, y) => y.sum - x.sum).slice(0, Math.max(1, Math.min(20, lim || 5)));
+}
+function activePromoCount(rulesRaw) {
+  try { return parsePromoRules(rulesRaw).size; } catch (e) { return 0; }
+}
+function lowStock(conn, lim) {
+  return conn.prepare('SELECT id, brand, name, stock FROM products WHERE stock IS NOT NULL AND stock <= 3 ORDER BY stock, id LIMIT ?').all(Math.max(1, Math.min(50, lim || 10)));
+}
+function statsText(conn, days) {
+  const d = Math.max(1, Math.min(366, Math.trunc(Number(days)) || 1));
+  const label = d === 1 ? 'сегодня' : d === 7 ? '7 дней' : d === 30 ? '30 дней' : d + ' дн.';
+  const s = salesStats(conn, d);
+  const tops = topProducts(conn, d, 5);
+  const cats = topCategories(conn, d, 5);
+  const out = [];
+  out.push(`Статистика · ${label}`);
+  out.push(`Заявки: ${s.count} на ${fmtMoney(s.sum)}`);
+  out.push(`Оплачено: ${s.paid_count} на ${fmtMoney(s.paid_sum)}`);
+  out.push(`Средний чек: ${fmtMoney(s.avg)}`);
+  out.push(`Конверсия в оплату: ${s.conv}%`);
+  out.push('Топ-5 товаров:');
+  if (!tops.length) out.push('— пока пусто');
+  tops.forEach((t, i) => out.push(`${i + 1}. ${t.name.slice(0, 60)} — ${t.qty} шт на ${fmtMoney(t.sum)}`));
+  out.push('Топ-5 категорий:');
+  if (!cats.length) out.push('— пока пусто');
+  cats.forEach((t, i) => out.push(`${i + 1}. ${t.cat} — на ${fmtMoney(t.sum)}`));
+  return out.join('\n');
+}
+function historyText(conn, limit, entity, entityId) {
+  const lim = Math.max(1, Math.min(50, Math.trunc(Number(limit)) || 15));
+  let rows;
+  if (entity) {
+    rows = conn.prepare('SELECT ts, actor, entity, entity_id, action FROM audit_log WHERE entity = ? AND (? = \'\' OR entity_id = ?) ORDER BY id DESC LIMIT ?').all(String(entity).slice(0, 30), String(entityId || ''), String(entityId || ''), lim);
+  } else {
+    rows = conn.prepare('SELECT ts, actor, entity, entity_id, action FROM audit_log ORDER BY id DESC LIMIT ?').all(lim);
+  }
+  if (!rows.length) return 'Журнал пуст: изменений пока не было.';
+  return rows.map((r) => `${String(r.ts || '').slice(5, 16)} ${r.actor} ${r.entity}${r.entity_id ? '#' + r.entity_id : ''} ${r.action}`).join('\n');
+}
+function parseDaysArg(text) {
+  const m = String(text || '').match(/\b(\d{1,4})\b/);
+  const n = m ? Number(m[1]) : 1;
+  return Math.max(1, Math.min(366, n || 1));
+}
+function parseHistoryArgs(text) {
+  const t = String(text || '');
+  let m = t.match(/(?:товар|product)\s+#?(\d{1,9})/i);
+  if (m) return { limit: 15, entity: 'product', entityId: m[1] };
+  m = t.match(/(?:заявк|заказ|order)\s+(TG-\d{1,9})/i);
+  if (m) return { limit: 15, entity: 'order', entityId: m[1].toUpperCase() };
+  m = t.match(/\b(\d{1,3})\b/);
+  return { limit: m ? Math.max(1, Math.min(50, Number(m[1]))) : 15, entity: '', entityId: '' };
+}
+// Брошенные заявки: фиксируем открытие бота по deep link (удаляем старый след
+// того же человека по той же заявке, чтобы не плодить строки и не слать дважды).
+function recordBotOpened(conn, tgId, code) {
+  const tg = String(tgId || '');
+  const c = String(code || '').toUpperCase();
+  if (!tg || !/^TG-\d+$/.test(c)) return;
+  conn.prepare("DELETE FROM checkout_events WHERE tg_id = ? AND order_code = ? AND status = 'bot_opened'").run(tg, c);
+  conn.prepare("INSERT INTO checkout_events (session_id, tg_id, cart_json, total, status, order_code) VALUES (?,?,?,?,?,?)").run('order:' + c, tg, '[]', 0, 'bot_opened', c);
+}
+// Кандидаты на одно вежливое напоминание: открывал бота >2 ч назад, за сутки
+// не напоминали, после открытия не появилось ни одной неотменённой заявки.
+function findReminderCandidates(conn) {
+  return conn.prepare(`SELECT * FROM checkout_events
+    WHERE status = 'bot_opened' AND tg_id IS NOT NULL AND tg_id != ''
+      AND datetime(updated_at) < datetime('now','-2 hours')
+      AND datetime(created_at) > datetime('now','-30 days')
+      AND (reminded_at IS NULL OR datetime(reminded_at) < datetime('now','-24 hours'))
+      AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.owner_tg = checkout_events.tg_id
+        AND datetime(o.created_at) >= datetime(checkout_events.created_at)
+        AND o.status NOT IN ('Отменен', 'Отменён'))
+    ORDER BY updated_at LIMIT 20`).all();
+}
+function cleanupCheckoutEvents(conn) {
+  try { conn.prepare("DELETE FROM checkout_events WHERE datetime(updated_at) < datetime('now','-30 days')").run(); } catch (e) {}
+  try { conn.prepare("DELETE FROM idempotency_keys WHERE datetime(created_at) < datetime('now','-30 days')").run(); } catch (e) {}
+}
+function digestText(conn, opts) {
+  const o = opts || {};
+  const y = salesStats(conn, 1, 1);
+  const yDate = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const out = [];
+  out.push(`Утро. Итоги ${yDate}:`);
+  out.push(`Заявок создано: ${y.count} на ${fmtMoney(y.sum)}`);
+  out.push(`Оплачено: ${y.paid_count} на ${fmtMoney(y.paid_sum)}`);
+  const low = lowStock(conn, 5);
+  out.push(low.length ? 'Заканчиваются: ' + low.map((p) => `#${p.id} ${String(p.name).slice(0, 40)} (${p.stock} шт)`).join('; ') : 'Остатки в норме.');
+  const bAge = o.backupAt ? (Date.now() - Date.parse(o.backupAt)) / 3600000 : 9999;
+  out.push('Бекап: ' + (bAge < 26 ? 'свежий' : 'СТАРШЕ 26 Ч — проверь!'));
+  if (o.publish && o.publish.ok === false) out.push('Публикация: ОШИБКА — ' + String(o.publish.error || '').slice(0, 120));
+  else out.push('Публикация: без ошибок.');
+  return out.join('\n');
+}
+async function sendCheckoutReminders() {
+  if (!tgBot) return;
+  let rows = [];
+  try { rows = findReminderCandidates(db); } catch (e) { return; }
+  for (const r of rows) {
+    try {
+      await tgBot.telegram.sendMessage(r.tg_id, `Вы начали оформление${r.order_code ? ' ' + r.order_code : ''}, но заявка не завершена. Если нужна помощь с выбором — напишите, подскажем.`);
+    } catch (e) { /* заблокировавший бота человек: фиксируем попытку, завтра попробуем снова */ }
+    try { db.prepare('UPDATE checkout_events SET reminded_at = CURRENT_TIMESTAMP, status = ? WHERE id = ?').run('reminded', r.id); } catch (e) {}
+    await new Promise((x) => setTimeout(x, 300));
+  }
+}
+function maybeMorningDigest() {
+  try {
+    if (new Date().getHours() < 9) return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (getSetting('last_digest_date') === today) return;
+    setSetting('last_digest_date', today);
+    let publish = null;
+    try { publish = JSON.parse(getSetting('publish_last') || 'null'); } catch (e) { publish = null; }
+    notifyTgAdmins(digestText(db, { backupAt: getSetting('last_backup_at'), publish }));
+  } catch (e) { console.error('digest failed:', redactSecrets(e.message)); }
+}
+function ownerTick() {
+  try { maybeMorningDigest(); } catch (e) {}
+  try { cleanupCheckoutEvents(db); } catch (e) {}
+  sendCheckoutReminders().catch(() => {});
+}
+setInterval(ownerTick, 10 * 60 * 1000).unref?.();
+// ---------- /Владелец ----------
+
 const orderRateLimit = new Map();
 const ORDER_COOLDOWN_MS = Math.max(Number(process.env.ORDER_COOLDOWN_MS || 5000), 0);
 
@@ -1266,11 +1572,35 @@ function allocateOrderCode() {
   return `TG-${Date.now()}`;
 }
 
+// Маяк «начал оформление»: только случайный sessionId, id/qty и сумма —
+// никаких телефонов и имён. На статике без сервера шлём в пустоту (catch на фронте).
+app.post('/api/checkout-started', (req, res) => {
+  const lip = req.ip || req.socket.remoteAddress || 'unknown';
+  if (!lookupAllowed(lip, 60)) return res.status(429).json({ error: 'Слишком много запросов.' });
+  try {
+    const b = req.body && typeof req.body === 'object' ? req.body : {};
+    const sid = String(b.sessionId || '');
+    if (!/^[A-Za-z0-9-]{8,64}$/.test(sid)) return res.status(400).json({ error: 'Bad session' });
+    const raw = Array.isArray(b.cart) ? b.cart.slice(0, 50) : [];
+    const cart = [];
+    for (const it of raw) {
+      const id = Number(it && it.id);
+      const qty = Number(it && it.qty);
+      if (!Number.isSafeInteger(id) || id <= 0 || !Number.isSafeInteger(qty) || qty < 1 || qty > 99) return res.status(400).json({ error: 'Bad cart item' });
+      cart.push({ id, qty });
+    }
+    if (!cart.length) return res.status(400).json({ error: 'Пустая корзина' });
+    const total = Math.max(0, Math.trunc(Number(b.total)) || 0);
+    db.prepare("INSERT INTO checkout_events (session_id, cart_json, total, status) VALUES (?,?,?,'started')").run(sid, JSON.stringify(cart), total);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: 'Не записалось' }); }
+});
+
 app.post('/api/order', async (req, res) => {
   try {
     return await handleApiOrder(req, res);
   } catch (e) {
-    console.error('Order API error:', e.message);
+    console.error('Order API error:', maskPhone(redactSecrets(e.message)));
     if (!res.headersSent) return res.status(500).json({ error: 'Не удалось оформить заказ. Попробуйте ещё раз.' });
     return res.end();
   }
@@ -1283,6 +1613,16 @@ async function handleApiOrder(req, res) {
     return res.status(429).json({ error: 'Слишком быстро. Попробуйте ещё раз.' });
   }
   orderRateLimit.set(ip, now);
+
+  // Повторная отправка той же формы (двойной клик, ретрай после таймаута):
+  // ключ из заголовка X-Idempotency-Key или тела. Дубликат возвращает тот же заказ.
+  const idemKey = String((req.headers && req.headers['x-idempotency-key']) || (req.body && req.body.idemKey) || '').slice(0, 64);
+  if (idemKey) {
+    const claimed = claimIdempotencyKey(idemKey);
+    if (claimed.ok && claimed.duplicate) {
+      return res.json({ orderCode: claimed.orderCode, total: claimed.total, duplicate: true });
+    }
+  }
 
   const { items, initData } = req.body;
   const tiRaw = req.body.tradein;
@@ -1356,9 +1696,38 @@ async function handleApiOrder(req, res) {
     if (!tgUser) return res.status(403).json({ error: 'Bad initData signature' });
   }
 
-  const orderCode = allocateOrderCode();
-  db.prepare('INSERT INTO orders (order_code, items_json, total, status, customer_json, owner_tg, promo_code, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(orderCode, JSON.stringify(cleanItems), finalTotal, ti ? 'Trade-In' : 'Новый', JSON.stringify(customer), tgUser ? String(tgUser.id) : null, promoEval ? promoEval.code : null, discountRub);
+  // Резерв остатков + вставка заявки — одной транзакцией: два покупателя не заберут
+  // последний экземпляр, а повторный запрос не создаст дубль и не уйдёт в минус.
+  let orderCode;
+  try {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      for (const ci of cleanItems) {
+        if (!ci.id) continue; // trade-in / подарки остатков не имеют
+        const st = db.prepare('SELECT stock FROM products WHERE id = ?').get(ci.id);
+        if (st && st.stock != null && Number(st.stock) < ci.qty) {
+          throw { outOfStock: true, name: ci.name };
+        }
+        if (st && st.stock != null) db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?').run(ci.qty, ci.id);
+      }
+      orderCode = allocateOrderCode();
+      db.prepare('INSERT INTO orders (order_code, items_json, total, status, customer_json, owner_tg, promo_code, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(orderCode, JSON.stringify(cleanItems), finalTotal, ti ? 'Trade-In' : 'Новый', JSON.stringify(customer), tgUser ? String(tgUser.id) : null, promoEval ? promoEval.code : null, discountRub);
+      if (idemKey && /^[A-Za-z0-9-]{8,64}$/.test(idemKey)) rememberIdempotencyKey(idemKey, orderCode);
+      db.exec('COMMIT');
+    } catch (e) {
+      try { db.exec('ROLLBACK'); } catch (e2) {}
+      throw e;
+    }
+  } catch (e) {
+    if (e && e.outOfStock) return res.status(409).json({ error: `К сожалению, «${String(e.name || 'товар').slice(0, 80)}» уже разобрали. Менеджер предложит аналог.` });
+    throw e;
+  }
+  auditLog({ actor: tgUser ? 'tg:' + tgUser.id : 'site', entity: 'order', entityId: orderCode, action: 'create', neW: { total: finalTotal, items: cleanItems.length }, source: 'api' });
+  try {
+    const sid = String((req.body && req.body.sid) || '').slice(0, 64);
+    if (/^[A-Za-z0-9-]{8,64}$/.test(sid)) db.prepare("UPDATE checkout_events SET status = 'ordered', updated_at = CURRENT_TIMESTAMP WHERE session_id = ?").run(sid);
+  } catch (e) {}
 
   const itemsText = cleanItems.map((i, idx) => `${idx + 1}. ${i.name} — ${i.qty} шт. x ${Number(i.price).toLocaleString('ru-RU')} ₽`).join('\n');
   const promoLine = promoEval && discountRub > 0
@@ -1390,6 +1759,16 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
   const isTgAdmin = isTgAdminCtx;
 
   tgBot.command('id', (ctx) => ctx.reply(`Ваш Telegram ID: ${ctx.from.id}`));
+
+  tgBot.command('stats', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.reply(statsText(db, parseDaysArg(ctx.message && ctx.message.text)));
+  });
+  tgBot.command('history', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    const a = parseHistoryArgs(ctx.message && ctx.message.text);
+    ctx.reply(historyText(db, a.limit, a.entity, a.entityId));
+  });
 
   tgBot.start(async (ctx) => {
     const shopKb = tgShopButtons();
@@ -1441,7 +1820,29 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
 
   tgBot.hears('Сводка сайта', (ctx) => {
     if (!isTgAdmin(ctx)) return;
-    ctx.reply(adminSummary(db, { show_payment: getSetting('show_payment') }));
+    ctx.reply(adminSummary(db, { show_payment: getSetting('show_payment') }),
+      Markup.inlineKeyboard([
+        [Markup.button.callback('Статистика 7 дней', 'stats_7'), Markup.button.callback('Статистика 30 дней', 'stats_30')],
+        [Markup.button.callback('Журнал изменений', 'history_15')]
+      ]));
+  });
+  tgBot.action(/^stats_(\d+)$/, (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery().catch(() => {});
+    ctx.reply(statsText(db, Math.max(1, Math.min(366, Number(ctx.match[1]) || 7))));
+  });
+  tgBot.action('history_15', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery().catch(() => {});
+    ctx.reply(historyText(db, 15));
+  });
+  tgBot.hears('Статистика', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.reply(statsText(db, 7));
+  });
+  tgBot.hears('Журнал', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.reply(historyText(db, 15) + '\n\nУточнить: /history товар 45 · /history заказ TG-1176');
   });
   tgBot.hears('Фото на стоках', (ctx) => {
     if (!isTgAdmin(ctx)) return;
@@ -1753,6 +2154,8 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     ctx.answerCbQuery('Публикую');
     const who = ctx.from.username ? `@${ctx.from.username}` : `id ${ctx.from.id}`;
     const res = await publishCatalog(who);
+    try { setSetting('publish_last', JSON.stringify({ ok: res.ok, at: new Date().toISOString(), error: res.ok ? null : String(res.error || '').slice(0, 200) })); } catch (e) {}
+    auditLog({ actor: 'tg:' + ctx.from.id, entity: 'publish', action: 'publish', neW: { ok: res.ok, sha: res.sha || null }, source: 'bot' });
     ctx.reply(res.ok ? res.text : res.error);
   });
   tgBot.action('tg_export_no', (ctx) => {
@@ -2071,6 +2474,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       if (parsed.unknown.length) return ctx.reply(`Не нашёл в каталоге позиции: ${parsed.unknown.join(', ')}. Отправьте заказ заново или напишите менеджеру.`);
       return ctx.reply('Не удалось распознать состав заказа. Отправьте номер (например, TG-1176) или напишите менеджеру.');
     }
+    try { recordBotOpened(db, String(ctx.from.id), order.order_code); } catch (e) {}
     return handleClientOrderLookupTg(ctx, order.order_code);
   }
 
@@ -2415,11 +2819,11 @@ function maxPromoKb() {
   return [['Добавить промокод', 'Убрать промокод'], ['Отмена']];
 }
 
-const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках'], ['Промокоды', 'Дизайн'], ['Бекап БД', 'Отмена']];
+const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках'], ['Статистика', 'Журнал'], ['Промокоды', 'Дизайн'], ['Бекап БД', 'Отмена']];
 const MAX_CANCEL = [['Отмена']];
 // Кнопки меню и навигации админки. Пока бот ждёт значение поля или шаг мастера,
 // нажатие такой кнопки обязано прервать ввод, а не уехать в него текстом.
-const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Категории', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Дизайн', 'Дизайн: Stealth', 'Дизайн: Classic', 'Бекап БД', 'Добавить промокод', 'Убрать промокод', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
+const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Категории', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Статистика', 'Журнал', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Дизайн', 'Дизайн: Stealth', 'Дизайн: Classic', 'Бекап БД', 'Добавить промокод', 'Убрать промокод', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
 function maxIsMenuCommand(text) {
   const t = String(text || '').trim();
   return MAX_MENU_COMMANDS.has(t)
@@ -2758,6 +3162,19 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     return sendMaxMessage(senderId, 'Здравствуйте! Напишите номер заказа (например, TG-1176) или дождитесь менеджера.');
   }
 
+  if (text === 'Статистика' || text === '/stats') {
+    return sendMaxMessage(senderId, statsText(db, 7) + '\n\nДля месячной напиши «Статистика 30».', MAX_MENU);
+  }
+  const ownerStatsM = String(text || '').match(/^Статистика\s+(\d{1,3})$/i);
+  if (ownerStatsM) {
+    return sendMaxMessage(senderId, statsText(db, Math.max(1, Math.min(366, Number(ownerStatsM[1]) || 7))), MAX_MENU);
+  }
+  const ownerHistM = String(text || '').match(/^(?:Журнал|\/history)(?:\s+(.*))?$/i);
+  if (ownerHistM) {
+    const a = parseHistoryArgs(ownerHistM[1] || '');
+    return sendMaxMessage(senderId, historyText(db, a.limit, a.entity, a.entityId) + '\n\nУточнить: «Журнал товар 45».', MAX_MENU);
+  }
+
   const sess = maxSessions.get(senderId) || {};
 
   if (text === 'Отмена') {
@@ -3076,6 +3493,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   }
   if (text === 'Подтвердить публикацию') {
     const res = await publishCatalog(`MAX id ${senderId}`);
+    try { setSetting('publish_last', JSON.stringify({ ok: res.ok, at: new Date().toISOString(), error: res.ok ? null : String(res.error || '').slice(0, 200) })); } catch (e) {}
     return sendMaxMessage(senderId, res.ok ? res.text : res.error, MAX_MENU);
   }
   if (text === 'Подтвердить экспорт') {
