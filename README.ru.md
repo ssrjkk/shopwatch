@@ -3,6 +3,8 @@
 [Shopfront](https://ssrjkk.github.io/shopwatch/) · [Bot](https://t.me/wwwatchshop_bot) · [Projects hub](https://ssrjkk.github.io/) · [SSRJKK](https://github.com/ssrjkk) · [Русская версия](README.ru.md)
 
 ![Watchop storefront: catalog, product cards and prices](docs/screenshots/storefront.jpg)
+![Catalog: sharp model photos filling each card](docs/screenshots/catalog.jpg)
+![Product page: large photo plus studio render](docs/screenshots/product.jpg)
 
 Storefront: a catalog of 347 products read from `products-data.js` (exported from the live
 database together with their ids), which the server also uses to seed and upgrade the database;
