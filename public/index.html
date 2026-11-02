@@ -4008,7 +4008,10 @@ try{if(document.body&&document.body.classList)document.body.classList.add('class
 // Живая виртуализация: окно карточек следует за прокруткой и шириной экрана.
 try{
   if(typeof window!=='undefined'&&window&&typeof window.addEventListener==='function'&&!window.__watchopGridBound){
-    window.addEventListener('scroll',function(){try{scheduleWindow();}catch(e){}try{if(typeof updateToTop==='function')updateToTop();}catch(e){}},{passive:true});
+    const onGridScroll=()=>{try{scheduleWindow();}catch(e){}try{if(typeof updateToTop==='function')updateToTop();}catch(e){}};
+    window.addEventListener('scroll',onGridScroll,{passive:true});
+    window.addEventListener('wheel',onGridScroll,{passive:true});
+    window.addEventListener('touchmove',onGridScroll,{passive:true});
     var __gridRzT=null;
     window.addEventListener('resize',function(){try{clearTimeout(__gridRzT);}catch(e){}__gridRzT=setTimeout(function(){try{if(typeof windowState!=='undefined'){windowState.cat={rowH:0};windowState.favorites={rowH:0};}}catch(e){}try{renderWindow();}catch(e){}},150);});
     window.__watchopGridBound=true;
