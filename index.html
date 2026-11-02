@@ -4136,7 +4136,7 @@ function freezeTransitionsTemporarily(){
   try{if(root.classList)root.classList.add('no-transitions');}catch(e){}
   const done=()=>{try{root.removeAttribute('data-switching');}catch(e){}try{if(root.classList)root.classList.remove('no-transitions');}catch(e){}};
   if(typeof requestAnimationFrame==='function'){requestAnimationFrame(()=>requestAnimationFrame(done));}
-  else{setTimeout(done,50);}
+  setTimeout(done,120);
 }
 function setDesignEdition(edition){
   state.designEdition=(edition==='classic')?'classic':'stealth';
