@@ -349,57 +349,6 @@ body.classic-edition .bg-white\/\[0\.05\] {
   border-color: #E2E8F0 !important;
 }
 
-/* Ночная тема Obsidian: идёт позже classic/ivory-блоков и побеждает их в каскаде */
-body.dark-theme {
-  background-color: #0B0F17 !important;
-  background-image:
-    radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.06) 0%, transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.05) 0%, transparent 45%) !important;
-  color: #F8FAFC !important;
-}
-body.dark-theme header {
-  background: rgba(11, 15, 23, 0.94) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-}
-body.dark-theme .watch-card,
-body.dark-theme .collection-chip,
-body.dark-theme #catalog-anchor,
-body.dark-theme #product-detail-box,
-body.dark-theme .bg-\[\#0E121B\],
-body.dark-theme .bg-\[\#0C1018\],
-body.dark-theme .bg-\[\#0B0F18\] {
-  background: #111827 !important;
-  color: #F8FAFC !important;
-  border-color: #1F2937 !important;
-  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.7) !important;
-}
-body.dark-theme .watch-stage {
-  background: #0F172A !important;
-  border-color: rgba(255, 255, 255, 0.06) !important;
-}
-body.dark-theme .text-white,
-body.dark-theme .text-slate-100,
-body.dark-theme .text-slate-200 {
-  color: #F8FAFC !important;
-}
-body.dark-theme .hero-obsidian .text-white,
-body.dark-theme .hero-obsidian .text-slate-200,
-body.dark-theme .watch-stage .text-white,
-body.dark-theme .watch-stage .text-slate-200 {
-  color: #F8FAFC !important;
-}
-body.dark-theme .text-slate-300,
-body.dark-theme .text-slate-400 {
-  color: #94A3B8 !important;
-}
-body.dark-theme .bg-white\/\[0\.03\],
-body.dark-theme .bg-white\/\[0\.04\],
-body.dark-theme .bg-white\/\[0\.05\] {
-  background-color: rgba(255, 255, 255, 0.04) !important;
-  color: #E2E8F0 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
 
 html[data-switching="1"] *, html[data-switching="1"] *::before, html[data-switching="1"] *::after,
 html.no-transitions *, html.no-transitions *::before, html.no-transitions *::after {
@@ -452,6 +401,77 @@ body.classic-edition #bot-sim-drawer {
   background: #FFFFFF !important;
   color: #0F172A !important;
   border-color: #E2E8F0 !important;
+}
+
+/* Ночная тема Obsidian: стоит последней в каскаде и отменяет classic/ivory */
+body.dark-theme {
+  background-color: #0B0F17 !important;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.05) 0%, transparent 45%) !important;
+  color: #F8FAFC !important;
+}
+body.dark-theme header {
+  background: rgba(11, 15, 23, 0.94) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+body.dark-theme .watch-card,
+body.dark-theme .collection-chip,
+body.dark-theme #catalog-anchor,
+body.dark-theme #product-detail-box,
+body.dark-theme .bg-\[\#0E121B\],
+body.dark-theme .bg-\[\#0C1018\],
+body.dark-theme .bg-\[\#0B0F18\] {
+  background: #111827 !important;
+  color: #F8FAFC !important;
+  border-color: #1F2937 !important;
+  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.7) !important;
+}
+body.dark-theme .watch-stage {
+  background: #0F172A !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+body.dark-theme .text-white,
+body.dark-theme .text-slate-100,
+body.dark-theme .text-slate-200 {
+  color: #F8FAFC !important;
+}
+body.dark-theme .hero-obsidian {
+  background-color: #06080E !important;
+  background-image:
+    radial-gradient(circle at 78% 45%, rgba(56, 189, 248, 0.15) 0%, transparent 48%),
+    radial-gradient(circle at 20% 25%, rgba(56, 189, 248, 0.1) 0%, transparent 50%),
+    linear-gradient(135deg, #0D121D 0%, #07090F 60%, #05060A 100%) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 28px 64px -16px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+body.dark-theme .hero-obsidian .text-white,
+body.dark-theme .hero-obsidian .text-slate-200,
+body.dark-theme .watch-stage .text-white,
+body.dark-theme .watch-stage .text-slate-200 {
+  color: #F8FAFC !important;
+}
+body.dark-theme .text-slate-300,
+body.dark-theme .text-slate-400 {
+  color: #94A3B8 !important;
+}
+body.dark-theme .bg-white\/\[0\.03\],
+body.dark-theme .bg-white\/\[0\.04\],
+body.dark-theme .bg-white\/\[0\.05\] {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  color: #E2E8F0 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+body.dark-theme #drawer,
+body.dark-theme #filter-drawer,
+body.dark-theme #bot-sim-drawer {
+  background: #0B0F17 !important;
+  color: #F8FAFC !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+body.dark-theme .brand-marquee-container {
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%) !important;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%) !important;
 }
 
 </style>
