@@ -410,7 +410,7 @@ body.classic-edition #bot-sim-drawer {
 </script>
 </head>
 <div id="tw-preseed" class="hidden classic-edition ivory-theme dark-theme stage-lume-active stage-redshift-active btn-luxury-added btn-luxury-gold text-red-500 text-gray-400 flex"></div>
-<body class="min-h-screen flex flex-col pb-24 selection:bg-[#38BDF8] selection:text-[#07090E]">
+<body class="min-h-screen flex flex-col pb-24 selection:bg-[#38BDF8] selection:text-[#07090E] classic-edition">
 
 <!-- ГЛОБАЛЬНЫЕ МЕТАЛЛИЧЕСКИЕ ШЕЙДЕРЫ ДЛЯ 3D-РЕНДЕРОВ ЧАСОВ -->
 <svg width="0" height="0" class="absolute pointer-events-none" aria-hidden="true">
@@ -792,10 +792,6 @@ body.classic-edition #bot-sim-drawer {
         <button onclick="openQuizModal()" class="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 text-slate-200 text-xs font-semibold transition-colors">
           <span class="w-1.5 h-1.5 rounded-full bg-[#38BDF8]"></span>
           <span>Подбор калибра</span>
-        </button>
-        <button id="design-switch-btn" onclick="toggleDesignEdition()" title="Чередовать дизайн: Новый Stealth 3D ⇄ Прошлый классический" class="px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-slate-100 text-[11px] font-extrabold flex items-center gap-1.5 transition-all">
-          <span class="w-2 h-2 rounded-full bg-[#38BDF8]"></span>
-          <span id="design-switch-label">Дизайн: Stealth 3D</span>
         </button>
         <button id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Переключить тему" title="Переключить режим освещения витрины" class="w-9 h-9 rounded-full bg-white/[0.04] border border-white/10 hover:border-[#38BDF8]/50 text-slate-200 text-xs font-bold flex items-center justify-center transition-colors">🌙</button>
         <button id="bot-sim-toggle-btn" onclick="toggleBotSim(true)" class="px-3.5 py-2 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors" title="Терминал синхронизации с Telegram-ботом">
@@ -1300,7 +1296,7 @@ let state={
   filtered:[],
   shownCount:0,
   heroIndex:0,
-  heroPaused:false,designEdition:'classic'
+  heroPaused:false,
 };
 
 const CAT_ORDER=['Все товары','Спортивные часы','Эхолоты','Велокомпьютеры','GPS навигаторы','Фитнес-трекеры','Дайвинг компьютеры','Охота и дрессировка','Пульсометры','Аксессуары'];
@@ -3188,9 +3184,6 @@ function sendBotSimCommand(cmdOverride){
     renderCatalog();
     renderHits();
     reply=`📈 <b>Массовая переоценка выполнена!</b><br>Бренд: <b>${esc(brand)}</b>, изменение: <b>${pct>0?'+'+pct:pct}%</b>.<br>Обновлено цен на витрине: <b>${cnt}</b> позиций.`;
-  }else if(raw==='/design'){
-    const mode=toggleDesignEdition();
-    reply=`🎨 Дизайн витрины переключён: <b>${mode==='classic'?'Классический (прошлый)':'Stealth Titanium 3D (новый)'}</b>.`;
   }else if(raw==='/orders_csv'){
     const count=state.simOrders.length||state.myOrders.length;
     reply=`📊 <b>Экспорт заказов в CSV (UTF-8 BOM для Excel):</b><br>Выгружено записей: <b>${count}</b>.<br>Колонки: <code>Код заказа; Статус; Сумма (₽); Состав заказа; Покупатель; Дата</code>.`;
@@ -3800,28 +3793,6 @@ function freezeTransitionsTemporarily(){
   if(typeof requestAnimationFrame==='function'){requestAnimationFrame(()=>requestAnimationFrame(done));}
   setTimeout(done,120);
 }
-function setDesignEdition(edition){
-  state.designEdition=(edition==='classic')?'classic':'stealth';
-  try{
-    const root=typeof document!=='undefined'&&document.documentElement;
-    freezeTransitionsTemporarily();
-    if(typeof document!=='undefined'&&document.body&&document.body.classList){
-      document.body.classList.toggle('classic-edition',state.designEdition==='classic');
-    }
-    const lbl=document.getElementById('design-switch-label');
-    if(lbl)lbl.textContent=state.designEdition==='classic'?'Дизайн: Классика':'Дизайн: Stealth 3D';
-    if(typeof localStorage!=='undefined')localStorage.setItem('watchop_design_edition',state.designEdition);
-  }catch(e){}
-  return state.designEdition;
-}
-
-function toggleDesignEdition(){
-  const next=state.designEdition==='classic'?'stealth':'classic';
-  setDesignEdition(next);
-  showToast(next==='classic'?'Включён прошлый классический дизайн (Фото + Изумруд)':'Включён дизайн Stealth Titanium 3D');
-  return next;
-}
-
 function applyTheme(theme,fromUser){
   state.theme=theme==='dark'?'dark':'light';
   try{
@@ -3948,7 +3919,7 @@ function copyCartShareLink(){
 }
 
 applyTheme(state.theme);
-try{setDesignEdition((typeof localStorage!=='undefined'&&localStorage.getItem('watchop_design_edition'))||'classic');}catch(e){try{setDesignEdition('classic');}catch(_){}}
+try{if(document.body&&document.body.classList)document.body.classList.add('classic-edition');}catch(e){}
 setupMiniApp();
 initApp();
 
