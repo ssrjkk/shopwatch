@@ -29,4 +29,26 @@ describe('PWA manifest: один сайт, витрина ссылается н�
     const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
     assert.ok(html.includes('<link rel="manifest" href="manifest.json"'), 'нет <link rel=manifest>');
   });
+
+  it('robots.txt и sitemap.xml зеркалятся в корень для Pages', () => {
+    for (const f of ['robots.txt', 'sitemap.xml']) {
+      const a = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+      const b = fs.readFileSync(path.join(__dirname, '..', 'public', f), 'utf8');
+      assert.equal(a, b, `${f} разошёлся — прогони npm run sync:pages`);
+    }
+    const robots = fs.readFileSync(path.join(__dirname, '..', 'robots.txt'), 'utf8');
+    assert.match(robots, /^User-agent: \*/m, 'robots без User-agent');
+    assert.match(robots, /sitemap\.xml/, 'robots без ссылки на sitemap');
+    const sm = fs.readFileSync(path.join(__dirname, '..', 'sitemap.xml'), 'utf8');
+    assert.match(sm, /https:\/\/ssrjkk\.github\.io\/shopwatch\//, 'sitemap без канонического URL');
+  });
+
+  it('соцкарточки и фавикон на месте, в витрине нет чужих хотлинков', () => {
+    const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+    assert.ok(html.includes('<meta name="twitter:card" content="summary_large_image"'), 'нет twitter:card');
+    assert.ok(html.includes('<link rel="icon" href="data:image/svg+xml,'), 'нет фавикона');
+    assert.ok(!html.includes('images.unsplash.com'), 'в витрине остался хотлинк Unsplash');
+    assert.ok(!html.includes('pitergsm.ru'), 'в витрине остался хотлинк PiterGSM');
+    assert.ok(html.includes('uploads/catalog/f88df70ab8a2.jpg'), 'og:image не на локальном фото');
+  });
 });

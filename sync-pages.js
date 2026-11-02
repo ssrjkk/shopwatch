@@ -9,6 +9,8 @@ const pairs = [
   ['public/index.html', 'index.html'],
   ['public/products-data.js', 'products-data.js'],
   ['public/manifest.json', 'manifest.json'],
+  ['public/robots.txt', 'robots.txt'],
+  ['public/sitemap.xml', 'sitemap.xml'],
 ];
 
 let dirty = 0;

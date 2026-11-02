@@ -414,21 +414,27 @@ const SEED_PRODUCTS = require('./public/products-data.js');
   const res = applySeed(db, SEED_PRODUCTS);
   if (res.added) console.log(res.empty ? `Catalog seeded: ${res.added} products` : `Catalog upgraded: +${res.added} products`);
 }
-// Разовый refresh фото из файла-источника: у позиций, чьи фото ещё на чужих
-// CDN (Unsplash/Wikimedia/PiterGSM), подтягиваем локальные кадры из
-// public/uploads/catalog. Свои загрузки (/uploads/...) и ручные правки не трогаем.
+// Разовый refresh фото из файла-источника: файл — единственный источник правды
+// для каталожных фото. Обновляем позиции, чьи фото ещё на чужих CDN, а также те,
+// что лежат в управляемом пуле uploads/catalog/ но разошлись с файлом (ревизия
+// пула). Свои загрузки админа вне catalog/ (/uploads/watch_*.jpg и т.п.) и ручные
+// правки не трогаем.
 try {
   const OLD_HOSTS = ['images.unsplash.com', 'upload.wikimedia.org', 'thumb.wikimedia.org', 'pitergsm.ru'];
   const wantByKey = new Map(SEED_PRODUCTS.map((p) => [seedKey(p), String(p.image || '')]));
+  const wantById = new Map(SEED_PRODUCTS.map((p) => [Number(p.id), String(p.image || '')]));
   const updImg = db.prepare('UPDATE products SET image = ? WHERE id = ?');
   let refreshed = 0;
   db.exec('SAVEPOINT img_refresh');
   try {
     for (const r of db.prepare('SELECT id, image, seed_key FROM products').all()) {
       const cur = String(r.image || '');
-      if (!OLD_HOSTS.some((h) => cur.includes(h))) continue;
-      const want = wantByKey.get(r.seed_key);
-      if (want && want !== cur) { updImg.run(want, r.id); refreshed++; }
+      const want = wantById.get(Number(r.id)) || wantByKey.get(r.seed_key);
+      if (!want || want === cur) continue;
+      const isHotlink = OLD_HOSTS.some((h) => cur.includes(h));
+      const isManagedPool = cur.startsWith('uploads/catalog/');
+      if (!isHotlink && !isManagedPool) continue;
+      updImg.run(want, r.id); refreshed++;
     }
     db.exec('RELEASE SAVEPOINT img_refresh');
   } catch (e) {
@@ -1043,7 +1049,7 @@ function exportCatalog(force) {
 // Витрина без сервера читает каталог из products-data.js, поэтому правка админки
 // становится видимой покупателю только после коммита в репозиторий. Кнопка в
 // бота делает именно это: выгрузка, синхронизация зеркал, коммит и push.
-const PUBLISH_PATHS = ['products-data.js', 'public/products-data.js', 'index.html', 'public/index.html', 'manifest.json', 'public/manifest.json', 'uploads', 'public/uploads'];
+const PUBLISH_PATHS = ['products-data.js', 'public/products-data.js', 'index.html', 'public/index.html', 'manifest.json', 'public/manifest.json', 'robots.txt', 'public/robots.txt', 'sitemap.xml', 'public/sitemap.xml', 'uploads', 'public/uploads'];
 let publishInFlight = false;
 
 // Подсказка к ошибке push: её причина зависит от того, откуда берётся доступ.

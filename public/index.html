@@ -5,8 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta property="og:title" content="Watchop — магазин оригинальной продукции Garmin и смарт-часов" />
 <meta property="og:type" content="website" />
-<meta property="og:image" content="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1200&q=80" />
+<meta property="og:url" content="https://ssrjkk.github.io/shopwatch/" />
+<meta property="og:image" content="https://ssrjkk.github.io/shopwatch/uploads/catalog/f88df70ab8a2.jpg" />
+<meta property="og:image:width" content="1000" />
+<meta property="og:image:height" content="1000" />
 <meta property="og:description" content="347 моделей в каталоге: туристические часы, эхолоты, велокомпьютеры, навигаторы. Подбор по задачам, доставка по всей России, гарантия 12 месяцев." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Watchop — магазин оригинальной продукции Garmin и смарт-часов" />
+<meta name="twitter:description" content="347 моделей в каталоге: спортивные часы, эхолоты, велокомпьютеры, навигаторы. Доставка по всей России, гарантия 12 месяцев." />
+<meta name="twitter:image" content="https://ssrjkk.github.io/shopwatch/uploads/catalog/f88df70ab8a2.jpg" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%23F8FAFC' stroke='%23141619' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%230E9F6E' stroke-width='2' stroke-dasharray='3 5'/%3E%3Cline x1='32' y1='32' x2='32' y2='15' stroke='%23141619' stroke-width='4' stroke-linecap='round'/%3E%3Cline x1='32' y1='32' x2='44' y2='38' stroke='%230E9F6E' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='3' fill='%23141619'/%3E%3C/svg%3E" type="image/svg+xml" />
 <title>WATCHOP — Haute Horlogerie &amp; Garmin MARQ Flagship Boutique</title>
 <meta name="theme-color" content="#0B0F17" />
 <link rel="manifest" href="manifest.json" />
@@ -339,6 +347,57 @@ body.classic-edition .bg-white\/\[0\.05\] {
   background-color: #F1F5F9 !important;
   color: #0F172A !important;
   border-color: #E2E8F0 !important;
+}
+
+/* Ночная тема Obsidian: идёт позже classic/ivory-блоков и побеждает их в каскаде */
+body.dark-theme {
+  background-color: #0B0F17 !important;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.05) 0%, transparent 45%) !important;
+  color: #F8FAFC !important;
+}
+body.dark-theme header {
+  background: rgba(11, 15, 23, 0.94) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+body.dark-theme .watch-card,
+body.dark-theme .collection-chip,
+body.dark-theme #catalog-anchor,
+body.dark-theme #product-detail-box,
+body.dark-theme .bg-\[\#0E121B\],
+body.dark-theme .bg-\[\#0C1018\],
+body.dark-theme .bg-\[\#0B0F18\] {
+  background: #111827 !important;
+  color: #F8FAFC !important;
+  border-color: #1F2937 !important;
+  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.7) !important;
+}
+body.dark-theme .watch-stage {
+  background: #0F172A !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+body.dark-theme .text-white,
+body.dark-theme .text-slate-100,
+body.dark-theme .text-slate-200 {
+  color: #F8FAFC !important;
+}
+body.dark-theme .hero-obsidian .text-white,
+body.dark-theme .hero-obsidian .text-slate-200,
+body.dark-theme .watch-stage .text-white,
+body.dark-theme .watch-stage .text-slate-200 {
+  color: #F8FAFC !important;
+}
+body.dark-theme .text-slate-300,
+body.dark-theme .text-slate-400 {
+  color: #94A3B8 !important;
+}
+body.dark-theme .bg-white\/\[0\.03\],
+body.dark-theme .bg-white\/\[0\.04\],
+body.dark-theme .bg-white\/\[0\.05\] {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  color: #E2E8F0 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 
@@ -746,7 +805,7 @@ body.classic-edition #bot-sim-drawer {
   <div class="relative max-w-2xl w-full text-center space-y-3" onclick="event.stopPropagation()">
     <button onclick="closeLightbox()" class="absolute -top-3 -right-2 w-9 h-9 rounded-full bg-white/10 text-white font-bold shadow-lg flex items-center justify-center">✕</button>
     <div class="relative overflow-hidden rounded-2xl">
-    <img id="lightbox-img" src="https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=900&q=85" alt="Фотография модели" width="1200" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" class="w-full max-h-[75vh] object-contain rounded-2xl bg-black/40 mx-auto" style="aspect-ratio:4/3" />
+    <img id="lightbox-img" src="uploads/catalog/f88df70ab8a2.jpg" alt="Фотография модели" width="1200" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" class="w-full max-h-[75vh] object-contain rounded-2xl bg-black/40 mx-auto" style="aspect-ratio:4/3" />
       <button onclick="event.stopPropagation();openLightboxPrev()" aria-label="Предыдущее фото" class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg font-bold">‹</button>
       <button onclick="event.stopPropagation();openLightboxNext()" aria-label="Следующее фото" class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white text-lg font-bold">›</button>
     </div>
@@ -1137,7 +1196,7 @@ body.classic-edition #bot-sim-drawer {
 <section id="view-about" class="hidden space-y-4">
   <div class="bg-[#0E121B] rounded-3xl p-6 space-y-4 text-sm leading-relaxed text-slate-300 border border-white/10">
     <h2 class="font-display text-xl font-extrabold text-white">О часовом бутике Watchop</h2>
-    <img src="https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=900&q=85" alt="Watchop Atelier" class="w-full h-56 object-cover rounded-2xl" loading="lazy" />
+    <img src="uploads/catalog/3b5381df9988.jpg" alt="Watchop Atelier" class="w-full h-56 object-cover rounded-2xl" loading="lazy" />
     <p>Watchop — специализированный бутик оригинальной продукции Garmin, швейцарской и японской часовой механики. С 2018 года мы поставляем проверенные хронометры и приборы с застрахованной доставкой по всей России.</p>
   </div>
 </section>
@@ -1325,7 +1384,6 @@ const TRANSLIT_MAP=[
 ];
 
 const PAGE_SIZE=20;
-let gridObserver=null;
 let heroTimer=null;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1557,6 +1615,7 @@ function applySettingsToUI(){
 }
 
 function showView(tab){
+  try{state.currentView=tab;}catch(e){}
   ['catalog','product','order-success','cart','checkout','favorites','orders','about','delivery','warranty','contacts','offer','privacy'].forEach(v=>{
     const el=document.getElementById('view-'+v);
     if(el)el.classList.add('hidden');
@@ -1575,7 +1634,7 @@ function showView(tab){
   if(tab==='orders')renderMyOrders();
   if(tab==='cart')renderCart();
   if(tab==='checkout')renderCheckout();
-  if(tab==='catalog')requestAnimationFrame(pumpGrid);
+  if(tab==='catalog')requestAnimationFrame(function(){try{renderWindow();}catch(e){}});
   syncMiniAppNav(tab);
   if(typeof window!=='undefined'&&window.scrollTo)window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -2198,19 +2257,14 @@ function renderSearchSuggestions(raw){
 
 function renderCatalog(){
   try{renderRecent();}catch(e){}
-  if(gridObserver){gridObserver.disconnect();gridObserver=null;}
   try{const sec=document.getElementById('hits-section');if(sec)sec.classList.toggle('hidden',!!searchQuery());}catch(e){}
   state.filtered=getFiltered();
   state.windowFrom=0;
   state.windowTo=Math.min(state.filtered.length,WINDOW_CARDS);
   state.shownCount=0;
-  const grid=document.getElementById('products-grid');
-  if(grid)grid.innerHTML='';
-  try{const gt=document.getElementById('grid-top');if(gt)gt.style.height='0px';}catch(e){}
-  try{const gb=document.getElementById('grid-bottom');if(gb)gb.style.height='0px';}catch(e){}
-  appendChunk();
-  observeSentinel();
-  pumpGrid();
+  try{if(typeof windowState!=='undefined')windowState.cat={rowH:0,colN:0};}catch(e){}
+  try{if(typeof window!=='undefined'&&window.scrollTo)window.scrollTo(0,0);}catch(e){}
+  renderWindowAt(0);
   renderDrawer();
   const fBadge=document.getElementById('active-filter-badge');
   if(fBadge)fBadge.textContent=String(state.filtered.length);
@@ -2230,19 +2284,6 @@ function safeCardHTML(p){
     return productCardHTML(p);
   }catch(e){return '';}
 }
-function appendChunk(){
-  const grid=document.getElementById('products-grid');
-  const next=state.filtered.slice(state.shownCount,state.shownCount+PAGE_SIZE);
-  if(!next.length){
-    updateGridStatus();
-    return false;
-  }
-  grid.insertAdjacentHTML('beforeend',next.map(p=>safeCardHTML(p)).join(''));
-  state.shownCount+=next.length;
-  updateGridStatus();
-  return state.shownCount<state.filtered.length;
-}
-
 function updateGridStatus(){
   const total=state.filtered.length;
   document.getElementById('found-count').textContent=`Найдено: ${total}`;
@@ -2253,27 +2294,6 @@ function updateGridStatus(){
     st.textContent=`Показано ${state.shownCount} из ${total} — листайте вниз`;
   }else{
     st.textContent=total>PAGE_SIZE?`Показаны все ${total}`:'';
-  }
-}
-
-function observeSentinel(){
-  const s=document.getElementById('grid-sentinel');
-  if(typeof window==='undefined'||!('IntersectionObserver' in window))return;
-  gridObserver=new IntersectionObserver(es=>{
-    if(es.some(e=>e.isIntersecting)){
-      if(!appendChunk()&&gridObserver){gridObserver.disconnect();gridObserver=null;}
-    }
-  },{rootMargin:'600px'});
-  gridObserver.observe(s);
-}
-
-function pumpGrid(){
-  const s=document.getElementById('grid-sentinel');
-  if(!s||!state.filtered.length||state.shownCount>=state.filtered.length)return;
-  const r=s.getBoundingClientRect();
-  if(r.top<window.innerHeight+600){
-    if(appendChunk())pumpGrid();
-    else if(gridObserver){gridObserver.disconnect();gridObserver=null;}
   }
 }
 
@@ -3141,7 +3161,7 @@ function sendBotSimCommand(cmdOverride){
       category:'Спортивные часы',
       name:`Garmin MARQ Athlete Gen 2 Performance Edition #${newId}`,
       price:229000,
-      image:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80',
+      image:'uploads/catalog/f88df70ab8a2.jpg',
       specs:'Добавлено через админ-панель Telegram/MAX бота: титан Grade-5, AMOLED, сапфир.',
       hit:1
     };
@@ -3620,25 +3640,54 @@ async function checkOrderStatusUI(){
 
 
 const WINDOW_ROWS=WINDOW_CARDS/2;const WINDOW_OVERSCAN_ROWS=10;const windowState={};let windowQueued=false;
-function renderWindowed(items,key,dom){
+// Число колонок живой сетки: 2 на телефоне, 3–4 на планшете/десктопе.
+function gridCols(grid){
+  try{
+    if(typeof getComputedStyle==='function'&&grid){
+      const v=String(getComputedStyle(grid).gridTemplateColumns||'').trim();
+      if(v&&v!=='none'){const n=v.split(/\s+/).filter(Boolean).length;if(n>=1&&n<=8)return n;}
+    }
+  }catch(e){}
+  return 2;
+}
+function gridRowGap(grid){
+  try{
+    if(typeof getComputedStyle==='function'&&grid){
+      const g=parseFloat(String(getComputedStyle(grid).rowGap||''));
+      if(g>0&&g<200)return g;
+    }
+  }catch(e){}
+  return 10;
+}
+function renderWindowed(items,key,dom,scrollPx){
   const grid=document.getElementById(dom.grid);if(!grid)return{from:0,to:0};
   const top=document.getElementById(dom.top);const bottom=document.getElementById(dom.bottom);const total=items.length;
   if(total<=WINDOW_CARDS){if(top)top.style.height="0px";if(bottom)bottom.style.height="0px";grid.innerHTML=items.map((p)=>productCardHTML(p)).join("");return{from:0,to:total};}
+  const cols=gridCols(grid);
+  const rowsInWindow=Math.max(1,Math.ceil(WINDOW_CARDS/cols));
   const st=windowState[key]||(windowState[key]={rowH:0});
-  const first=grid.children&&grid.children[0];if(first&&first.offsetHeight)st.rowH=first.offsetHeight+10;
-  const rowH=st.rowH||240;const rowsTotal=Math.ceil(total/2);
-  const wrap=document.getElementById(dom.wrap);
-  const docTop=wrap&&wrap.getBoundingClientRect?Math.max(0,(typeof window!=="undefined"&&(window.scrollY||0)?0:0)):0;
-  const scrolled=Math.max(0,(typeof window!=="undefined"?(window.scrollY||0):0)-docTop);
-  const startRow=Math.max(0,Math.min(Math.floor(scrolled/rowH)-WINDOW_OVERSCAN_ROWS,rowsTotal-WINDOW_ROWS));
-  const endRow=startRow+WINDOW_ROWS;
-  grid.innerHTML=items.slice(startRow*2,endRow*2).map((p)=>productCardHTML(p)).join("");
+  const first=grid.children&&grid.children[0];if(first&&first.offsetHeight)st.rowH=first.offsetHeight+gridRowGap(grid);
+  const rowH=st.rowH||240;const rowsTotal=Math.ceil(total/cols);
+  let scrolled;
+  if(typeof scrollPx==='number'){scrolled=Math.max(0,scrollPx);}
+  else{
+    scrolled=0;
+    try{
+      const wrap=document.getElementById(dom.wrap);
+      const rt=wrap&&wrap.getBoundingClientRect?wrap.getBoundingClientRect().top:null;
+      if(rt===null||rt===undefined){scrolled=Math.max(0,(typeof window!=="undefined"&&(window.scrollY||0))||0);}
+      else{scrolled=Math.max(0,-rt);}
+    }catch(e){scrolled=0;}
+  }
+  const startRow=Math.max(0,Math.min(Math.floor(scrolled/rowH)-WINDOW_OVERSCAN_ROWS,rowsTotal-rowsInWindow));
+  const endRow=startRow+rowsInWindow;
+  grid.innerHTML=items.slice(startRow*cols,endRow*cols).map((p)=>productCardHTML(p)).join("");
   if(top)top.style.height=(startRow*rowH)+"px";
   if(bottom)bottom.style.height=((rowsTotal-endRow)*rowH)+"px";
-  return{from:startRow*2,to:Math.min(total,endRow*2)};
+  return{from:startRow*cols,to:Math.min(total,endRow*cols)};
 }
-function renderWindow(){
-  const w=renderWindowed(state.filtered,"cat",{grid:"products-grid",top:"grid-top",bottom:"grid-bottom",wrap:"grid-window"});
+function renderWindowAt(px){
+  const w=renderWindowed(state.filtered,"cat",{grid:"products-grid",top:"grid-top",bottom:"grid-bottom",wrap:"grid-window"},px);
   state.windowFrom=w.from;state.windowTo=w.to;state.shownCount=w.to-w.from;
   const total=state.filtered.length;
   const fc=document.getElementById("found-count");if(fc)fc.textContent="Найдено: "+total;
@@ -3648,10 +3697,17 @@ function renderWindow(){
     else st.textContent=state.windowTo<total?("Показаны "+(state.windowFrom+1)+"–"+state.windowTo+" из "+total+" — листайте вниз"):(total>WINDOW_CARDS?("Показаны все "+total):"");
   }
 }
+function renderWindow(){
+  let sy=0;
+  try{sy=(typeof window!=="undefined"&&(window.scrollY||0))||0;}catch(e){sy=0;}
+  renderWindowAt(sy);
+}
 function scheduleWindow(){
   if(windowQueued)return;windowQueued=true;
-  try{requestAnimationFrame(()=>{windowQueued=false;if(state.currentView==="catalog")renderWindow();else if(state.currentView==="favorites")renderFavorites();});}
-  catch(e){windowQueued=false;if(state.currentView==="catalog")renderWindow();}
+  let ran=false;
+  const run=()=>{if(ran)return;ran=true;windowQueued=false;try{if(state.currentView==="catalog")renderWindow();else if(state.currentView==="favorites")renderFavorites();}catch(e){}};
+  try{if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else run();}catch(e){run();}
+  setTimeout(run,120);
 }
 function localOrders(){
   try{const a=JSON.parse(localStorage.getItem("watchop_orders")||"null");if(Array.isArray(a))return a;}catch(e){}
@@ -3793,16 +3849,13 @@ function freezeTransitionsTemporarily(){
   if(typeof requestAnimationFrame==='function'){requestAnimationFrame(()=>requestAnimationFrame(done));}
   setTimeout(done,120);
 }
-function applyTheme(theme,fromUser){
+function applyTheme(theme){
   state.theme=theme==='dark'?'dark':'light';
   try{
-    const root=typeof document!=='undefined'&&document.documentElement;
     freezeTransitionsTemporarily();
     if(typeof document!=='undefined'&&document.body&&document.body.classList){
       document.body.classList.toggle('dark-theme',state.theme==='dark');
-      if(fromUser){
-        document.body.classList.toggle('ivory-theme',state.theme==='light');
-      }
+      document.body.classList.toggle('ivory-theme',state.theme==='light');
     }
     const btn=document.getElementById('theme-toggle-btn');
     if(btn)btn.textContent=state.theme==='dark'?'☀️':'🌙';
@@ -3810,7 +3863,7 @@ function applyTheme(theme,fromUser){
   }catch(e){}
 }
 function toggleTheme(){
-  applyTheme(state.theme==='dark'?'light':'dark',true);
+  applyTheme(state.theme==='dark'?'light':'dark');
   showToast(state.theme==='dark'?'Включена тема Obsidian Atelier':'Включена светлая галерея Swiss Ivory');
 }
 
@@ -3920,6 +3973,15 @@ function copyCartShareLink(){
 
 applyTheme(state.theme);
 try{if(document.body&&document.body.classList)document.body.classList.add('classic-edition');}catch(e){}
+// Живая виртуализация: окно карточек следует за прокруткой и шириной экрана.
+try{
+  if(typeof window!=='undefined'&&window&&typeof window.addEventListener==='function'&&!window.__watchopGridBound){
+    window.addEventListener('scroll',function(){try{scheduleWindow();}catch(e){}try{if(typeof updateToTop==='function')updateToTop();}catch(e){}},{passive:true});
+    var __gridRzT=null;
+    window.addEventListener('resize',function(){try{clearTimeout(__gridRzT);}catch(e){}__gridRzT=setTimeout(function(){try{if(typeof windowState!=='undefined'){windowState.cat={rowH:0};windowState.favorites={rowH:0};}}catch(e){}try{renderWindow();}catch(e){}},150);});
+    window.__watchopGridBound=true;
+  }
+}catch(e){}
 setupMiniApp();
 initApp();
 
