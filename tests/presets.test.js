@@ -99,18 +99,18 @@ describe('подбор по пресетам и цене, лайтбокс, пр
     setField('price-max', '');
   });
 
-  it('фото товара открывается крупно и просит ширину под слот', () => {
+  it('фото товара открывается крупно: в лайтбоксе — его же локальное фото', () => {
     g.resetFilters();
-    const withStock = g.state.products.find((p) => /unsplash\.com/.test(String(p.image)));
-    assert.ok(withStock, 'в каталоге есть позиция с внешним фото');
-    g.openProduct(withStock.id);
+    const item = g.state.products.find((p) => String(p.image || '').startsWith('uploads/'));
+    assert.ok(item, 'в каталоге есть позиция с локальным фото');
+    g.openProduct(item.id);
     g.openLightbox();
     const box = g.document.getElementById('lightbox');
     const img = g.document.getElementById('lightbox-img');
     assert.equal(box.classList.contains('hidden'), false, 'оверлей показан');
-    assert.match(String(img.src), /w=1200/, 'в лайтбоксе — большое фото, а не 700 из карточки');
-    assert.match(String(img.src), /fm=webp/);
-    assert.ok(String(img.alt).includes(withStock.name), 'альт подписан названием товара');
+    assert.ok(String(img.src).includes('uploads/'), 'в лайтбоксе — локальное фото, а не хотлинк');
+    assert.ok(!/unsplash\.com|placeholder|svg/.test(String(img.src)), 'в лайтбоксе нет чужих/рисованных картинок');
+    assert.ok(String(img.alt).includes(item.name), 'альт подписан названием товара');
     g.closeLightbox();
     assert.equal(box.classList.contains('hidden'), true, 'закрытие прячет оверлей');
   });

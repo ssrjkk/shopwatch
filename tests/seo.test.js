@@ -177,6 +177,9 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.equal(p340.image, 'uploads/catalog/1a03db850d60.jpg');
     assert.equal(p343.image, 'uploads/catalog/60612ffd7012.jpg');
     assert.equal(p345.image, 'uploads/catalog/8a692ef52c16.jpg');
+    const p346 = products.find((p) => p.id === 346); // Чехол Edge Red — без хотлинков
+    assert.equal(p346.image, 'uploads/catalog/8a692ef52c16.jpg');
+    assert.ok(!String(p346.image).startsWith('http'), 'no hotlink photos in catalog');
     assert.equal(bike.image, 'uploads/catalog/7ccfea8dd6a3.jpg');
 
     // Verify non-Garmin watch brands do not collide with Garmin photos
@@ -185,11 +188,14 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
       assert.ok(!garminWatchImgs.has(p.image), `Brand ${p.brand} product #${p.id} collides with Garmin image ${p.image}`);
     }
 
-    // Verify PDP main image #product-main-img and multi-angle gallery thumbnails in #product-detail
+    // Verify PDP main image #product-main-img shows exactly one honest photo (no fake angles)
     g.openProduct(1);
     const detailHtml = g.document.getElementById('product-detail-box').innerHTML;
     assert.match(detailHtml, /id="product-main-img"/, 'PDP must render #product-main-img');
-    assert.match(detailHtml, /switchProductGalleryPhoto\(1\)/, 'PDP must render multi-angle gallery switcher');
+    assert.ok(!detailHtml.includes('switchProductGalleryPhoto'), 'PDP must not render fake multi-angle switcher');
+    assert.ok(!detailHtml.includes('product-3d-stage'), 'PDP must not render SVG 3D stage');
+    assert.ok(!detailHtml.includes('renderModelStudioSVG'), 'PDP must not embed drawn renders');
+    assert.equal((detailHtml.match(/id="product-main-img"/g) || []).length, 1, 'PDP has exactly one main photo');
     assert.match(detailHtml, /По коду WATCH10:/, 'PDP must render 585 Золотой club price box');
     g.setProductJsonLd(null);
   });

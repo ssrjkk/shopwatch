@@ -421,7 +421,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
 </script>
 </head>
 <div id="tw-preseed" class="hidden classic-edition ivory-theme dark-theme stage-lume-active stage-redshift-active btn-luxury-added btn-luxury-gold text-red-500 text-gray-400 flex"></div>
-<body class="min-h-screen flex flex-col pb-24 selection:bg-[#38BDF8] selection:text-[#07090E] classic-edition">
+<body class="min-h-screen flex flex-col pb-24 selection:bg-[#38BDF8] selection:text-[#07090E] classic-edition ivory-theme">
 <noscript>
   <div style="max-width:960px;margin:0 auto;padding:16px;font-family:sans-serif;background:#fff;color:#141619">
     <h2>Watchop — каталог 347 оригинальных часов Garmin, Apple Watch, Samsung и навигаторов</h2>
@@ -567,18 +567,10 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
           <svg class="w-4 h-4 text-[#0E9F6E]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span class="text-[10px] font-semibold mt-0.5">Подбор</span>
         </button>
-        <button id="design-switch-btn" onclick="toggleDesignEdition()" title="Переключить режим витрины" class="hidden sm:inline-flex px-2.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-800 text-[11px] font-bold items-center gap-1.5 transition-colors">
-          <span class="w-2 h-2 rounded-full bg-[#0E9F6E]"></span>
-          <span id="design-switch-label">Дизайн: Светлый</span>
-        </button>
-        <button id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Переключить тему" title="Переключить тему" class="w-9 h-9 rounded-xl bg-gray-100 border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-bold flex items-center justify-center transition-colors shrink-0">☀️</button>
         <a href="https://t.me/wwwatchshop_bot" target="_blank" rel="noopener" class="px-2.5 py-2 rounded-xl bg-[#2AABEE]/10 hover:bg-[#2AABEE]/20 border border-[#2AABEE]/30 text-[#2AABEE] text-xs font-bold inline-flex items-center gap-1.5 transition-colors shrink-0" title="Официальный Telegram-бот @wwwatchshop_bot">
           <span class="w-1.5 h-1.5 rounded-full bg-[#2AABEE]"></span>
           <span class="hidden sm:inline">Telegram</span>
         </a>
-        <button id="bot-sim-toggle-btn" onclick="toggleBotSim(true)" class="hidden px-2.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 text-xs font-bold items-center gap-1.5 transition-colors shrink-0" title="Демо-терминал бота (?demo=1)">
-          <span>Демо Бот</span>
-        </button>
         <a href="#/favorites" class="relative w-9 h-9 rounded-xl bg-gray-100 border border-gray-200 hover:border-[#E11D48] flex items-center justify-center text-gray-700 transition-colors shrink-0" title="Избранное">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
           <span id="fav-badge" class="hidden absolute -top-1 -right-1 bg-[#E11D48] text-white text-[10px] font-extrabold w-4 h-4 rounded-full items-center justify-center">0</span>
@@ -818,19 +810,6 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
     </select>
   </div>
 
-  <!-- ПАНЕЛЬ ИНТЕГРАЦИИ И ЭКСПОРТА КАТАЛОГА: WOOCOMMERCE / OPENCART 4 / PRESTASHOP 8 -->
-  <div id="cms-engine-bar" class="bg-white rounded-2xl border border-gray-200 p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
-    <div class="flex items-center gap-2.5">
-      <span class="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-[#0E9F6E] text-[10px] font-extrabold uppercase tracking-wider">CMS E-Commerce Ready</span>
-      <span class="text-xs font-bold text-gray-900">Витрина и выгрузка 347 товаров для WooCommerce, OpenCart 4 и PrestaShop 8</span>
-    </div>
-    <div class="flex flex-wrap items-center gap-1.5">
-      <button type="button" onclick="downloadCmsCatalog('woocommerce')" class="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-[#0E9F6E] hover:text-white text-gray-800 text-[11px] font-bold transition-colors border border-gray-200">⬇ WooCommerce CSV</button>
-      <button type="button" onclick="downloadCmsCatalog('opencart')" class="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-[#0E9F6E] hover:text-white text-gray-800 text-[11px] font-bold transition-colors border border-gray-200">⬇ OpenCart 4 CSV</button>
-      <button type="button" onclick="downloadCmsCatalog('prestashop')" class="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-[#0E9F6E] hover:text-white text-gray-800 text-[11px] font-bold transition-colors border border-gray-200">⬇ PrestaShop 8 CSV</button>
-    </div>
-  </div>
-
   <!-- КЛАССИЧЕСКАЯ 2-КОЛОНОЧНАЯ СЕТКА МАГАЗИНА (OPENCART / WOOCOMMERCE SIDEBAR + ВИТРИНА) -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
     <aside id="cms-catalog-sidebar" class="hidden lg:block lg:col-span-3 bg-white rounded-2xl border border-gray-200 p-4 space-y-4 sticky top-28">
@@ -967,7 +946,6 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
     <div class="space-y-2.5">
       <a id="order-tg-btn" href="https://t.me/wwwatchshop_bot" target="_blank" class="block w-full btn-luxury-gold font-extrabold text-sm py-3.5 rounded-2xl">Открыть заказ в Telegram</a>
       <a id="order-max-btn" href="https://max.ru/watchop" target="_blank" class="block w-full bg-white/[0.05] border border-white/15 text-white font-bold text-sm py-3 rounded-2xl">Написать в MAX</a>
-      <button onclick="toggleBotSim(true)" class="w-full bg-white/[0.04] text-slate-300 font-bold text-xs py-2.5 rounded-xl">Проверить заявку во встроенном терминале бота →</button>
       <a href="#/catalog" class="block w-full text-xs text-[#E2E8F0] font-bold py-2 text-center">Вернуться в коллекцию</a>
     </div>
   </div>
@@ -1160,7 +1138,7 @@ let state={
   filtered:[],
   shownCount:0,
   heroIndex:0,
-  heroPaused:false,designEdition:'classic',theme:'light',
+  heroPaused:false,
 };
 
 const CAT_ORDER=['Все товары','Спортивные часы','Эхолоты','Велокомпьютеры','GPS навигаторы','Фитнес-трекеры','Дайвинг компьютеры','Охота и дрессировка','Пульсометры','Аксессуары'];
@@ -1446,53 +1424,6 @@ function getCompatibleAccessories(p){
   return [strap, glass, cable].filter(Boolean);
 }
 
-function downloadCmsCatalog(engine){
-  const items = state.products || [];
-  const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  let csv = '';
-  let filename = 'watchop-catalog.csv';
-  if (engine === 'opencart') {
-    filename = 'watchop-opencart-products.csv';
-    const hdr = ['product_id','model','sku','name','manufacturer','category','price','special','quantity','status','image','description'];
-    const rows = items.map(p => [
-      p.id, 'REF-' + String(p.id).padStart(4,'0'), 'WOP-' + String(p.id).padStart(4,'0'),
-      p.name, p.brand, p.category || p.cat || 'Спортивные часы',
-      p.old_price || p.oldPrice || p.price, ((p.old_price || p.oldPrice || 0) > p.price) ? p.price : '',
-      p.stock || 5, p.status === 'out' ? 0 : 1, p.image, p.specs || p.desc || ''
-    ].map(q).join(','));
-    csv = [hdr.join(','), ...rows].join('\n');
-  } else if (engine === 'prestashop') {
-    filename = 'watchop-prestashop-products.csv';
-    const hdr = ['Product ID','Active (0/1)','Name *','Categories (x,y,z...)','Price tax included','Reference #','Manufacturer','Quantity','Summary','Image URLs (x,y,z...)'];
-    const rows = items.map(p => [
-      p.id, p.status === 'out' ? 0 : 1, p.name, 'Home,' + (p.category || p.cat || 'Спортивные часы'),
-      p.price, 'REF-' + String(p.id).padStart(4,'0'), p.brand, p.stock || 5, p.specs || '', p.image
-    ].map(q).join(';'));
-    csv = [hdr.join(';'), ...rows].join('\n');
-  } else {
-    filename = 'watchop-woocommerce-products.csv';
-    const hdr = ['ID','Type','SKU','Name','Published','Is featured?','Short description','Sale price','Regular price','Categories','Images','Attribute 1 name','Attribute 1 value(s)'];
-    const rows = items.map(p => [
-      p.id, 'simple', 'REF-' + String(p.id).padStart(4,'0'), p.name, 1, isHit(p) ? 1 : 0,
-      p.specs || '', p.price, p.old_price || p.oldPrice || p.price,
-      (p.category || p.cat || 'Спортивные часы') + ', ' + (p.brand || 'GARMIN'),
-      p.image, 'Бренд', p.brand || 'GARMIN'
-    ].map(q).join(','));
-    csv = [hdr.join(','), ...rows].join('\n');
-  }
-  try {
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-    if (typeof showToast === 'function') showToast('Выгружен каталог ' + filename + ' (' + items.length + ' товаров)');
-  } catch (e) {}
-}
 
 function startWatchDialClock(){
   const tick = () => {
@@ -1536,7 +1467,6 @@ async function initApp(){
   initRevealObserver();
   startHeroAuto();
   startWatchDialClock();
-  try{if(typeof location!=='undefined'&&/(?:demo|admin_demo)=1/.test(String(location.search||'')+String(location.hash||''))){const b=document.getElementById('bot-sim-toggle-btn');if(b){b.classList.remove('hidden');b.classList.add('inline-flex');}}}catch(e){}
   updateCollectionChipCounts();
   renderFilters();
   renderCatalog();
@@ -2334,25 +2264,10 @@ function gallerySrc(base, view, w){
   return out;
 }
 function productGallery(p){
+  // Честная галерея: только официальное фото самого товара, без подмен
+  // чужими кадрами и без синтетических ракурсов.
   if (!p) return [];
-  const base = imgSrc(p.image);
-  if (!/images\.unsplash\.com\//.test(String(base))) {
-    const sameSeries = (state.products || []).filter(x => x && x.id !== p.id && x.series === p.series && x.image && x.image !== p.image && !/unsplash\.com/.test(String(x.image)));
-    const sameBrand = (state.products || []).filter(x => x && x.id !== p.id && x.brand === p.brand && x.image && x.image !== p.image && !/unsplash\.com/.test(String(x.image)));
-    const pool = [...sameSeries, ...sameBrand];
-    const alt1 = pool[0] ? imgSrc(pool[0].image) : base;
-    const alt2 = pool[1] ? imgSrc(pool[1].image) : base;
-    return [
-      { src: imgUrl(base, 1200), label: 'Общий план', zoom: '' },
-      { src: imgUrl(alt1, 1200), label: 'Циферблат крупно', zoom: alt1 === base ? 'scale(1.22)' : '' },
-      { src: imgUrl(alt2, 1200), label: 'Корпус и ремешок', zoom: alt2 === base ? 'scale(1.12)' : '' },
-    ];
-  }
-  return [
-    { src: gallerySrc(base, 'front', 1200), label: 'Общий план', zoom: '' },
-    { src: gallerySrc(base, 'detail', 1000), label: 'Циферблат крупно', zoom: '' },
-    { src: gallerySrc(base, 'strap', 1000), label: 'Корпус и ремешок', zoom: '' },
-  ];
+  return [{ src: imgUrl(imgSrc(p.image), 1200), label: 'Официальное фото', zoom: '' }];
 }
 function handleImgError(imgEl,brand,cat){
   if(!imgEl||imgEl.dataset.fallbackApplied)return;
@@ -2368,10 +2283,10 @@ function handleImgError(imgEl,brand,cat){
   };
   const fb = pool[c];
   if (fb && imgEl.src !== fb) { imgEl.dataset.fallbackApplied = '1'; imgEl.src = fb; return; }
-  // Этап 2: векторная заглушка — геометрия карточки сохраняется всегда.
+  // Этап 2: светлая нейтральная плашка — честно показывает, что фото скоро будет.
   imgEl.dataset.fallbackApplied='1';
   const label=String(brand||'WATCHOP').slice(0,12);
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#0F172A"/><circle cx="100" cy="100" r="68" fill="#1E293B" stroke="#10B981" stroke-width="3"/><line x1="100" y1="100" x2="100" y2="55" stroke="#F8FAFC" stroke-width="4" stroke-linecap="round"/><line x1="100" y1="100" x2="132" y2="100" stroke="#10B981" stroke-width="3" stroke-linecap="round"/><text x="100" y="138" text-anchor="middle" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="bold">${label}</text></svg>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#F1F5F9"/><circle cx="100" cy="88" r="44" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/><line x1="100" y1="88" x2="100" y2="62" stroke="#64748B" stroke-width="3" stroke-linecap="round"/><line x1="100" y1="88" x2="118" y2="88" stroke="#0E9F6E" stroke-width="3" stroke-linecap="round"/><text x="100" y="152" text-anchor="middle" fill="#94A3B8" font-family="sans-serif" font-size="10" font-weight="bold">${label} • фото скоро</text></svg>`;
   imgEl.src='data:image/svg+xml;utf8,'+encodeURIComponent(svg);
 }
 
@@ -2396,158 +2311,6 @@ function getWatchPalette(p){
   return { strap, strapHi, caseGrad, bezel, bezelRing, dial, accent, lume, isSolar, isSapphire, isAmoled, sizeLabel };
 }
 
-function renderModelStudioSVG(p){
-  const pal=getWatchPalette(p);
-  const cat=p.category||'';
-  const ser=(p.series||'').toLowerCase();
-  const nm=(p.name||'').toLowerCase();
-  const seed=(Number(p.id)||1);
-  const hAng=((seed*37)%360);
-  const mAng=((seed*83+110)%360);
-
-  if(cat==='Эхолоты'){
-    return `<svg viewBox="0 0 220 200" class="w-full h-full select-none" aria-hidden="true">
-      <path d="M55 158 L42 182 L178 182 L165 158 Z" fill="#1E2533" stroke="#334155" stroke-width="1.2"/>
-      <rect x="36" y="176" width="148" height="8" rx="4" fill="#0F141E" stroke="#475569" stroke-width="1"/>
-      <rect x="20" y="34" width="180" height="126" rx="14" fill="url(#st-carbon)" stroke="#475569" stroke-width="1.8"/>
-      <rect x="27" y="41" width="166" height="112" rx="9" fill="#050811" stroke="#1E293B" stroke-width="1"/>
-      <rect x="33" y="47" width="136" height="100" rx="5" fill="#041527"/>
-      <path d="M33 122 Q68 95 102 118 T169 104 L169 147 L33 147 Z" fill="#D97706" fill-opacity="0.45"/>
-      <path d="M33 122 Q68 95 102 118 T169 104" fill="none" stroke="#F59E0B" stroke-width="2"/>
-      <path d="M33 88 Q75 68 115 84 T169 74" fill="none" stroke="#38BDF8" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.7"/>
-      <path d="M62 74 Q66 69 70 74" fill="none" stroke="#34D399" stroke-width="2" stroke-linecap="round"/>
-      <path d="M112 86 Q117 80 122 86" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round"/>
-      <path d="M138 68 Q142 63 146 68" fill="none" stroke="#34D399" stroke-width="2" stroke-linecap="round"/>
-      <text x="40" y="61" fill="#F8FAFC" font-family="monospace" font-size="11" font-weight="800">${12+(seed%19)}.4m</text>
-      <text x="40" y="72" fill="#38BDF8" font-family="monospace" font-size="6.5" font-weight="700">CHIRP 800 kHz • CLEARVÜ</text>
-      <text x="40" y="141" fill="#FBBF24" font-family="monospace" font-size="6.5" font-weight="700">GARMIN SONAR • GPS</text>
-      <circle cx="181" cy="62" r="5" fill="#1E293B" stroke="#475569" stroke-width="1"/>
-      <circle cx="181" cy="82" r="5" fill="#1E293B" stroke="#475569" stroke-width="1"/>
-      <circle cx="181" cy="102" r="6" fill="#1E293B" stroke="#38BDF8" stroke-width="1.2"/>
-      <rect x="176" y="122" width="10" height="16" rx="3" fill="#EF4444" fill-opacity="0.8"/>
-      <path d="M28 42 L155 42 L115 147 L28 147 Z" fill="url(#st-glare)" pointer-events="none"/>
-    </svg>`;
-  }
-
-  if(cat==='Велокомпьютеры'||cat==='GPS навигаторы'||cat==='Охота и дрессировка'){
-    const isBike=cat==='Велокомпьютеры';
-    return `<svg viewBox="0 0 220 200" class="w-full h-full select-none" aria-hidden="true">
-      ${!isBike?`<rect x="128" y="8" width="18" height="32" rx="8" fill="#1E2533" stroke="#475569" stroke-width="1.5"/>`:''}
-      <rect x="58" y="24" width="104" height="154" rx="${isBike?22:18}" fill="url(#st-carbon)" stroke="#64748B" stroke-width="1.8"/>
-      <rect x="65" y="34" width="90" height="122" rx="12" fill="#060B14" stroke="${pal.accent}" stroke-width="0.9" stroke-opacity="0.6"/>
-      <text x="110" y="48" text-anchor="middle" fill="#94A3B8" font-family="monospace" font-size="6.5" font-weight="800" letter-spacing="1.5">GARMIN ${isBike?'EDGE SOLAR':'SAT-NAV'}</text>
-      <text x="110" y="72" text-anchor="middle" fill="#F8FAFC" font-family="monospace" font-size="18" font-weight="800">${isBike?(240+(seed%90))+'W':(47+(seed%12))+'°N'}</text>
-      <text x="110" y="83" text-anchor="middle" fill="${pal.accent}" font-family="monospace" font-size="6.5" font-weight="700">${isBike?'CLIMBPRO • 38.4 KM/H':'TOPOACTIVE • MULTI-GNSS'}</text>
-      <path d="M72 132 L88 116 L104 122 L124 98 L148 108 L148 142 L72 142 Z" fill="${pal.accent}" fill-opacity="0.22"/>
-      <path d="M72 132 L88 116 L104 122 L124 98 L148 108" fill="none" stroke="${pal.accent}" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="124" cy="98" r="3" fill="#F8FAFC" stroke="${pal.accent}" stroke-width="1.5"/>
-      <text x="110" y="168" text-anchor="middle" fill="#CBD5E1" font-family="sans-serif" font-size="7" font-weight="800" letter-spacing="2">GARMIN</text>
-      <path d="M65 34 L135 34 L95 156 L65 156 Z" fill="url(#st-glare)" pointer-events="none"/>
-    </svg>`;
-  }
-
-  if(cat==='Пульсометры'||cat==='Умные весы'||cat==='Аксессуары'){
-    return `<svg viewBox="0 0 220 200" class="w-full h-full select-none" aria-hidden="true">
-      <rect x="28" y="84" width="164" height="32" rx="10" fill="${pal.strap}" stroke="#334155" stroke-width="1.2"/>
-      <rect x="64" y="68" width="92" height="64" rx="18" fill="url(#st-carbon)" stroke="${pal.accent}" stroke-width="1.6"/>
-      <rect x="74" y="77" width="72" height="46" rx="12" fill="#080C14" stroke="#334155" stroke-width="0.8"/>
-      <path d="M82 102 L94 102 L99 89 L106 113 L112 96 L117 102 L138 102" fill="none" stroke="${pal.accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="110" y="90" text-anchor="middle" fill="#F8FAFC" font-family="monospace" font-size="6.5" font-weight="800" letter-spacing="1.4">${esc(p.brand||'GARMIN')} PRO</text>
-      <text x="110" y="117" text-anchor="middle" fill="#94A3B8" font-family="monospace" font-size="6" font-weight="700">ANT+ • BLE 5.0</text>
-    </svg>`;
-  }
-
-  if(p.brand==='APPLE'||/apple watch/.test(nm)){
-    return `<svg viewBox="0 0 220 200" class="w-full h-full select-none" aria-hidden="true">
-      <path d="M84 12 L136 12 L142 46 L78 46 Z" fill="${pal.strap}" stroke="#334155" stroke-width="0.8"/>
-      <path d="M78 154 L142 154 L136 188 L84 188 Z" fill="${pal.strap}" stroke="#334155" stroke-width="0.8"/>
-      <rect x="160" y="64" width="7" height="22" rx="3.5" fill="url(#st-silver)" stroke="#F97316" stroke-width="1.2"/>
-      <rect x="54" y="82" width="4" height="24" rx="2" fill="#F97316"/>
-      <rect x="57" y="38" width="106" height="124" rx="28" fill="url(#st-silver)" stroke="#94A3B8" stroke-width="1.5"/>
-      <rect x="63" y="44" width="94" height="112" rx="23" fill="#05070B" stroke="#1E293B" stroke-width="1.2"/>
-      <circle cx="110" cy="100" r="36" fill="none" stroke="#1E293B" stroke-width="4"/>
-      <circle cx="110" cy="100" r="36" fill="none" stroke="${pal.accent}" stroke-width="4" stroke-dasharray="165 240" stroke-linecap="round" transform="rotate(-90 110 100)"/>
-      <text x="110" y="76" text-anchor="middle" fill="#F97316" font-family="monospace" font-size="7" font-weight="800" letter-spacing="1.2">ULTRA OLED</text>
-      <text x="110" y="105" text-anchor="middle" fill="#F8FAFC" font-family="monospace" font-size="17" font-weight="800">09:41</text>
-      <text x="110" y="121" text-anchor="middle" fill="#94A3B8" font-family="monospace" font-size="6.5" font-weight="700">${pal.sizeLabel} • TITANIUM</text>
-      <path d="M64 45 L146 45 L98 154 L64 154 Z" fill="url(#st-glare)" pointer-events="none"/>
-    </svg>`;
-  }
-
-  const isMech=/seiko|tissot|continental|citizen|orient|casio|edifice/.test(nm+' '+ser);
-  if(isMech){
-    const isPrx=/prx|continental/.test(nm+' '+ser);
-    return `<svg viewBox="0 0 220 200" class="w-full h-full select-none" aria-hidden="true">
-      <path d="M78 8 L142 8 L148 48 L72 48 Z" fill="url(#st-silver)" stroke="#475569" stroke-width="1"/>
-      <line x1="80" y1="18" x2="140" y2="18" stroke="#1E293B" stroke-width="1.2" opacity="0.55"/>
-      <line x1="77" y1="28" x2="143" y2="28" stroke="#1E293B" stroke-width="1.2" opacity="0.55"/>
-      <line x1="74" y1="38" x2="146" y2="38" stroke="#1E293B" stroke-width="1.2" opacity="0.55"/>
-      <path d="M72 152 L148 152 L142 192 L78 192 Z" fill="url(#st-silver)" stroke="#475569" stroke-width="1"/>
-      <line x1="74" y1="162" x2="146" y2="162" stroke="#1E293B" stroke-width="1.2" opacity="0.55"/>
-      <line x1="77" y1="172" x2="143" y2="172" stroke="#1E293B" stroke-width="1.2" opacity="0.55"/>
-      <line x1="80" y1="182" x2="140" y2="182" stroke="#1E293B" stroke-width="1.2" opacity="0.55"/>
-      <rect x="171" y="91" width="7" height="18" rx="2" fill="${pal.caseGrad}" stroke="#64748B" stroke-width="1"/>
-      ${isPrx?`<path d="M64 42 L156 42 L168 72 L168 128 L156 158 L64 158 L52 128 L52 72 Z" fill="${pal.caseGrad}" stroke="#94A3B8" stroke-width="1.4"/>`:`<circle cx="110" cy="100" r="62" fill="${pal.caseGrad}" stroke="#94A3B8" stroke-width="1.4"/>`}
-      <circle cx="110" cy="100" r="55" fill="${pal.bezel}" stroke="${pal.bezelRing}" stroke-width="2"/>
-      ${!isPrx?`<path d="M 55 100 A 55 55 0 0 1 165 100" fill="none" stroke="${pal.accent}" stroke-width="5" opacity="0.65"/>`:''}
-      <circle cx="110" cy="100" r="47" fill="${pal.dial}" stroke="#334155" stroke-width="0.8"/>
-      <circle cx="110" cy="100" r="43" fill="none" stroke="${pal.accent}" stroke-width="0.6" stroke-dasharray="1.5 3.5" opacity="0.7"/>
-      <rect x="108.5" y="56" width="3" height="8" rx="1" fill="#F8FAFC" stroke="${pal.accent}" stroke-width="0.5"/>
-      <rect x="108.5" y="136" width="3" height="8" rx="1" fill="#F8FAFC"/>
-      <rect x="66" y="98.5" width="8" height="3" rx="1" fill="#F8FAFC"/>
-      <rect x="140" y="95" width="13" height="10" rx="2" fill="#F8FAFC" stroke="${pal.accent}" stroke-width="1"/>
-      <text x="146.5" y="102.5" text-anchor="middle" fill="#090D16" font-family="monospace" font-size="6.5" font-weight="800">28</text>
-      <text x="110" y="79" text-anchor="middle" fill="#F8FAFC" font-family="serif" font-size="8" font-weight="700" letter-spacing="1.6">${esc(p.brand)}</text>
-      <text x="110" y="87" text-anchor="middle" fill="${pal.accent}" font-family="monospace" font-size="5.5" font-weight="700" letter-spacing="1">${isPrx?'POWERMATIC 80':'AUTOMATIC GMT'}</text>
-      <text x="110" y="126" text-anchor="middle" fill="#94A3B8" font-family="monospace" font-size="5.5" font-weight="700" letter-spacing="1">${pal.isSapphire?'SAPPHIRE':'100M / 330FT'}</text>
-      <line x1="110" y1="100" x2="136" y2="74" stroke="#EF4444" stroke-width="1.4" stroke-linecap="round"/>
-      <polygon points="108,105 110,66 112,105" fill="#F8FAFC" transform="rotate(${hAng} 110 100)"/>
-      <polygon points="108.5,107 110,58 111.5,107" fill="${pal.accent}" transform="rotate(${mAng} 110 100)"/>
-      <circle cx="110" cy="100" r="3.5" fill="${pal.accent}" stroke="#090D16" stroke-width="1"/>
-      <path d="M72 62 A 48 48 0 0 1 148 64 A 46 46 0 0 0 74 134 Z" fill="url(#st-glare)" pointer-events="none"/>
-    </svg>`;
-  }
-
-  const isRugged=/fēnix|fenix|epix|enduro|tactix|instinct|marq|descent|suunto|coros|g-shock/.test(nm+' '+ser);
-  return `<svg viewBox="0 0 220 200" class="w-full h-full select-none" aria-hidden="true">
-    <path d="M80 6 L140 6 L146 44 L74 44 Z" fill="${pal.strap}" stroke="#334155" stroke-width="0.9"/>
-    <rect x="88" y="14" width="44" height="3.5" rx="1.5" fill="${pal.strapHi}" opacity="0.45"/>
-    <rect x="86" y="23" width="48" height="3.5" rx="1.5" fill="${pal.strapHi}" opacity="0.45"/>
-    <rect x="84" y="32" width="52" height="3.5" rx="1.5" fill="${pal.strapHi}" opacity="0.45"/>
-    <path d="M74 156 L146 156 L140 194 L80 194 Z" fill="${pal.strap}" stroke="#334155" stroke-width="0.9"/>
-    <rect x="84" y="164" width="52" height="3.5" rx="1.5" fill="${pal.strapHi}" opacity="0.45"/>
-    <rect x="86" y="173" width="48" height="3.5" rx="1.5" fill="${pal.strapHi}" opacity="0.45"/>
-    <rect x="88" y="182" width="44" height="3.5" rx="1.5" fill="${pal.strapHi}" opacity="0.45"/>
-    <path d="M66 36 L154 36 L164 56 L56 56 Z" fill="${pal.caseGrad}" stroke="#475569" stroke-width="1"/>
-    <path d="M56 144 L164 144 L154 164 L66 164 Z" fill="${pal.caseGrad}" stroke="#475569" stroke-width="1"/>
-    <rect x="166" y="64" width="8" height="15" rx="2.5" transform="rotate(16 170 71)" fill="${pal.accent}" stroke="#0F172A" stroke-width="1"/>
-    <rect x="171" y="92" width="6" height="16" rx="2" fill="${pal.caseGrad}" stroke="#64748B" stroke-width="1"/>
-    <rect x="166" y="121" width="8" height="15" rx="2.5" transform="rotate(-16 170 128)" fill="${pal.caseGrad}" stroke="#64748B" stroke-width="1"/>
-    <rect x="46" y="66" width="6" height="13" rx="2" transform="rotate(-14 49 72)" fill="${pal.caseGrad}" stroke="#64748B" stroke-width="0.8"/>
-    <rect x="46" y="121" width="6" height="13" rx="2" transform="rotate(14 49 128)" fill="${pal.caseGrad}" stroke="#64748B" stroke-width="0.8"/>
-    <circle cx="110" cy="100" r="63" fill="${pal.caseGrad}" stroke="#94A3B8" stroke-width="1.3"/>
-    <circle cx="110" cy="100" r="56" fill="${pal.bezel}" stroke="${pal.bezelRing}" stroke-width="1.6"/>
-    ${isRugged?`
-    <circle cx="110" cy="41" r="2.1" fill="#94A3B8" stroke="#0F172A" stroke-width="0.7"/>
-    <circle cx="110" cy="159" r="2.1" fill="#94A3B8" stroke="#0F172A" stroke-width="0.7"/>
-    <circle cx="59" cy="70" r="2.1" fill="#94A3B8" stroke="#0F172A" stroke-width="0.7"/>
-    <circle cx="161" cy="70" r="2.1" fill="#94A3B8" stroke="#0F172A" stroke-width="0.7"/>
-    <circle cx="59" cy="130" r="2.1" fill="#94A3B8" stroke="#0F172A" stroke-width="0.7"/>
-    <circle cx="161" cy="130" r="2.1" fill="#94A3B8" stroke="#0F172A" stroke-width="0.7"/>`:''}
-    <circle cx="110" cy="100" r="49" fill="${pal.dial}" stroke="${pal.isSolar?'#D97706':pal.accent}" stroke-width="${pal.isSolar?'2.4':'1.2'}" stroke-opacity="0.85"/>
-    <circle cx="110" cy="100" r="44" fill="none" stroke="#334155" stroke-width="2.2"/>
-    <circle cx="110" cy="100" r="44" fill="none" stroke="${pal.accent}" stroke-width="2.2" stroke-dasharray="190 280" stroke-linecap="round" transform="rotate(-90 110 100)"/>
-    <text x="110" y="72" text-anchor="middle" fill="${pal.accent}" font-family="monospace" font-size="6.5" font-weight="800" letter-spacing="1.5">${esc(p.brand||'GARMIN')}</text>
-    <text x="110" y="82" text-anchor="middle" fill="#94A3B8" font-family="monospace" font-size="5.5" font-weight="700">♥ ${68+(seed%18)} • VO2 ${54+(seed%12)}</text>
-    <text x="110" y="104" text-anchor="middle" fill="#F8FAFC" font-family="monospace" font-size="15.5" font-weight="800" letter-spacing="0.5">10:${12+(seed%47)}</text>
-    <path d="M84 117 Q96 109 108 115 T136 111" fill="none" stroke="${pal.accent}" stroke-width="1.4" stroke-linecap="round" opacity="0.85"/>
-    <text x="110" y="131" text-anchor="middle" fill="#CBD5E1" font-family="monospace" font-size="6" font-weight="700" letter-spacing="1">${pal.sizeLabel} • ${pal.isSolar?'SOLAR':pal.isAmoled?'AMOLED':'GPS'}</text>
-    <line x1="110" y1="104" x2="110" y2="68" stroke="#F8FAFC" stroke-width="2.8" stroke-linecap="round" stroke-opacity="0.9" transform="rotate(${hAng} 110 100)"/>
-    <line x1="110" y1="106" x2="110" y2="58" stroke="${pal.accent}" stroke-width="2" stroke-linecap="round" stroke-opacity="0.95" transform="rotate(${mAng} 110 100)"/>
-    <circle cx="110" cy="100" r="3.2" fill="#0F172A" stroke="${pal.accent}" stroke-width="1.5"/>
-    <path d="M68 62 A 50 50 0 0 1 150 64 A 48 48 0 0 0 72 136 Z" fill="url(#st-glare)" pointer-events="none"/>
-  </svg>`;
-}
 
 function imgSrc(url){const s=String(url||"");return s.charAt(0)==="/"?s.slice(1):s;}
 function imgUrl(url,w){const s=imgSrc(url);if(!/images\.unsplash\.com\//.test(s))return s;let out=s.replace(/([?&])w=\d+/,"$1w="+w);if(!/[?&]fm=webp/.test(out))out+=(out.includes("?")?"&":"?")+"fm=webp";return out;}
@@ -2717,52 +2480,13 @@ function updateWristFit(wristCm,caseMm){
   return fit;
 }
 
-function setProductLumeMode(mode){
-  state.lumeMode=(mode==='lume'||mode==='redshift')?mode:'day';
-  const stg=document.getElementById('product-3d-stage');
-  if(stg&&stg.classList){
-    stg.classList.toggle('stage-lume-active',state.lumeMode==='lume');
-    stg.classList.toggle('stage-redshift-active',state.lumeMode==='redshift');
-  }
-  ['day','lume','redshift'].forEach(k=>{
-    const b=document.getElementById('lume-btn-'+k);
-    if(b){
-      b.className=k===state.lumeMode
-        ?'px-2.5 py-1 rounded-full btn-luxury-gold text-[10px] font-extrabold tracking-wider'
-        :'px-2.5 py-1 rounded-full bg-black/55 text-slate-300 border border-white/10 text-[10px] font-bold tracking-wider hover:text-white';
-    }
-  });
-}
 
-function toggleProductLumeMode(){
-  const order=['day','lume','redshift'];
-  const next=order[(order.indexOf(state.lumeMode||'day')+1)%order.length];
-  setProductLumeMode(next);
-}
 
-function switchProductGalleryPhoto(idx){
-  const p=state.products.find(x=>x.id===state.currentProductId);
-  if(!p)return;
-  const gal=productGallery(p);
-  const item=gal[idx]||gal[0];
-  if(!item)return;
-  const mainImg=document.getElementById('product-main-img');
-  if(mainImg){
-    mainImg.src=item.src;
-    try{mainImg.style.transform=item.zoom||'';}catch(e){}
-  }
-  if(typeof document!=='undefined'&&document.querySelectorAll){
-    document.querySelectorAll('[data-pdp-thumb]').forEach((el,i)=>{
-      el.classList.toggle('active',i===idx);
-    });
-  }
-}
 
 function openProduct(id){
   const p=state.products.find(x=>x.id===id);
   if(!p)return;
   state.currentProductId=id;
-  state.lumeMode='day';
   recordRecentProduct(id);
   updateProductJsonLd(p);
   const related=state.products.filter(x=>x.id!==p.id&&(x.series===p.series||x.category===p.category)).slice(0,4);
@@ -2797,7 +2521,7 @@ function openProduct(id){
   const bundleHTML=`<div class="mt-6 p-4 rounded-2xl bg-white border border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-2xs"><div class="flex items-center gap-3"><div class="flex items-center gap-1.5 shrink-0"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" class="w-12 h-12 rounded-xl bg-[#FAFAFC] border border-gray-200 object-contain p-1" loading="lazy" /><span class="font-extrabold text-gray-400">+</span><img src="${esc(imgSrc(acc.image||'uploads/catalog/strap-26-orange.jpg'))}" alt="${esc(acc.name)}" class="w-12 h-12 rounded-xl bg-[#FAFAFC] border border-gray-200 object-contain p-1" loading="lazy" /></div><div><div class="font-extrabold text-[#0E9F6E] uppercase tracking-wider text-[10px]">Выгодный комплект (−15% на аксессуар)</div><div class="text-gray-800 mt-0.5">${esc(p.name)} + <b>${esc(acc.name)}</b> за <b class="text-gray-900">${bundlePrice.toLocaleString('ru-RU')} ₽</b></div></div></div><button onclick="addBundleToCart(${p.id},${acc.id})" class="btn-luxury-gold font-extrabold px-4 py-2.5 rounded-xl whitespace-nowrap">Купить комплектом</button></div>`;
   const stockBannerHTML=`<div class="mb-4 p-3 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between text-xs font-bold text-slate-200"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${stk.dotClass}"></span><span>${esc(stk.label)}</span></div><span class="text-[11px] text-[#E2E8F0] font-mono">${esc(getDispatchCountdown())}</span></div>`;
   const relHTML=bundleHTML+(related.length?`<div class="mt-8 pt-6 border-t border-white/10"><h3 class="text-sm font-extrabold text-white uppercase tracking-wider mb-4">Модели из коллекции ${esc(p.series)}</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">${related.map(r=>productCardHTML(r)).join('')}</div></div>`:'');
-  document.getElementById('product-detail-box').innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-7 items-start"><div class="space-y-3"><div><div id="product-photo-pane" class="relative rounded-[28px] watch-stage h-72 sm:h-96 flex items-center justify-center p-4 overflow-hidden group"><img id="product-main-img" src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" width="900" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')" onclick="openLightbox('${esc(imgSrc(p.image))}','${esc(p.name)}')" class="absolute inset-0 w-full h-full object-contain p-4 cursor-zoom-in transition-transform duration-500 group-hover/php:scale-[1.03] img-skeleton" onload="this.classList.remove('img-skeleton')" /><button onclick="openLightbox('${esc(imgSrc(p.image))}','${esc(p.name)}')" class="absolute bottom-3 right-3 z-20 text-[10px] font-mono text-slate-300 bg-black/55 px-3 py-1 rounded-full border border-white/10 hover:text-white">🔍 Фото · ${productGallery(p).length} ${productGallery(p).length===1?'вид':'вида'}</button></div></div><div id="product-3d-stage" class="hidden relative rounded-3xl watch-stage h-72 sm:h-96 items-center justify-center p-6 overflow-hidden transition-all duration-500"><div id="product-3d-render" onclick="openLightbox('${esc(imgSrc(p.image))}','${esc(p.name)}')" class="lume-target relative z-10 w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center cursor-zoom-in transition-all duration-500">${renderModelStudioSVG(p)}</div><div class="absolute bottom-3 left-3 z-20 flex items-center gap-1"><button id="lume-btn-day" onclick="setProductLumeMode('day')" class="px-2.5 py-1 rounded-full btn-luxury-gold text-[10px] font-extrabold tracking-wider">☀️ ДЕНЬ</button><button id="lume-btn-lume" onclick="setProductLumeMode('lume')" class="px-2.5 py-1 rounded-full bg-black/55 text-slate-300 border border-white/10 text-[10px] font-bold tracking-wider hover:text-white">🟢 LUME</button><button id="lume-btn-redshift" onclick="setProductLumeMode('redshift')" class="px-2.5 py-1 rounded-full bg-black/55 text-slate-300 border border-white/10 text-[10px] font-bold tracking-wider hover:text-white">🔴 RED SHIFT</button></div></div><div class="flex items-center justify-center gap-2.5 py-1">${productGallery(p).map((g,gi)=>`<button type="button" onclick="switchProductGalleryPhoto(${gi})" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-[#0E9F6E] text-[11px] font-semibold text-gray-700"><img data-pdp-thumb="${gi}" src="${esc(g.src)}" alt="${esc(g.label)}" class="gal-thumb ${gi===0?'active':''}" style="width:36px;height:36px" /><span class="hidden sm:inline">${esc(g.label)}</span></button>`).join('')}<button type="button" id="toggle-3d-stage-btn" onclick="toggleProduct3dStage()" class="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-[#0E9F6E] text-[11px] font-bold text-[#0E9F6E]" title="Показать интерактивный 3D-циферблат ДЕНЬ / LUME / RED SHIFT">🎛 3D Lume</button></div><div class="grid grid-cols-3 gap-2 text-[11px] text-center"><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-[#E2E8F0]">100% Оригинал</div><div class="text-slate-400 text-[10px]">Серийный номер</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">Предпродажа</div><div class="text-slate-400 text-[10px]">Обновление карт</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">СДЭК 0 ₽</div><div class="text-slate-400 text-[10px]">Со страховкой</div></div></div></div><div><div class="flex items-center justify-between"><div class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#38BDF8]">${esc(p.brand)} • ${esc(p.series)}</div><button onclick="copyProductLink(${p.id})" class="text-[11px] font-semibold text-slate-300 hover:text-white bg-white/[0.05] border border-white/10 px-3 py-1 rounded-full">🔗 Ссылка</button></div><h1 class="font-display text-xl sm:text-2xl font-extrabold text-white mt-1.5 leading-snug">${esc(p.name)}</h1><div class="my-4 p-4 rounded-2xl bg-white border border-gray-200 space-y-2.5 shadow-2xs"><div class="flex flex-wrap items-baseline justify-between gap-2"><div class="text-2xl sm:text-3xl font-extrabold tabular-nums ${((Math.trunc(Number(p.old_price||p.oldPrice))||0)>Number(p.price)?'text-[#FF5A5A]':'text-gray-900')}">${Number(p.price).toLocaleString('ru-RU')} ₽${oldPriceHTML(p,'ml-2 text-base font-bold text-gray-400 line-through')}</div><button onclick="openDeliveryCalc()" class="text-[11px] font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-xl border border-gray-200">Долями 0%: 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽</button></div><div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 flex-wrap"><div class="text-xs font-extrabold text-[#E11D48]">🔥 По клубному коду WATCH10 (−10%): ${(Math.round((Number(p.price)*0.9)/10)*10).toLocaleString('ru-RU')} ₽</div><button type="button" onclick="copyPromoCode()" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#E11D48] text-[11px] font-extrabold border border-rose-200">Скопировать WATCH10</button></div></div>${stockBannerHTML}${wristBoxHTML}<div id="battery-calc-widget" class="mb-4 p-4 rounded-2xl bg-gray-50 border border-gray-200">
+  document.getElementById('product-detail-box').innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-7 items-start"><div class="space-y-3"><div><div id="product-photo-pane" class="relative rounded-[28px] watch-stage h-72 sm:h-96 flex items-center justify-center p-4 overflow-hidden group"><img id="product-main-img" src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" width="900" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')" onclick="openLightbox('${esc(imgSrc(p.image))}','${esc(p.name)}')" class="absolute inset-0 w-full h-full object-contain p-4 cursor-zoom-in transition-transform duration-500 group-hover/php:scale-[1.03] img-skeleton" onload="this.classList.remove('img-skeleton')" /><button onclick="openLightbox('${esc(imgSrc(p.image))}','${esc(p.name)}')" class="absolute bottom-3 right-3 z-20 text-[10px] font-mono text-slate-300 bg-black/55 px-3 py-1 rounded-full border border-white/10 hover:text-white">🔍 Фото</button></div></div><div class="grid grid-cols-3 gap-2 text-[11px] text-center"><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-[#E2E8F0]">100% Оригинал</div><div class="text-slate-400 text-[10px]">Серийный номер</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">Предпродажа</div><div class="text-slate-400 text-[10px]">Обновление карт</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">СДЭК 0 ₽</div><div class="text-slate-400 text-[10px]">Со страховкой</div></div></div></div><div><div class="flex items-center justify-between"><div class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#38BDF8]">${esc(p.brand)} • ${esc(p.series)}</div><button onclick="copyProductLink(${p.id})" class="text-[11px] font-semibold text-slate-300 hover:text-white bg-white/[0.05] border border-white/10 px-3 py-1 rounded-full">🔗 Ссылка</button></div><h1 class="font-display text-xl sm:text-2xl font-extrabold text-white mt-1.5 leading-snug">${esc(p.name)}</h1><div class="my-4 p-4 rounded-2xl bg-white border border-gray-200 space-y-2.5 shadow-2xs"><div class="flex flex-wrap items-baseline justify-between gap-2"><div class="text-2xl sm:text-3xl font-extrabold tabular-nums ${((Math.trunc(Number(p.old_price||p.oldPrice))||0)>Number(p.price)?'text-[#FF5A5A]':'text-gray-900')}">${Number(p.price).toLocaleString('ru-RU')} ₽${oldPriceHTML(p,'ml-2 text-base font-bold text-gray-400 line-through')}</div><button onclick="openDeliveryCalc()" class="text-[11px] font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-xl border border-gray-200">Долями 0%: 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽</button></div><div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 flex-wrap"><div class="text-xs font-extrabold text-[#E11D48]">🔥 По клубному коду WATCH10 (−10%): ${(Math.round((Number(p.price)*0.9)/10)*10).toLocaleString('ru-RU')} ₽</div><button type="button" onclick="copyPromoCode()" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#E11D48] text-[11px] font-extrabold border border-rose-200">Скопировать WATCH10</button></div></div>${stockBannerHTML}${wristBoxHTML}<div id="battery-calc-widget" class="mb-4 p-4 rounded-2xl bg-gray-50 border border-gray-200">
           <div class="flex items-center justify-between gap-2 mb-2">
             <span class="text-[11px] font-bold uppercase tracking-wider text-gray-700">Калькулятор автономности</span>
             <span id="bat-days-output" class="text-sm font-extrabold text-[#0E9F6E] font-mono">${computeBatteryLife(p).days} дн.</span>
@@ -2833,7 +2557,6 @@ function quickOrder(e,id){
   document.getElementById('order-max-btn').href=state.settings.max_link;
   recordMyOrder(orderCode,items,p.price,'Новый (Быстрый заказ)');
   saveSessionOrder({orderCode,summary:`${p.name} × 1 — ${Number(p.price).toLocaleString('ru-RU')} ₽`,tgHref:tgOrderLink(orderCode,items),maxHref:state.settings.max_link});
-  appendBotSimNotice(orderCode,items,p.price);
   switchTab('order-success');
 }
 
@@ -3089,7 +2812,6 @@ async function submitOrder(){
     }
   }catch(e){}
   state.simOrders.unshift({code:orderCode,items,total,customer,status:'Новый'});
-  appendBotSimNotice(orderCode,items,total,customer);
   state.cart=[];
   saveCart();
   renderCart();
@@ -3171,116 +2893,8 @@ function renderFavorites(){
 }
 
 // Интерактивный симулятор Telegram / MAX бота
-function toggleBotSim(open){
-  const d=document.getElementById('bot-sim-drawer');
-  const b=document.getElementById('bot-sim-backdrop');
-  if(!d||!b)return;
-  if(open){d.classList.remove('translate-x-full');b.classList.remove('hidden');}
-  else{d.classList.add('translate-x-full');b.classList.add('hidden');}
-}
 
-function appendBotSimNotice(code,items,total,customer){
-  const log=document.getElementById('bot-sim-log');
-  if(!log)return;
-  const lines=(items||[]).map(i=>`• ${esc(i.name)} × ${i.qty} = ${(i.price*i.qty).toLocaleString('ru-RU')} ₽`).join('<br>');
-  const cust=customer?`<div class="text-slate-400 mt-1">👤 ${esc(customer.fio)} (${esc(customer.phone)}) • ${esc(customer.delivery||'СДЭК')}</div>`:'';
-  log.insertAdjacentHTML('beforeend',
-    `<div class="bg-emerald-950/60 border border-emerald-500/40 rounded-2xl p-3 space-y-1">
-      <div class="font-bold text-emerald-300">🔔 НОВАЯ ЗАЯВКА ${esc(code)} (TG + MAX)</div>
-      <div class="text-slate-200">${lines}</div>
-      <div class="font-bold text-white pt-1">Итого: ${Number(total).toLocaleString('ru-RU')} ₽</div>
-      ${cust}
-      <div class="text-[11px] text-emerald-300 pt-1">Нажмите <button onclick="sendBotSimCommand('${esc(code)}')" class="underline font-bold">${esc(code)}</button>, чтобы проверить ответ бота клиенту с реквизитами оплаты.</div>
-    </div>`
-  );
-  log.scrollTop=log.scrollHeight;
-}
 
-function sendBotSimCommand(cmdOverride){
-  const inp=document.getElementById('bot-sim-input');
-  const log=document.getElementById('bot-sim-log');
-  if(!log)return;
-  const raw=(cmdOverride!==undefined?cmdOverride:(inp?inp.value:'')).trim();
-  if(!raw)return;
-  if(inp&&cmdOverride===undefined)inp.value='';
-
-  log.insertAdjacentHTML('beforeend',`<div class="bg-[#2AABEE]/20 border border-[#2AABEE]/40 rounded-2xl p-2.5 text-right text-sky-100 font-semibold">${esc(raw)}</div>`);
-
-  let reply='';
-  if(/^TG-\d+$/i.test(raw)){
-    const ord=state.simOrders.find(o=>o.code.toUpperCase()===raw.toUpperCase());
-    const sum=ord?`${ord.total.toLocaleString('ru-RU')} ₽`:'по счёту';
-    reply=`<b>Заказ ${esc(raw.toUpperCase())} подтверждён!</b><br>Сумма к оплате: <b>${sum}</b><br><br><b>Реквизиты для оплаты:</b><br>${esc(state.settings.payment_details).replace(/\n/g,'<br>')}`;
-  }else if(raw==='/orders'){
-    if(!state.simOrders.length){
-      reply='Заявок в текущей сессии пока нет. Оформите любой товар на сайте или нажмите «Быстрый заказ в 1 клик»!';
-    }else{
-      reply='<b>Последние заявки:</b><br>'+state.simOrders.slice(0,5).map(o=>`• <b>${esc(o.code)}</b> — ${o.total.toLocaleString('ru-RU')} ₽ (${esc(o.status)})`).join('<br>');
-    }
-  }else if(raw==='/pay_demo'){
-    reply=`<b>Текущие реквизиты (выдаются только в боте по номеру TG-XXXX):</b><br>${esc(state.settings.payment_details).replace(/\n/g,'<br>')}`;
-  }else if(raw==='/add_demo'){
-    const newId=state.products.length+1;
-    const demoWatch={
-      id:newId,
-      brand:'GARMIN',
-      series:'MARQ',
-      category:'Спортивные часы',
-      name:`Garmin MARQ Athlete Gen 2 Performance Edition #${newId}`,
-      price:229000,
-      image:'uploads/catalog/f88df70ab8a2.jpg',
-      specs:'Добавлено через админ-панель Telegram/MAX бота: титан Grade-5, AMOLED, сапфир.',
-      hit:1
-    };
-    state.products.unshift(demoWatch);
-    updateCollectionChipCounts();
-    renderFilters();
-    renderCatalog();
-    renderHits();
-    reply=`✅ <b>Товар добавлен в каталог витрины!</b><br>ID: #${newId} — ${esc(demoWatch.name)} (${demoWatch.price.toLocaleString('ru-RU')} ₽). Проверьте каталог — счётчик обновился до <b>${state.products.length}</b> позиций!`;
-  }else if(raw==='/design'){const nxt=toggleDesignEdition();reply='<b>Дизайн витрины переключён:</b> '+esc(nxt.toUpperCase());}else if(raw==='/hero_demo'){
-    state.settings.hero_title='Watchop — Официальный магазин Garmin, Seiko и швейцарских часов с доставкой по всей РФ';
-    applySettingsToUI();
-    heroGoTo(0);
-    reply='✅ Заголовок главного баннера (Слайд 1) мгновенно обновлён на витрине!';
-  }else if(/^\/stock\s+(\d+)\s+(\d+)/i.test(raw)){
-    const m=raw.match(/^\/stock\s+(\d+)\s+(\d+)/i);
-    const id=Number(m[1]),qty=Number(m[2]);
-    const prod=state.products.find(p=>p.id===id);
-    if(!prod){
-      reply=`Товар #${id} не найден.`;
-    }else{
-      prod.stock=qty;
-      renderCatalog();
-      renderHits();
-      const stk=getStockInfo(prod);
-      reply=`📦 <b>Остаток товара #${id} (${esc(prod.name)}) обновлён:</b><br>Статус на витрине: <b>${esc(stk.label)}</b>.`;
-    }
-  }else if(/^\/reprice\s+(\S+)\s+([+-]?\d+)/i.test(raw)){
-    const m=raw.match(/^\/reprice\s+(\S+)\s+([+-]?\d+)/i);
-    const brand=m[1].toUpperCase();
-    const pct=Number(m[2]);
-    let cnt=0;
-    state.products.forEach(p=>{
-      if(brand==='ALL'||String(p.brand||'').toUpperCase()===brand){
-        p.price=Math.max(100,Math.round((p.price*(1+pct/100))/10)*10);
-        cnt++;
-      }
-    });
-    _cachedCatLen=-1;
-    renderCatalog();
-    renderHits();
-    reply=`📈 <b>Массовая переоценка выполнена!</b><br>Бренд: <b>${esc(brand)}</b>, изменение: <b>${pct>0?'+'+pct:pct}%</b>.<br>Обновлено цен на витрине: <b>${cnt}</b> позиций.`;
-  }else if(raw==='/orders_csv'){
-    const count=state.simOrders.length||state.myOrders.length;
-    reply=`📊 <b>Экспорт заказов в CSV (UTF-8 BOM для Excel):</b><br>Выгружено записей: <b>${count}</b>.<br>Колонки: <code>Код заказа; Статус; Сумма (₽); Состав заказа; Покупатель; Дата</code>.`;
-  }else{
-    reply='Доступные команды: отправьте номер заказа <b>TG-XXXX</b> для получения реквизитов, либо нажмите кнопки ниже (<b>/orders</b>, <b>/pay_demo</b>, <b>/add_demo</b>, <b>/hero_demo</b>, <b>/reprice GARMIN +5</b>, <b>/orders_csv</b>).';
-  }
-
-  log.insertAdjacentHTML('beforeend',`<div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-3 text-slate-200 leading-relaxed">${reply}</div>`);
-  log.scrollTop=log.scrollHeight;
-}
 
 function setupMiniApp(){
   if(!MiniApp)return;
@@ -3407,7 +3021,6 @@ function submitCallbackRequest(){
   const code='TG-'+(20000+Math.floor(Math.random()*9999));
   const items=[{id:1,name:`Обратный звонок: ${comment}`,price:0,qty:1}];
   state.simOrders.unshift({code,items,total:0,customer:{fio:name,phone,delivery:'Звонок консультанта'},status:'Заявка на звонок'});
-  appendBotSimNotice(code,items,0,{fio:name,phone,delivery:'Консультация'});
   recordMyOrder(code,items,0,'Заявка на звонок');
   saveSessionOrder({orderCode:code,summary:`Обратный звонок (${name}, ${phone})`,tgHref:tgOrderLink(code,items),maxHref:state.settings.max_link});
   document.getElementById('order-code-badge').textContent=code;
@@ -3894,7 +3507,6 @@ function submitTradeInRequest(){
   const items=[{id:target.id,name:`Trade-In (${oldM}, ${cond}) → ${target.name}`,price:target.price,qty:1}];
   state.simOrders.unshift({code,items,total:target.price,customer:{fio:contact,phone:contact,delivery:'Trade-In обмен'},status:'Оценка Trade-In'});
   recordMyOrder(code,items,target.price,'Оценка Trade-In');
-  appendBotSimNotice(code,items,target.price,{fio:contact,phone:contact,delivery:'Trade-In'});
   saveSessionOrder({orderCode:code,summary:`Trade-In (${oldM}) → ${target.name}`,tgHref:tgOrderLink(code,items),maxHref:state.settings.max_link});
   document.getElementById('order-code-badge').textContent=code;
   document.getElementById('order-item-summary').textContent=`Trade-In обмен: ${oldM} → ${target.name}`;
@@ -3904,7 +3516,6 @@ function submitTradeInRequest(){
 }
 
 
-state.theme=(typeof localStorage!=='undefined'&&localStorage.getItem('watchop_theme'))||'light';
 
 
 // Обёртка смены темы без фризов: глушит transitions/animations на 2 кадра,
@@ -3917,58 +3528,6 @@ function freezeTransitionsTemporarily(){
   const done=()=>{try{root.removeAttribute('data-switching');}catch(e){}try{if(root.classList)root.classList.remove('no-transitions');}catch(e){}};
   if(typeof requestAnimationFrame==='function'){requestAnimationFrame(()=>requestAnimationFrame(done));}
   setTimeout(done,120);
-}
-function setDesignEdition(edition){
-  state.designEdition=(edition==='stealth')?'stealth':'classic';
-  try{
-    freezeTransitionsTemporarily();
-    if(typeof document!=='undefined'&&document.body&&document.body.classList){
-      document.body.classList.toggle('classic-edition',state.designEdition==='classic');
-      document.body.classList.toggle('stealth-edition',state.designEdition==='stealth');
-    }
-    const lbl=document.getElementById('design-switch-label');
-    if(lbl)lbl.textContent=state.designEdition==='classic'?'Дизайн: Светлый':'Дизайн: Stealth 3D';
-    const stg=typeof document!=='undefined'&&document.getElementById('product-3d-stage');
-    if(stg){
-      if(state.designEdition==='stealth'){stg.classList.remove('hidden');stg.classList.add('flex');}
-      else if(!state.force3dStage){stg.classList.add('hidden');stg.classList.remove('flex');}
-    }
-    if(typeof windowState!=='undefined')windowState.cat={rowH:0,colN:0};
-    if(typeof localStorage!=='undefined')localStorage.setItem('watchop_design_edition',state.designEdition);
-  }catch(e){}
-  return state.designEdition;
-}
-function toggleDesignEdition(){
-  const next=state.designEdition==='classic'?'stealth':'classic';
-  setDesignEdition(next);
-  showToast(next==='classic'?'Включён светлый классический дизайн':'Включён дизайн Stealth Titanium 3D');
-  return next;
-}
-function toggleProduct3dStage(){
-  state.force3dStage=!state.force3dStage;
-  const stg=typeof document!=='undefined'&&document.getElementById('product-3d-stage');
-  if(stg){
-    const show=Boolean(state.force3dStage||state.designEdition==='stealth');
-    stg.classList.toggle('hidden',!show);
-    stg.classList.toggle('flex',show);
-  }
-}
-function applyTheme(theme){
-  state.theme=theme==='dark'?'dark':'light';
-  try{
-    freezeTransitionsTemporarily();
-    if(typeof document!=='undefined'&&document.body&&document.body.classList){
-      document.body.classList.toggle('dark-theme',state.theme==='dark');
-      document.body.classList.toggle('ivory-theme',state.theme==='light');
-    }
-    const btn=document.getElementById('theme-toggle-btn');
-    if(btn)btn.textContent=state.theme==='dark'?'☀️':'🌙';
-    if(typeof localStorage!=='undefined')localStorage.setItem('watchop_theme',state.theme);
-  }catch(e){}
-}
-function toggleTheme(){
-  applyTheme(state.theme==='dark'?'light':'dark');
-  showToast(state.theme==='dark'?'Включена ночная тема Obsidian':'Включена светлая тема магазина');
 }
 
 const CITY_RATES={
@@ -4075,7 +3634,7 @@ function copyCartShareLink(){
   return link;
 }
 
-applyTheme(state.theme);
+
 try{if(document.body&&document.body.classList)document.body.classList.add('classic-edition');}catch(e){}
 // Живая виртуализация: окно карточек следует за прокруткой и шириной экрана.
 try{
