@@ -14,6 +14,15 @@ function csvCell(val, sep = ',') {
   return s;
 }
 
+// Абсолютный URL фото для импорта в CMS: WooCommerce/OpenCart/PrestaShop
+// скачивают картинки по URL, относительные пути каталога им не подходят.
+function absImageUrl(image) {
+  const s = String(image || '');
+  if (!s || /^https?:\/\//i.test(s) || s.startsWith('data:')) return s;
+  const base = (typeof process !== 'undefined' && process.env && process.env.SHOP_URL ? String(process.env.SHOP_URL) : 'https://ssrjkk.github.io/shopwatch').replace(/\/+$/, '');
+  return base + '/' + s.replace(/^\/+/, '');
+}
+
 function toWooCommerceCsv(products) {
   const headers = [
     'ID', 'Type', 'SKU', 'Name', 'Published', 'Is featured?', 'Visibility in catalog',
@@ -46,7 +55,7 @@ function toWooCommerceCsv(products) {
       regPrice,
       salePrice,
       cat,
-      p.image || '',
+      absImageUrl(p.image),
       'Бренд',
       p.brand || '',
       1,
@@ -86,7 +95,7 @@ function toOpenCartCsv(products) {
       stock,
       1,
       hit,
-      p.image || '',
+      absImageUrl(p.image),
       p.specs || ''
     ];
     lines.push(row.map((c) => csvCell(c, ';')).join(';'));
@@ -127,7 +136,7 @@ function toOpenCartSql(products, prefix = 'oc_') {
     const hasSale = (Number(p.old_price) || 0) > Number(p.price);
     const basePrice = hasSale ? Number(p.old_price) : Number(p.price);
     const stock = p.stock !== undefined ? Number(p.stock) : 4;
-    out.push(`INSERT INTO ${prefix}product (product_id, model, sku, quantity, stock_status_id, image, manufacturer_id, shipping, price, status, date_added, date_modified) VALUES (${id}, ${sqlEsc((p.brand || 'WATCH') + '-' + id)}, ${sqlEsc(sku)}, ${stock}, 7, ${sqlEsc(p.image || '')}, ${mid}, 1, ${basePrice}, 1, NOW(), NOW()) ON DUPLICATE KEY UPDATE price=VALUES(price), quantity=VALUES(quantity), image=VALUES(image);`);
+    out.push(`INSERT INTO ${prefix}product (product_id, model, sku, quantity, stock_status_id, image, manufacturer_id, shipping, price, status, date_added, date_modified) VALUES (${id}, ${sqlEsc((p.brand || 'WATCH') + '-' + id)}, ${sqlEsc(sku)}, ${stock}, 7, ${sqlEsc(absImageUrl(p.image))}, ${mid}, 1, ${basePrice}, 1, NOW(), NOW()) ON DUPLICATE KEY UPDATE price=VALUES(price), quantity=VALUES(quantity), image=VALUES(image);`);
     out.push(`INSERT INTO ${prefix}product_description (product_id, language_id, name, description, tag, meta_title) VALUES (${id}, 1, ${sqlEsc(p.name)}, ${sqlEsc(p.specs || '')}, ${sqlEsc(p.series || '')}, ${sqlEsc(p.name)}) ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);`);
     if (cid >= 100) {
       out.push(`INSERT IGNORE INTO ${prefix}product_to_category (product_id, category_id) VALUES (${id}, ${cid});`);
@@ -167,7 +176,7 @@ function toPrestaShopCsv(products) {
       p.specs || '',
       `${p.name || ''} (${p.brand || ''} ${p.series || ''}). ${p.specs || ''}`,
       stock,
-      p.image || '',
+      absImageUrl(p.image),
       hasSale ? 1 : 0
     ];
     lines.push(row.map((c) => csvCell(c, ';')).join(';'));
@@ -200,7 +209,7 @@ function toWooCommerceRestProduct(p) {
     stock_status: stock > 0 ? 'instock' : 'onbackorder',
     categories: [{ id: 1, name: String(p.category || 'Спортивные часы'), slug: String(p.category || 'watches') }],
     brands: [{ id: 1, name: String(p.brand || 'GARMIN') }],
-    images: p.image ? [{ id: id * 10, src: String(p.image), name: String(p.name || '') }] : [],
+    images: p.image ? [{ id: id * 10, src: absImageUrl(p.image), name: String(p.name || '') }] : [],
     attributes: [
       { id: 1, name: 'Бренд', options: [String(p.brand || '')] },
       { id: 2, name: 'Серия', options: [String(p.series || '')] }
@@ -259,6 +268,7 @@ function normalizeCmsWebhookOrder(engine, body) {
 }
 
 module.exports = {
+  absImageUrl,
   toWooCommerceCsv,
   toOpenCartCsv,
   toOpenCartSql,

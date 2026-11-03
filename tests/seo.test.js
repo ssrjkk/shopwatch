@@ -125,6 +125,13 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.ok(ocCsv.includes('product_id;model;sku') && ocCsv.split('\n').length >= 348);
     assert.ok(ocSql.includes('INSERT INTO oc_product') && ocSql.includes('COMMIT;'));
     assert.ok(psCsv.includes('Product ID;Active (0/1)') && psCsv.split('\n').length >= 348);
+    // Фото в выгрузках — абсолютные URL: WooCommerce/OpenCart/PrestaShop качают картинки по ссылкам
+    for (const p of items) {
+      assert.ok(String(p.image).startsWith('uploads/'), `Product #${p.id} must use local photo, got ${p.image}`);
+    }
+    assert.ok(wcCsv.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'Woo CSV carries absolute image URLs');
+    assert.ok(psCsv.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'Presta CSV carries absolute image URLs');
+    assert.ok(ocSql.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'OpenCart SQL carries absolute image URLs');
 
     const wcOrder = cmsBridge.normalizeCmsWebhookOrder('woocommerce', { id: 101, total: 62320, billing: { first_name: 'Алексей', phone: '+79990001122' } });
     assert.equal(wcOrder.total, 62320);

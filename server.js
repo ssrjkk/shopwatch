@@ -1694,7 +1694,7 @@ app.get('/api/opencart/products', (req, res) => {
         special: p.old_price && p.old_price > p.price ? p.price : null,
         quantity: p.stock != null ? p.stock : 5,
         status: p.stock === 0 ? 0 : 1,
-        image: p.image,
+        image: cmsBridge ? cmsBridge.absImageUrl(p.image) : p.image,
       })),
     });
   } catch (e) {
@@ -1718,7 +1718,7 @@ app.get('/api/prestashop/products', (req, res) => {
         wholesale_price: p.old_price || p.price,
         quantity: p.stock != null ? p.stock : 5,
         active: p.stock === 0 ? 0 : 1,
-        cover_image: p.image,
+        cover_image: cmsBridge ? cmsBridge.absImageUrl(p.image) : p.image,
       })),
     });
   } catch (e) {
