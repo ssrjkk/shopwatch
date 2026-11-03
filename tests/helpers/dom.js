@@ -80,7 +80,7 @@ const EXPOSE = [
   'effectivePriceRange', 'applyPickTo', 'renderPresets', 'openLightbox', 'closeLightbox', 'safeImageSrc', 'absoluteUrl',
   'SPEC_FACETS', 'facetOf', 'facetCount', 'specHit', 'allBrands', 'toggleBrand', 'toggleSpec', 'renderBrandPills', 'renderSpecPills',
   'COMPARE_MAX', 'toggleCompare', 'clearCompare', 'compareItems', 'inCompare', 'updateCompareBar', 'openCompareModal', 'closeCompareModal',
-  'recordRecent', 'clearRecentViewed', 'recentItems', 'renderRecent', 'RECENT_MAX', 'productJsonLd', 'setProductJsonLd', 'applyHashFilters',
+  'recordRecent', 'clearRecentViewed', 'recentItems', 'renderRecent', 'RECENT_MAX', 'productJsonLd', 'setProductJsonLd', 'updateSeoTitle', 'setDesignEdition', 'toggleDesignEdition', 'toggleTheme', 'computeBatteryLife', 'downloadCmsCatalog', 'applyHashFilters',
   'deepLinkPromo', 'promoInputValue', 'cartItemsForApi', 'applyPromoCode', 'clearPromo', 'renderPromoRow', 'renderDeliveryOptions', 'beaconCheckoutStarted', 'checkoutSid',
 ];
 

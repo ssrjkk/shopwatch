@@ -1,0 +1,348 @@
+﻿product_id;model;sku;name;manufacturer;category;series;price;special_price;quantity;status;is_hit;image;description
+1;GARMIN-1;REF-0001;Garmin Fenix 8 — 51 мм Solar Sapphire Carbon Grey DLC;GARMIN;Спортивные часы;fēnix;89990;62320;4;1;0;uploads/catalog/cb0bbeb006cb.jpg;Сапфир + солнечная зарядка, фонарик LED, дайвинг 40 м, топокарты.
+2;GARMIN-2;REF-0002;Garmin Fenix 8 — 51 мм AMOLED Sapphire Titanium Orange;GARMIN;Спортивные часы;fēnix;89990;62320;4;1;0;uploads/catalog/f88df70ab8a2.jpg;"AMOLED 1.4"", титан, дайвинг 40 м, мульти-GNSS."
+3;GARMIN-3;REF-0003;Garmin Fenix 7X Pro Sapphire Solar Titanium;GARMIN;Спортивные часы;fēnix;58990;;4;1;0;uploads/catalog/f88df70ab8a2.jpg;Фонарик, solar, 37 дней в смарт-режиме.
+4;GARMIN-4;REF-0004;Garmin Forerunner 970 Carbon Grey DLC Titanium;GARMIN;Спортивные часы;Forerunner;64990;41200;4;1;0;uploads/catalog/c4f473600352.jpg;AMOLED, титан, двухчастотный GPS, карты.
+5;GARMIN-5;REF-0005;Garmin Forerunner 570 — 47 мм Slate Grey / Black;GARMIN;Спортивные часы;Forerunner;31210;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Беговые метрики, Garmin Pay, музыка.
+6;GARMIN-6;REF-0006;Garmin Forerunner 265 Black AMOLED;GARMIN;Спортивные часы;Forerunner;34990;;4;1;0;uploads/catalog/769dc4087dc4.jpg;AMOLED, Training Readiness, 20 дней.
+7;GARMIN-7;REF-0007;Garmin Forerunner 965 Titanium Yellow;GARMIN;Спортивные часы;Forerunner;45990;;4;1;0;uploads/catalog/c4f473600352.jpg;Титан, AMOLED, полные карты.
+8;GARMIN-8;REF-0008;Дайвинг компьютер Garmin Descent Mk3i 51 мм Carbon Grey;GARMIN;Дайвинг компьютеры;Descent;125350;;4;1;0;uploads/catalog/105a631e64ce.jpg;SubWave сонар, 200 м, AMOLED.
+9;GARMIN-9;REF-0009;Дайвинг компьютер Garmin Descent Mk3 43 мм Stainless;GARMIN;Дайвинг компьютеры;Descent;95890;;4;1;0;uploads/catalog/0253abaf21c3.jpg;Погружение 200 м, мульти-GNSS.
+10;GARMIN-10;REF-0010;Garmin Descent X50i Large Format;GARMIN;Дайвинг компьютеры;Descent;91770;;4;1;0;uploads/catalog/3b5381df9988.jpg;Большой формат для технодайвинга.
+11;GARMIN-11;REF-0011;Garmin Instinct 3 — 50 мм AMOLED Tactical Black;GARMIN;Спортивные часы;Instinct;38900;;4;1;0;uploads/catalog/7918a30d0696.jpg;MIL-STD-810, тактический режим.
+12;GARMIN-12;REF-0012;Garmin Instinct 2X Solar Tactical Tan;GARMIN;Спортивные часы;Instinct;32990;;4;1;0;uploads/catalog/c6c21c631092.jpg;Solar, бесконечная работа в эконом-режиме.
+13;GARMIN-13;REF-0013;Garmin Venu 3 — 45 мм Slate / Black;GARMIN;Спортивные часы;Venu;36400;;4;1;0;uploads/catalog/929de68596eb.jpg;Сон, звонки с запястья, 30+ профилей.
+14;GARMIN-14;REF-0014;Garmin MARQ Athlete (Gen 2) — Carbon Edition;GARMIN;Спортивные часы;MARQ;215000;;4;1;0;uploads/catalog/105a631e64ce.jpg;Кованый карбон 130 слоев, сапфир.
+15;GARMIN-15;REF-0015;Garmin vivoactive 5 Metallic Navy;GARMIN;Фитнес-трекеры;vívoactive;24900;;4;1;0;uploads/catalog/153b0d88851f.jpg;AMOLED, Body Battery, 11 дней.
+16;GARMIN-16;REF-0016;Garmin Lily 2 Active Lunar Gold / Bone;GARMIN;Фитнес-трекеры;Lily;27500;;4;1;0;uploads/catalog/05faaf765e6d.jpg;Компактные женские, скрытый дисплей.
+17;GARMIN-17;REF-0017;Garmin tactix 7 AMOLED Ballistics Titanium;GARMIN;Спортивные часы;tactix;108900;;4;1;0;uploads/catalog/35855e2bc61d.jpg;Баллистика Applied Ballistics, NVG.
+18;GARMIN-18;REF-0018;Garmin Epix Pro Gen 2 51 мм Sapphire Carbon;GARMIN;Спортивные часы;epix;79990;;4;1;0;uploads/catalog/724b129c4b44.jpg;AMOLED, фонарик, топокарты.
+19;GARMIN-19;REF-0019;Garmin Enduro 3 Solar Black;GARMIN;Спортивные часы;Enduro;69990;;4;1;0;uploads/catalog/724b129c4b44.jpg;Ультра-автономность 90 дней solar.
+20;APPLE-20;REF-0020;Apple Watch Ultra 2 49 мм Black Titanium Trail Loop;APPLE;Спортивные часы;Apple Watch;59990;51990;4;1;0;uploads/catalog/ac502e2323a5.jpg;Титан 49 мм, 3000 нит, EN13319.
+21;APPLE-21;REF-0021;Apple Watch Series 10 46 мм Jet Black;APPLE;Спортивные часы;Apple Watch;42990;;4;1;0;uploads/catalog/f52aeeb5346a.jpg;Тонкий корпус, OLED, глубиномер.
+22;SAMSUNG-22;REF-0022;Samsung Galaxy Watch Ultra 47 мм LTE Titanium Gray;SAMSUNG;Спортивные часы;Galaxy Watch;49990;;4;1;0;uploads/catalog/698a28d84593.jpg;Титан, сапфир, 10 АТМ, Galaxy AI.
+23;SAMSUNG-23;REF-0023;Samsung Galaxy Watch 7 44 мм Green;SAMSUNG;Спортивные часы;Galaxy Watch;26990;;4;1;0;uploads/catalog/6a309d7634a7.jpg;3 нм, BioActive, двухчастотный GPS.
+24;SUUNTO-24;REF-0024;Suunto Vertical Titanium Solar Canyon;SUUNTO;Спортивные часы;Suunto;64900;;4;1;0;uploads/catalog/0c0cc5828a34.jpg;Офлайн-карты, 60 дней.
+25;SUUNTO-25;REF-0025;Suunto Race S Titanium Canary AMOLED;SUUNTO;Спортивные часы;Suunto;41500;;4;1;0;uploads/catalog/fa58d622c06a.jpg;Мультиспорт, AMOLED.
+26;POLAR-26;REF-0026;Polar Grit X2 Pro Titan Sapphire;POLAR;Спортивные часы;Polar;68400;;4;1;0;uploads/catalog/6393356c2dfe.jpg;ЭКГ, SpO2, титан.
+27;POLAR-27;REF-0027;Polar Vantage V3 Night Black;POLAR;Спортивные часы;Polar;54900;;4;1;0;uploads/catalog/6393356c2dfe.jpg;Elixir biosensing, AMOLED.
+28;COROS-28;REF-0028;COROS VERTIX 2S Space;COROS;Спортивные часы;COROS;63500;;4;1;0;uploads/catalog/27b518625696.jpg;40 дней, офлайн-карты, сапфир+титан.
+29;COROS-29;REF-0029;COROS Pace 3 White Nylon;COROS;Спортивные часы;COROS;22990;;4;1;0;uploads/catalog/27b518625696.jpg;Легкие 30 г, 38 часов GPS.
+30;HUAWEI-30;REF-0030;Huawei Watch Ultimate Green Zirconium;HUAWEI;Спортивные часы;Huawei Watch;59990;;4;1;0;uploads/catalog/1ebf9c114332.jpg;Жидкий металл, 100 м.
+31;HUAWEI-31;REF-0031;Huawei Watch GT 5 Pro Black Titanium;HUAWEI;Спортивные часы;Huawei Watch;32990;;4;1;0;uploads/catalog/83fbf2100a11.jpg;Титан, ECG, 14 дней.
+32;AMAZFIT-32;REF-0032;Amazfit T-Rex 3 48 мм Onyx Military;AMAZFIT;Спортивные часы;Amazfit;25900;;4;1;0;uploads/catalog/d52d0a6d8b31.jpg;2000 нит, -30C, 27 дней.
+33;CASIO-33;REF-0033;Casio G-Shock GBD-H2000-1A9 Solar GPS;CASIO;Спортивные часы;G-Shock;37900;;4;1;0;uploads/catalog/casio-rangeman.jpg;Пульсометр, GPS, solar.
+34;GARMIN-34;REF-0034;Garmin Fenix 8 43 мм AMOLED Sapphire Black Slate;GARMIN;Спортивные часы;fēnix;58500;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;"AMOLED 1.3"", сапфир, фонарик LED, дайвинг 40 м."
+35;GARMIN-35;REF-0035;Garmin Fenix 8 43 мм AMOLED Sapphire White Stone;GARMIN;Спортивные часы;fēnix;60000;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;"AMOLED 1.3"", сапфир, фонарик LED, дайвинг 40 м."
+36;GARMIN-36;REF-0036;Garmin Fenix 8 47 мм AMOLED Black;GARMIN;Спортивные часы;fēnix;59900;;4;1;1;uploads/catalog/cb0bbeb006cb.jpg;"AMOLED 1.4"", мульти-GNSS, топокарты, 29 дней."
+37;GARMIN-37;REF-0037;Garmin Fenix 8 47 мм AMOLED Orange;GARMIN;Спортивные часы;fēnix;61100;;4;1;1;uploads/catalog/f88df70ab8a2.jpg;"AMOLED 1.4"", мульти-GNSS, топокарты, 29 дней."
+38;GARMIN-38;REF-0038;Garmin Fenix 8 47 мм AMOLED Whitestone;GARMIN;Спортивные часы;fēnix;61100;;4;1;1;uploads/catalog/3e2318401d20.jpg;"AMOLED 1.4"", мульти-GNSS, топокарты, 29 дней."
+39;GARMIN-39;REF-0039;Garmin Fenix 8 51 мм AMOLED Sapphire Titanium Orange;GARMIN;Спортивные часы;fēnix;89990;62320;4;1;1;uploads/catalog/a8ee7edf87c8.jpg;"Титан, сапфир, AMOLED 1.4"", дайвинг 40 м."
+40;GARMIN-40;REF-0040;Garmin Fenix 8 51 мм AMOLED Sapphire Titanium Carbon Grey DLC;GARMIN;Спортивные часы;fēnix;89990;64820;4;1;1;uploads/catalog/cb0bbeb006cb.jpg;"Титан, сапфир, AMOLED 1.4"", дайвинг 40 м."
+41;GARMIN-41;REF-0041;Garmin Fenix 8 51 мм Solar Sapphire Carbon Grey DLC;GARMIN;Спортивные часы;fēnix;89990;62320;4;1;0;uploads/catalog/cb0bbeb006cb.jpg;Сапфир + solar, фонарик LED, 48 дней solar.
+42;GARMIN-42;REF-0042;Garmin Fenix 8 51 мм Solar Sapphire Titanium;GARMIN;Спортивные часы;fēnix;89990;65320;4;1;0;uploads/catalog/f88df70ab8a2.jpg;Сапфир + solar, фонарик LED, 48 дней solar.
+43;GARMIN-43;REF-0043;Garmin Fenix 7 Pro 47 мм Solar Slate Grey;GARMIN;Спортивные часы;fēnix;52900;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Фонарик, solar, красный фонарь, 22 дня.
+44;GARMIN-44;REF-0044;Garmin Fenix 7 Pro 47 мм Solar Titanium;GARMIN;Спортивные часы;fēnix;61900;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Фонарик, solar, красный фонарь, 22 дня.
+45;GARMIN-45;REF-0045;Garmin Fenix 7X Pro 51 мм Sapphire Solar Carbon Grey DLC;GARMIN;Спортивные часы;fēnix;58900;;4;1;0;uploads/catalog/f88df70ab8a2.jpg;Максимальный экран, фонарик, 37 дней.
+46;GARMIN-46;REF-0046;Garmin Fenix 7X Pro 51 мм Sapphire Solar Titanium;GARMIN;Спортивные часы;fēnix;66900;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Максимальный экран, фонарик, 37 дней.
+47;GARMIN-47;REF-0047;Garmin Fenix 7S Pro 42 мм Solar Rose Gold;GARMIN;Спортивные часы;fēnix;51900;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Компактные, solar, фонарик, для узкого запястья.
+48;GARMIN-48;REF-0048;Garmin Fenix 7S Pro 42 мм Solar Carbon Grey;GARMIN;Спортивные часы;fēnix;52900;;4;1;0;uploads/catalog/f88df70ab8a2.jpg;Компактные, solar, фонарик, для узкого запястья.
+49;GARMIN-49;REF-0049;Garmin Fenix E 47 мм AMOLED Black;GARMIN;Спортивные часы;fēnix;44900;;4;1;0;uploads/catalog/3e2318401d20.jpg;Доступный Fenix: AMOLED, карты, фонарик.
+50;GARMIN-50;REF-0050;Garmin Fenix E 47 мм AMOLED White;GARMIN;Спортивные часы;fēnix;44900;;4;1;0;uploads/catalog/3e2318401d20.jpg;Доступный Fenix: AMOLED, карты, фонарик.
+51;GARMIN-51;REF-0051;Garmin Fenix 6S Pro Solar Rose Gold;GARMIN;Спортивные часы;fēnix;32900;;4;1;0;uploads/catalog/f88df70ab8a2.jpg;Solar, музыка, Pulse Ox, прошлая линейка — выгодно.
+52;GARMIN-52;REF-0052;Garmin Fenix 6 Pro Solar Black;GARMIN;Спортивные часы;fēnix;34900;;4;1;0;uploads/catalog/f88df70ab8a2.jpg;Solar-зарядка, топокарты, PacePro.
+53;GARMIN-53;REF-0053;Garmin Fenix 6X Pro Solar Titanium Carbon Grey DLC;GARMIN;Спортивные часы;fēnix;39900;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Титан, solar, большие карты.
+54;GARMIN-54;REF-0054;Garmin Forerunner 970 Carbon Grey DLC Titanium Carbon Grey;GARMIN;Спортивные часы;Forerunner;64990;41200;4;1;1;uploads/catalog/769dc4087dc4.jpg;AMOLED, титан, двухчастотный GPS, карты.
+55;GARMIN-55;REF-0055;Garmin Forerunner 970 Carbon Grey DLC Titanium Whitestone Amp Yellow;GARMIN;Спортивные часы;Forerunner;64990;42700;4;1;1;uploads/catalog/c4f473600352.jpg;AMOLED, титан, двухчастотный GPS, карты.
+56;GARMIN-56;REF-0056;Garmin Forerunner 570 42 мм Slate Grey;GARMIN;Спортивные часы;Forerunner;28900;;4;1;0;uploads/catalog/c4f473600352.jpg;Беговые метрики, Garmin Pay, музыка.
+57;GARMIN-57;REF-0057;Garmin Forerunner 570 42 мм White;GARMIN;Спортивные часы;Forerunner;28900;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Беговые метрики, Garmin Pay, музыка.
+58;GARMIN-58;REF-0058;Garmin Forerunner 570 47 мм Slate Grey / Black Slate Grey Black;GARMIN;Спортивные часы;Forerunner;31210;;4;1;0;uploads/catalog/769dc4087dc4.jpg;Крупный AMOLED, триатлон, 18 дней.
+59;GARMIN-59;REF-0059;Garmin Forerunner 570 47 мм Slate Grey / Black Lunar Grey;GARMIN;Спортивные часы;Forerunner;32210;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Крупный AMOLED, триатлон, 18 дней.
+60;GARMIN-60;REF-0060;Garmin Forerunner 265 Black AMOLED Black;GARMIN;Спортивные часы;Forerunner;34900;;4;1;0;uploads/catalog/c4f473600352.jpg;AMOLED, Training Readiness, 20 дней.
+61;GARMIN-61;REF-0061;Garmin Forerunner 265 Black AMOLED Whitestone;GARMIN;Спортивные часы;Forerunner;35900;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;AMOLED, Training Readiness, 20 дней.
+62;GARMIN-62;REF-0062;Garmin Forerunner 265 Black AMOLED Aqua;GARMIN;Спортивные часы;Forerunner;35900;;4;1;0;uploads/catalog/769dc4087dc4.jpg;AMOLED, Training Readiness, 20 дней.
+63;GARMIN-63;REF-0063;Garmin Forerunner 265S Black;GARMIN;Спортивные часы;Forerunner;34900;;4;1;0;uploads/catalog/769dc4087dc4.jpg;Компактные 41 мм, AMOLED, для бега.
+64;GARMIN-64;REF-0064;Garmin Forerunner 265S White;GARMIN;Спортивные часы;Forerunner;34900;;4;1;0;uploads/catalog/c4f473600352.jpg;Компактные 41 мм, AMOLED, для бега.
+65;GARMIN-65;REF-0065;Garmin Forerunner 965 Titanium Yellow Yellow Black;GARMIN;Спортивные часы;Forerunner;45990;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Титан, AMOLED, полные карты.
+66;GARMIN-66;REF-0066;Garmin Forerunner 965 Titanium Yellow White;GARMIN;Спортивные часы;Forerunner;46990;;4;1;0;uploads/catalog/769dc4087dc4.jpg;Титан, AMOLED, полные карты.
+67;GARMIN-67;REF-0067;Garmin Forerunner 955 Solar Black;GARMIN;Спортивные часы;Forerunner;38900;;4;1;0;uploads/catalog/c4f473600352.jpg;Solar, мультиспорт, ClimbPro.
+68;GARMIN-68;REF-0068;Garmin Forerunner 55 Black;GARMIN;Спортивные часы;Forerunner;19900;;4;1;0;uploads/catalog/c4f473600352.jpg;Лёгкие беговые, Garmin Coach, 2 недели.
+69;GARMIN-69;REF-0069;Garmin Forerunner 55 White;GARMIN;Спортивные часы;Forerunner;19900;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Лёгкие беговые, Garmin Coach, 2 недели.
+70;GARMIN-70;REF-0070;Garmin Forerunner 255 Music Black;GARMIN;Спортивные часы;Forerunner;29900;;4;1;0;uploads/catalog/769dc4087dc4.jpg;Музыка, мульти-GNSS, triathlon light.
+71;GARMIN-71;REF-0071;Garmin Forerunner 255 Music Whitestone;GARMIN;Спортивные часы;Forerunner;29900;;4;1;0;uploads/catalog/769dc4087dc4.jpg;Музыка, мульти-GNSS, triathlon light.
+72;GARMIN-72;REF-0072;Garmin Forerunner 745 Black;GARMIN;Спортивные часы;Forerunner;27900;;4;1;0;uploads/catalog/c4f473600352.jpg;Триатлон, VO2max, прошлое поколение.
+73;GARMIN-73;REF-0073;Garmin Instinct 2 Solar Graphite;GARMIN;Спортивные часы;Instinct;26900;;4;1;0;uploads/catalog/dc44ad2d853f.jpg;Solar, MIL-STD-810, бесконечный режим.
+74;GARMIN-74;REF-0074;Garmin Instinct 2 Solar Tactical Tan;GARMIN;Спортивные часы;Instinct;29900;;4;1;0;uploads/catalog/7918a30d0696.jpg;Solar, MIL-STD-810, бесконечный режим.
+75;GARMIN-75;REF-0075;Garmin Instinct 2X Solar Graphite;GARMIN;Спортивные часы;Instinct;32900;;4;1;0;uploads/catalog/c6c21c631092.jpg;Крупные, фонарик, solar.
+76;GARMIN-76;REF-0076;Garmin Instinct 2X Solar Whitestone;GARMIN;Спортивные часы;Instinct;33900;;4;1;0;uploads/catalog/dc44ad2d853f.jpg;Крупные, фонарик, solar.
+77;GARMIN-77;REF-0077;Garmin Instinct 3 45 мм AMOLED Black;GARMIN;Спортивные часы;Instinct;34900;;4;1;0;uploads/catalog/7918a30d0696.jpg;AMOLED, мульти-GNSS, 24 дня.
+78;GARMIN-78;REF-0078;Garmin Instinct 3 45 мм AMOLED Neotropic;GARMIN;Спортивные часы;Instinct;35900;;4;1;0;uploads/catalog/c6c21c631092.jpg;AMOLED, мульти-GNSS, 24 дня.
+79;GARMIN-79;REF-0079;Garmin Instinct 3 50 мм AMOLED Tactical Black Tactical Black;GARMIN;Спортивные часы;Instinct;38900;;4;1;0;uploads/catalog/dc44ad2d853f.jpg;Тактический режим, NVG, MIL-STD-810.
+80;GARMIN-80;REF-0080;Garmin Instinct 3 50 мм AMOLED Tactical Black Charcoal;GARMIN;Спортивные часы;Instinct;38900;;4;1;0;uploads/catalog/7918a30d0696.jpg;Тактический режим, NVG, MIL-STD-810.
+81;GARMIN-81;REF-0081;Garmin Instinct Crossover Solar Graphite;GARMIN;Спортивные часы;Instinct;41900;;4;1;0;uploads/catalog/c6c21c631092.jpg;Аналоговые стрелки + smart, solar.
+82;GARMIN-82;REF-0082;Garmin Instinct Crossover Solar Tactical Green;GARMIN;Спортивные часы;Instinct;43900;;4;1;0;uploads/catalog/dc44ad2d853f.jpg;Аналоговые стрелки + smart, solar.
+83;GARMIN-83;REF-0083;Garmin Venu Sq 2 Shadow Grey;GARMIN;Спортивные часы;Venu;22900;;4;1;0;uploads/catalog/929de68596eb.jpg;AMOLED, сон, Body Battery, 11 дней.
+84;GARMIN-84;REF-0084;Garmin Venu Sq 2 Ivory;GARMIN;Спортивные часы;Venu;23400;;4;1;0;uploads/catalog/e36e28f939b8.jpg;AMOLED, сон, Body Battery, 11 дней.
+85;GARMIN-85;REF-0085;Garmin Venu 3 45 мм Slate / Black Slate Black;GARMIN;Спортивные часы;Venu;36400;;4;1;0;uploads/catalog/929de68596eb.jpg;Звонки с запястья, сон, 30+ профилей.
+86;GARMIN-86;REF-0086;Garmin Venu 3 45 мм Slate / Black French Grey;GARMIN;Спортивные часы;Venu;37200;;4;1;0;uploads/catalog/929de68596eb.jpg;Звонки с запястья, сон, 30+ профилей.
+87;GARMIN-87;REF-0087;Garmin Venu 3S 41 мм Sage Grey;GARMIN;Спортивные часы;Venu;36400;;4;1;0;uploads/catalog/e36e28f939b8.jpg;Компактные, все функции Venu 3.
+88;GARMIN-88;REF-0088;Garmin Venu 3S 41 мм Dusty Rose;GARMIN;Спортивные часы;Venu;37200;;4;1;0;uploads/catalog/929de68596eb.jpg;Компактные, все функции Venu 3.
+89;GARMIN-89;REF-0089;Garmin MARQ Athlete Gen 2 Carbon Edition Carbon;GARMIN;Спортивные часы;MARQ;215000;;4;1;1;uploads/catalog/35855e2bc61d.jpg;Кованый карбон 130 слоёв, сапфир.
+90;GARMIN-90;REF-0090;Garmin MARQ Adventurer Gen 2 Titanium;GARMIN;Спортивные часы;MARQ;185000;;4;1;0;uploads/catalog/105a631e64ce.jpg;Титан, топокарты, экспедиции.
+91;GARMIN-91;REF-0091;Garmin MARQ Golfer Gen 2 Carbon Carbon;GARMIN;Спортивные часы;MARQ;199000;;4;1;0;uploads/catalog/35855e2bc61d.jpg;Гольф: 43000 полей, caddie.
+92;GARMIN-92;REF-0092;Garmin MARQ Captain Gen 2 Steel;GARMIN;Спортивные часы;MARQ;189000;;4;1;0;uploads/catalog/105a631e64ce.jpg;Морские карты, автопилот, тактика регаты.
+93;GARMIN-93;REF-0093;Garmin MARQ Aviator Gen 2 Titanium;GARMIN;Спортивные часы;MARQ;189000;;4;1;0;uploads/catalog/35855e2bc61d.jpg;Авиация: METAR, HSI, emergency.
+94;GARMIN-94;REF-0094;Garmin tactix 7 AMOLED Ballistics Titanium Black;GARMIN;Спортивные часы;tactix;108900;;4;1;1;uploads/catalog/35855e2bc61d.jpg;Баллистика Applied Ballistics, NVG, титан.
+95;GARMIN-95;REF-0095;Garmin tactix 7 Pro Solar Ballistics Black;GARMIN;Спортивные часы;tactix;99900;;4;1;0;uploads/catalog/35855e2bc61d.jpg;Solar, баллистика, Jumpmaster.
+96;GARMIN-96;REF-0096;Garmin tactix 7 Pro Solar Ballistics Tan;GARMIN;Спортивные часы;tactix;101400;;4;1;0;uploads/catalog/3b5381df9988.jpg;Solar, баллистика, Jumpmaster.
+97;GARMIN-97;REF-0097;Garmin Epix Pro Gen 2 42 мм Sapphire Carbon Carbon Grey;GARMIN;Спортивные часы;epix;74900;;4;1;0;uploads/catalog/35855e2bc61d.jpg;AMOLED, фонарик, топокарты.
+98;GARMIN-98;REF-0098;Garmin Epix Pro Gen 2 47 мм Sapphire Carbon Grey;GARMIN;Спортивные часы;epix;77900;;4;1;0;uploads/catalog/724b129c4b44.jpg;"AMOLED 1.4"", сапфир, 16 дней."
+99;GARMIN-99;REF-0099;Garmin Epix Pro Gen 2 47 мм Sapphire Whitestone;GARMIN;Спортивные часы;epix;78900;;4;1;0;uploads/catalog/3e2318401d20.jpg;"AMOLED 1.4"", сапфир, 16 дней."
+100;GARMIN-100;REF-0100;Garmin Epix Pro Gen 2 51 мм Sapphire Carbon Carbon Grey;GARMIN;Спортивные часы;epix;79990;;4;1;0;uploads/catalog/724b129c4b44.jpg;Максимальный размер, фонарик.
+101;GARMIN-101;REF-0101;Garmin Enduro 2 Solar Sapphire Black;GARMIN;Спортивные часы;Enduro;64900;;4;1;0;uploads/catalog/724b129c4b44.jpg;Ультра: 46 дней, solar, топокарты.
+102;GARMIN-102;REF-0102;Garmin Enduro 3 Solar Black Black;GARMIN;Спортивные часы;Enduro;69990;;4;1;0;uploads/catalog/724b129c4b44.jpg;90 дней solar, фонарик, 51 мм.
+103;GARMIN-103;REF-0103;Garmin Enduro 3 Solar Black Titanium;GARMIN;Спортивные часы;Enduro;74990;;4;1;0;uploads/catalog/724b129c4b44.jpg;90 дней solar, фонарик, 51 мм.
+104;GARMIN-104;REF-0104;Garmin Approach S44 Black;GARMIN;Спортивные часы;Approach;24900;;4;1;0;uploads/catalog/769dc4087dc4.jpg;Гольф: 43000 полей, Green View.
+105;GARMIN-105;REF-0105;Garmin Approach S44 White;GARMIN;Спортивные часы;Approach;24900;;4;1;0;uploads/catalog/105a631e64ce.jpg;Гольф: 43000 полей, Green View.
+106;GARMIN-106;REF-0106;Garmin Approach S70 42 мм Black;GARMIN;Спортивные часы;Approach;54900;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;AMOLED гольф, caddie, 16 дней.
+107;GARMIN-107;REF-0107;Garmin Approach S70 42 мм White;GARMIN;Спортивные часы;Approach;55400;;4;1;0;uploads/catalog/769dc4087dc4.jpg;AMOLED гольф, caddie, 16 дней.
+108;GARMIN-108;REF-0108;Garmin Approach S70 47 мм Black;GARMIN;Спортивные часы;Approach;57900;;4;1;0;uploads/catalog/105a631e64ce.jpg;"AMOLED 1.4"", гольф-премиум."
+109;GARMIN-109;REF-0109;Garmin Approach S70 47 мм Grey;GARMIN;Спортивные часы;Approach;58400;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;"AMOLED 1.4"", гольф-премиум."
+110;GARMIN-110;REF-0110;Garmin D2 Air X10 Aviator Black;GARMIN;Спортивные часы;D2;44900;;4;1;0;uploads/catalog/769dc4087dc4.jpg;Авиационные часы, AMOLED, METAR.
+111;GARMIN-111;REF-0111;Garmin D2 Mach 1 Aviator Titanium Black;GARMIN;Спортивные часы;D2;89900;;4;1;0;uploads/catalog/105a631e64ce.jpg;Титан, сапфир, авиация.
+112;GARMIN-112;REF-0112;Garmin D2 Mach 1 Aviator Titanium Pro Oxford;GARMIN;Спортивные часы;D2;92900;;4;1;0;uploads/catalog/a8ee7edf87c8.jpg;Титан, сапфир, авиация.
+113;APPLE-113;REF-0113;Apple Watch Ultra 2 49 мм Black Titanium Trail Loop Black Titanium Trail;APPLE;Спортивные часы;Apple Watch;59990;51990;4;1;1;uploads/catalog/312d50ca27f4.jpg;Титан 49 мм, 3000 нит, EN13319.
+114;APPLE-114;REF-0114;Apple Watch Ultra 2 49 мм Black Titanium Trail Loop White Ocean;APPLE;Спортивные часы;Apple Watch;59990;51990;4;1;1;uploads/catalog/4449d1120508.jpg;Титан 49 мм, 3000 нит, EN13319.
+115;APPLE-115;REF-0115;Apple Watch Ultra 2 49 мм Black Titanium Trail Loop Blue Alpine;APPLE;Спортивные часы;Apple Watch;59990;51990;4;1;1;uploads/catalog/ac502e2323a5.jpg;Титан 49 мм, 3000 нит, EN13319.
+116;APPLE-116;REF-0116;Apple Watch Series 10 46 мм Jet Black Aluminum Jet Black;APPLE;Спортивные часы;Apple Watch;42990;;4;1;0;uploads/catalog/161cd1030748.jpg;Тонкий корпус, OLED, глубиномер.
+117;APPLE-117;REF-0117;Apple Watch Series 10 46 мм Jet Black Aluminum Silver;APPLE;Спортивные часы;Apple Watch;43990;;4;1;0;uploads/catalog/f52aeeb5346a.jpg;Тонкий корпус, OLED, глубиномер.
+118;APPLE-118;REF-0118;Apple Watch Series 10 46 мм Jet Black Aluminum Rose Gold;APPLE;Спортивные часы;Apple Watch;43990;;4;1;0;uploads/catalog/2e854a960bcd.jpg;Тонкий корпус, OLED, глубиномер.
+119;APPLE-119;REF-0119;Apple Watch Series 10 42 мм Jet Black;APPLE;Спортивные часы;Apple Watch;39990;;4;1;0;uploads/catalog/161cd1030748.jpg;Компактные, watchOS, ECG.
+120;APPLE-120;REF-0120;Apple Watch Series 10 42 мм Silver;APPLE;Спортивные часы;Apple Watch;39990;;4;1;0;uploads/catalog/f52aeeb5346a.jpg;Компактные, watchOS, ECG.
+121;APPLE-121;REF-0121;Apple Watch Series 9 45 мм GPS Midnight;APPLE;Спортивные часы;Apple Watch;35990;;4;1;0;uploads/catalog/2e854a960bcd.jpg;S9 SiP, Double Tap, 2000 нит.
+122;APPLE-122;REF-0122;Apple Watch Series 9 45 мм GPS Starlight;APPLE;Спортивные часы;Apple Watch;35990;;4;1;0;uploads/catalog/161cd1030748.jpg;S9 SiP, Double Tap, 2000 нит.
+123;APPLE-123;REF-0123;Apple Watch SE 2 40 мм GPS Midnight;APPLE;Спортивные часы;Apple Watch;21990;;4;1;0;uploads/catalog/f52aeeb5346a.jpg;Доступные, crash detection.
+124;APPLE-124;REF-0124;Apple Watch SE 2 40 мм GPS Starlight;APPLE;Спортивные часы;Apple Watch;21990;;4;1;0;uploads/catalog/2e854a960bcd.jpg;Доступные, crash detection.
+125;APPLE-125;REF-0125;Apple Watch SE 2 44 мм GPS Midnight;APPLE;Спортивные часы;Apple Watch;23990;;4;1;0;uploads/catalog/161cd1030748.jpg;Больше экран, те же функции.
+126;APPLE-126;REF-0126;Apple Watch SE 2 44 мм GPS Silver;APPLE;Спортивные часы;Apple Watch;24490;;4;1;0;uploads/catalog/f52aeeb5346a.jpg;Больше экран, те же функции.
+127;SAMSUNG-127;REF-0127;Samsung Galaxy Watch Ultra 47 мм LTE Titanium Gray Titanium Gray;SAMSUNG;Спортивные часы;Galaxy Watch;49990;;4;1;1;uploads/catalog/698a28d84593.jpg;Титан, сапфир, 10 АТМ, Galaxy AI.
+128;SAMSUNG-128;REF-0128;Samsung Galaxy Watch Ultra 47 мм LTE Titanium Gray Titanium Silver;SAMSUNG;Спортивные часы;Galaxy Watch;51490;;4;1;1;uploads/catalog/321b76648576.jpg;Титан, сапфир, 10 АТМ, Galaxy AI.
+129;SAMSUNG-129;REF-0129;Samsung Galaxy Watch 7 44 мм Green Sapphire Green;SAMSUNG;Спортивные часы;Galaxy Watch;26990;;4;1;0;uploads/catalog/713fe7e90eda.jpg;3 нм, BioActive, двухчастотный GPS.
+130;SAMSUNG-130;REF-0130;Samsung Galaxy Watch 7 44 мм Green Sapphire Silver;SAMSUNG;Спортивные часы;Galaxy Watch;26990;;4;1;0;uploads/catalog/d4ef097fb7c3.jpg;3 нм, BioActive, двухчастотный GPS.
+131;SAMSUNG-131;REF-0131;Samsung Galaxy Watch 7 44 мм Green Sapphire Cream;SAMSUNG;Спортивные часы;Galaxy Watch;26990;;4;1;0;uploads/catalog/b0ed6f196f1b.jpg;3 нм, BioActive, двухчастотный GPS.
+132;SAMSUNG-132;REF-0132;Samsung Galaxy Watch 7 40 мм Green;SAMSUNG;Спортивные часы;Galaxy Watch;23990;;4;1;0;uploads/catalog/321b76648576.jpg;Компактные, Wear OS, сон.
+133;SAMSUNG-133;REF-0133;Samsung Galaxy Watch 7 40 мм Cream;SAMSUNG;Спортивные часы;Galaxy Watch;23990;;4;1;0;uploads/catalog/6a309d7634a7.jpg;Компактные, Wear OS, сон.
+134;SAMSUNG-134;REF-0134;Samsung Galaxy Watch 6 Classic 47 мм Black Black;SAMSUNG;Спортивные часы;Galaxy Watch;29990;;4;1;0;uploads/catalog/6a309d7634a7.jpg;Вращающийся безель, сапфир.
+135;SAMSUNG-135;REF-0135;Samsung Galaxy Watch 6 Classic 47 мм Black Silver;SAMSUNG;Спортивные часы;Galaxy Watch;30990;;4;1;0;uploads/catalog/2bd412184c09.jpg;Вращающийся безель, сапфир.
+136;SAMSUNG-136;REF-0136;Samsung Galaxy Watch 6 Classic 43 мм Black;SAMSUNG;Спортивные часы;Galaxy Watch;27990;;4;1;0;uploads/catalog/321b76648576.jpg;Классика, безель, LTE опция.
+137;SAMSUNG-137;REF-0137;Samsung Galaxy Watch 6 Classic 43 мм Silver;SAMSUNG;Спортивные часы;Galaxy Watch;27990;;4;1;0;uploads/catalog/6a309d7634a7.jpg;Классика, безель, LTE опция.
+138;SAMSUNG-138;REF-0138;Samsung Galaxy Watch 5 Pro 45 мм Titanium Black Titanium;SAMSUNG;Спортивные часы;Galaxy Watch;24990;;4;1;0;uploads/catalog/2bd412184c09.jpg;Титан, 80 часов, треки GPX.
+139;SAMSUNG-139;REF-0139;Samsung Galaxy Watch 5 Pro 45 мм Titanium Grey Titanium;SAMSUNG;Спортивные часы;Galaxy Watch;25990;;4;1;0;uploads/catalog/321b76648576.jpg;Титан, 80 часов, треки GPX.
+140;SAMSUNG-140;REF-0140;Samsung Galaxy Fit 3 Grey;SAMSUNG;Спортивные часы;Galaxy Watch;5990;;4;1;0;uploads/catalog/321b76648576.jpg;Фитнес-браслет, AMOLED, 13 дней.
+141;SAMSUNG-141;REF-0141;Samsung Galaxy Fit 3 Silver;SAMSUNG;Спортивные часы;Galaxy Watch;5990;;4;1;0;uploads/catalog/321b76648576.jpg;Фитнес-браслет, AMOLED, 13 дней.
+142;SUUNTO-142;REF-0142;Suunto Vertical Titanium Solar Canyon GPS Canyon;SUUNTO;Спортивные часы;Suunto;64900;;4;1;1;uploads/catalog/0c0cc5828a34.jpg;Офлайн-карты, solar, 60 дней.
+143;SUUNTO-143;REF-0143;Suunto Vertical Titanium Solar Canyon GPS Black;SUUNTO;Спортивные часы;Suunto;66900;;4;1;1;uploads/catalog/0c0cc5828a34.jpg;Офлайн-карты, solar, 60 дней.
+144;SUUNTO-144;REF-0144;Suunto Race S Titanium Canary AMOLED Canary;SUUNTO;Спортивные часы;Suunto;41500;;4;1;0;uploads/catalog/fa58d622c06a.jpg;Мультиспорт, AMOLED, лёгкие.
+145;SUUNTO-145;REF-0145;Suunto Race S Titanium Canary AMOLED All Black;SUUNTO;Спортивные часы;Suunto;42500;;4;1;0;uploads/catalog/fa58d622c06a.jpg;Мультиспорт, AMOLED, лёгкие.
+146;SUUNTO-146;REF-0146;Suunto Race Titanium Charcoal Charcoal;SUUNTO;Спортивные часы;Suunto;49900;;4;1;0;uploads/catalog/fa58d622c06a.jpg;Гонки, карты, 40 часов GPS.
+147;SUUNTO-147;REF-0147;Suunto Race Titanium Charcoal Birch;SUUNTO;Спортивные часы;Suunto;50900;;4;1;0;uploads/catalog/fa58d622c06a.jpg;Гонки, карты, 40 часов GPS.
+148;SUUNTO-148;REF-0148;Suunto 9 Peak Pro Forest Green;SUUNTO;Спортивные часы;Suunto;34900;;4;1;0;uploads/catalog/5b4fc84c63c3.jpg;Ультратонкие, титан, 21 день.
+149;SUUNTO-149;REF-0149;Suunto 9 Peak Pro Ocean Blue;SUUNTO;Спортивные часы;Suunto;34900;;4;1;0;uploads/catalog/5b4fc84c63c3.jpg;Ультратонкие, титан, 21 день.
+150;SUUNTO-150;REF-0150;Suunto Ocean Steel Black Black;SUUNTO;Спортивные часы;Suunto;58900;;4;1;0;uploads/catalog/5b4fc84c63c3.jpg;Дайвинг + мультиспорт, AMOLED.
+151;SUUNTO-151;REF-0151;Suunto Ocean Steel Black Sand;SUUNTO;Спортивные часы;Suunto;59900;;4;1;0;uploads/catalog/5b4fc84c63c3.jpg;Дайвинг + мультиспорт, AMOLED.
+152;POLAR-152;REF-0152;Polar Grit X2 Pro Titan Sapphire AMOLED Night Black;POLAR;Спортивные часы;Polar;68400;;4;1;1;uploads/catalog/6393356c2dfe.jpg;ЭКГ, SpO2, титан, сапфир.
+153;POLAR-153;REF-0153;Polar Grit X2 Pro Titan Sapphire AMOLED Stone Grey;POLAR;Спортивные часы;Polar;69900;;4;1;1;uploads/catalog/6393356c2dfe.jpg;ЭКГ, SpO2, титан, сапфир.
+154;POLAR-154;REF-0154;Polar Grit X2 Brown Copper Brown Copper;POLAR;Спортивные часы;Polar;49900;;4;1;0;uploads/catalog/6393356c2dfe.jpg;Аутдор, MIL-STD, карты Komoot.
+155;POLAR-155;REF-0155;Polar Vantage V3 Night Black Night Black;POLAR;Спортивные часы;Polar;54900;;4;1;0;uploads/catalog/6393356c2dfe.jpg;Elixir biosensing, AMOLED.
+156;POLAR-156;REF-0156;Polar Vantage V3 Night Black Sky Blue;POLAR;Спортивные часы;Polar;55900;;4;1;0;uploads/catalog/6393356c2dfe.jpg;Elixir biosensing, AMOLED.
+157;POLAR-157;REF-0157;Polar Pacer Pro Carbon Grey Carbon Grey;POLAR;Спортивные часы;Polar;29900;;4;1;0;uploads/catalog/a56ac85f7355.jpg;Бег, тесты, барометр.
+158;POLAR-158;REF-0158;Polar Pacer Pro Carbon Grey Autumn Maroon;POLAR;Спортивные часы;Polar;30400;;4;1;0;uploads/catalog/a56ac85f7355.jpg;Бег, тесты, барометр.
+159;POLAR-159;REF-0159;Polar Ignite 3 Titanium Silver Silver;POLAR;Спортивные часы;Polar;27900;;4;1;0;uploads/catalog/a56ac85f7355.jpg;Фитнес, сон, AMOLED.
+160;POLAR-160;REF-0160;Polar Ignite 3 Titanium Silver Black;POLAR;Спортивные часы;Polar;27900;;4;1;0;uploads/catalog/a56ac85f7355.jpg;Фитнес, сон, AMOLED.
+161;POLAR-161;REF-0161;Polar Verity Sense Red;POLAR;Спортивные часы;Polar;8900;;4;1;0;uploads/catalog/a56ac85f7355.jpg;Оптический датчик на руку.
+162;COROS-162;REF-0162;COROS VERTIX 2S Adventure Space Space;COROS;Спортивные часы;COROS;63500;;4;1;1;uploads/catalog/27b518625696.jpg;40 дней, офлайн-карты, сапфир+титан.
+163;COROS-163;REF-0163;COROS VERTIX 2S Adventure Space Earth;COROS;Спортивные часы;COROS;64500;;4;1;1;uploads/catalog/27b518625696.jpg;40 дней, офлайн-карты, сапфир+титан.
+164;COROS-164;REF-0164;COROS Pace 3 White Nylon White Nylon;COROS;Спортивные часы;COROS;22990;;4;1;0;uploads/catalog/27b518625696.jpg;Лёгкие 30 г, 38 часов GPS.
+165;COROS-165;REF-0165;COROS Pace 3 White Nylon Black Silicone;COROS;Спортивные часы;COROS;22990;;4;1;0;uploads/catalog/27b518625696.jpg;Лёгкие 30 г, 38 часов GPS.
+166;COROS-166;REF-0166;COROS Apex 2 Pro Black;COROS;Спортивные часы;COROS;44900;;4;1;0;uploads/catalog/53a672ee0545.jpg;Титан, сапфир, 75 часов.
+167;COROS-167;REF-0167;COROS Apex 2 Pro Grey;COROS;Спортивные часы;COROS;45400;;4;1;0;uploads/catalog/53a672ee0545.jpg;Титан, сапфир, 75 часов.
+168;COROS-168;REF-0168;COROS Apex 2 Black;COROS;Спортивные часы;COROS;34900;;4;1;0;uploads/catalog/53a672ee0545.jpg;Мультиспорт, 43 часа GPS.
+169;COROS-169;REF-0169;COROS Apex 2 Grey;COROS;Спортивные часы;COROS;34900;;4;1;0;uploads/catalog/53a672ee0545.jpg;Мультиспорт, 43 часа GPS.
+170;COROS-170;REF-0170;COROS Dura Solar Bike Computer Black;COROS;Спортивные часы;COROS;24990;;4;1;0;uploads/catalog/53a672ee0545.jpg;Велокомпьютер, solar, 120 часов.
+171;HUAWEI-171;REF-0171;Huawei Watch Ultimate Green Zirconium Green;HUAWEI;Спортивные часы;Huawei Watch;59990;;4;1;1;uploads/catalog/1ebf9c114332.jpg;Жидкий металл, дайвинг 100 м.
+172;HUAWEI-172;REF-0172;Huawei Watch Ultimate Green Zirconium Blue Voyage;HUAWEI;Спортивные часы;Huawei Watch;62990;;4;1;1;uploads/catalog/83fbf2100a11.jpg;Жидкий металл, дайвинг 100 м.
+173;HUAWEI-173;REF-0173;Huawei Watch GT 5 46 мм Black Black;HUAWEI;Спортивные часы;Huawei Watch;21990;;4;1;0;uploads/catalog/1ebf9c114332.jpg;TruSense, 14 дней, звонки.
+174;HUAWEI-174;REF-0174;Huawei Watch GT 5 46 мм Black Brown Leather;HUAWEI;Спортивные часы;Huawei Watch;23490;;4;1;0;uploads/catalog/83fbf2100a11.jpg;TruSense, 14 дней, звонки.
+175;HUAWEI-175;REF-0175;Huawei Watch GT 5 41 мм Blue Blue;HUAWEI;Спортивные часы;Huawei Watch;20990;;4;1;0;uploads/catalog/71a559c49e9f.jpg;Компактные, AMOLED.
+176;HUAWEI-176;REF-0176;Huawei Watch GT 5 41 мм Blue White Leather;HUAWEI;Спортивные часы;Huawei Watch;22190;;4;1;0;uploads/catalog/1ebf9c114332.jpg;Компактные, AMOLED.
+177;HUAWEI-177;REF-0177;Huawei Watch GT 5 Pro 46 мм Black Titanium Black Titanium;HUAWEI;Спортивные часы;Huawei Watch;32990;;4;1;0;uploads/catalog/1ebf9c114332.jpg;Титан, сапфир, ECG, гольф.
+178;HUAWEI-178;REF-0178;Huawei Watch 4 Pro Space Edition Dark Brown Leather;HUAWEI;Спортивные часы;Huawei Watch;39990;;4;1;0;uploads/catalog/83fbf2100a11.jpg;eSIM, титан, здоровье.
+179;HUAWEI-179;REF-0179;Huawei Watch Fit 3 Grey Nylon Grey Nylon;HUAWEI;Спортивные часы;Huawei Watch;11990;;4;1;0;uploads/catalog/ea5cf521bd71.jpg;Тонкие, AMOLED, 10 дней.
+180;HUAWEI-180;REF-0180;Huawei Watch Fit 3 Grey Nylon Black Fluoroelastomer;HUAWEI;Спортивные часы;Huawei Watch;11990;;4;1;0;uploads/catalog/a0a073706fd1.jpg;Тонкие, AMOLED, 10 дней.
+181;AMAZFIT-181;REF-0181;Amazfit T-Rex 3 48 мм Onyx Military AMOLED Onyx;AMAZFIT;Спортивные часы;Amazfit;25900;;4;1;1;uploads/catalog/80439f334dcb.jpg;2000 нит, -30°C, 27 дней.
+182;AMAZFIT-182;REF-0182;Amazfit T-Rex 3 48 мм Onyx Military AMOLED Lava;AMAZFIT;Спортивные часы;Amazfit;26900;;4;1;1;uploads/catalog/d52d0a6d8b31.jpg;2000 нит, -30°C, 27 дней.
+183;AMAZFIT-183;REF-0183;Amazfit Balance Sunset Grey Sunset Grey;AMAZFIT;Спортивные часы;Amazfit;19990;;4;1;0;uploads/catalog/222f50774385.jpg;AMOLED, Body Composition, Zepp AI.
+184;AMAZFIT-184;REF-0184;Amazfit Balance Sunset Grey Midnight;AMAZFIT;Спортивные часы;Amazfit;19990;;4;1;0;uploads/catalog/80439f334dcb.jpg;AMOLED, Body Composition, Zepp AI.
+185;AMAZFIT-185;REF-0185;Amazfit GTR 4 New Brown Leather Brown Leather;AMAZFIT;Спортивные часы;Amazfit;17990;;4;1;0;uploads/catalog/d52d0a6d8b31.jpg;Классика, AMOLED, Alexa.
+186;AMAZFIT-186;REF-0186;Amazfit GTR 4 New Brown Leather Black;AMAZFIT;Спортивные часы;Amazfit;17990;;4;1;0;uploads/catalog/222f50774385.jpg;Классика, AMOLED, Alexa.
+187;AMAZFIT-187;REF-0187;Amazfit GTS 4 Mini Mint Blue Mint Blue;AMAZFIT;Спортивные часы;Amazfit;11990;;4;1;0;uploads/catalog/80439f334dcb.jpg;Компактные, 5 спутников.
+188;AMAZFIT-188;REF-0188;Amazfit GTS 4 Mini Mint Blue Black;AMAZFIT;Спортивные часы;Amazfit;11990;;4;1;0;uploads/catalog/d52d0a6d8b31.jpg;Компактные, 5 спутников.
+189;AMAZFIT-189;REF-0189;Amazfit Cheetah Pro Black;AMAZFIT;Спортивные часы;Amazfit;24990;;4;1;0;uploads/catalog/222f50774385.jpg;Бег, AI-тренер, двухчастотный GPS.
+190;AMAZFIT-190;REF-0190;Amazfit Bip 5 Unity Grey Grey;AMAZFIT;Спортивные часы;Amazfit;7990;;4;1;0;uploads/catalog/80439f334dcb.jpg;Доступные, звонки, 11 дней.
+191;AMAZFIT-191;REF-0191;Amazfit Bip 5 Unity Grey Black;AMAZFIT;Спортивные часы;Amazfit;7990;;4;1;0;uploads/catalog/d52d0a6d8b31.jpg;Доступные, звонки, 11 дней.
+192;CASIO-192;REF-0192;Casio G-Shock GBD-H2000-1A9 Solar GPS Black;CASIO;Спортивные часы;G-Shock;37990;;4;1;1;uploads/catalog/casio-rangeman.jpg;Пульсометр, GPS, solar.
+193;CASIO-193;REF-0193;Casio G-Shock GBD-H2000-1A9 Solar GPS Yellow;CASIO;Спортивные часы;G-Shock;39490;;4;1;1;uploads/catalog/casio-rangeman.jpg;Пульсометр, GPS, solar.
+194;CASIO-194;REF-0194;Casio G-Shock GBD-200-1ER Black;CASIO;Спортивные часы;G-Shock;14990;;4;1;0;uploads/catalog/casio-dw5600.jpg;Квадрат, шагомер, Bluetooth.
+195;CASIO-195;REF-0195;Casio G-Shock GBD-200-1ER White;CASIO;Спортивные часы;G-Shock;15490;;4;1;0;uploads/catalog/casio-dw5600.jpg;Квадрат, шагомер, Bluetooth.
+196;CASIO-196;REF-0196;Casio GSW-H1000-1 Wear OS Black Red;CASIO;Спортивные часы;G-Shock;54990;;4;1;0;uploads/catalog/casio-dw5600.jpg;Первый G-Squad на Wear OS.
+197;CASIO-197;REF-0197;Casio DW-H5600-1 Solar Heart Rate Black;CASIO;Спортивные часы;G-Shock;24990;;4;1;0;uploads/catalog/casio-dw5600.jpg;Квадрат, пульс, solar.
+198;CASIO-198;REF-0198;Casio DW-H5600-1 Solar Heart Rate Blue;CASIO;Спортивные часы;G-Shock;25790;;4;1;0;uploads/catalog/casio-dw5600.jpg;Квадрат, пульс, solar.
+199;GARMIN-199;REF-0199;Garmin Striker Vivid 4cv + GT20-TM GT20-TM транцевый;GARMIN;Эхолоты;Striker;24990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"Яркий 4.3"", CHIRP + ClearVü."
+200;GARMIN-200;REF-0200;Garmin Striker Vivid 4cv + GT20-TM Без датчика;GARMIN;Эхолоты;Striker;20990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"Яркий 4.3"", CHIRP + ClearVü."
+201;GARMIN-201;REF-0201;Garmin Striker Vivid 5cv + GT20-TM GT20-TM;GARMIN;Эхолоты;Striker;32990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"5"", CHIRP/ClearVü, Quickdraw."
+202;GARMIN-202;REF-0202;Garmin Striker Vivid 5cv + GT20-TM GT52HW-TM;GARMIN;Эхолоты;Striker;41990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"5"", CHIRP/ClearVü, Quickdraw."
+203;GARMIN-203;REF-0203;Garmin Striker Vivid 7cv + GT52HW-TM GT52HW-TM;GARMIN;Эхолоты;Striker;45990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"7"", CHIRP + ClearVü + SideVü."
+204;GARMIN-204;REF-0204;Garmin Striker Vivid 7cv + GT52HW-TM GT56UHD-TM;GARMIN;Эхолоты;Striker;59990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"7"", CHIRP + ClearVü + SideVü."
+205;GARMIN-205;REF-0205;Garmin Striker Vivid 7sv + GT52HW-TM GT52HW-TM;GARMIN;Эхолоты;Striker;52990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"SideVü сканирование, 7""."
+206;GARMIN-206;REF-0206;Garmin Striker Vivid 9sv + GT52HW-TM GT52HW-TM;GARMIN;Эхолоты;Striker;64990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"Большой 9"", всё сканирование."
+207;GARMIN-207;REF-0207;Garmin Striker Vivid 9sv + GT52HW-TM GT56UHD-TM;GARMIN;Эхолоты;Striker;79990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"Большой 9"", всё сканирование."
+208;GARMIN-208;REF-0208;Garmin ECHOMAP UHD2 52cv + GT20-TM GT20-TM;GARMIN;Эхолоты;ECHOMAP;54990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Карты, CHIRP, ClearVü.
+209;GARMIN-209;REF-0209;Garmin ECHOMAP UHD2 72cv + GT54-TM GT54-TM;GARMIN;Эхолоты;ECHOMAP;74990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"7"", UHD сканирование."
+210;GARMIN-210;REF-0210;Garmin ECHOMAP UHD2 72cv + GT54-TM GT56-TM;GARMIN;Эхолоты;ECHOMAP;86990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"7"", UHD сканирование."
+211;GARMIN-211;REF-0211;Garmin ECHOMAP UHD2 72sv + GT54-TM GT54-TM;GARMIN;Эхолоты;ECHOMAP;84990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;SideVü, сенсорный.
+212;GARMIN-212;REF-0212;Garmin ECHOMAP UHD2 92sv + GT56-TM GT56-TM;GARMIN;Эхолоты;ECHOMAP;109990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"9"", UHD + SideVü, топ."
+213;GARMIN-213;REF-0213;Garmin ECHOMAP Ultra 102sv + GT56UHD-TM GT56UHD-TM;GARMIN;Эхолоты;ECHOMAP;149990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"10"", LiveScope-совместим."
+214;GARMIN-214;REF-0214;Garmin ECHOMAP Ultra 122sv + GT56UHD-TM GT56UHD-TM;GARMIN;Эхолоты;ECHOMAP;189990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;"12"", флагман картплоттера."
+215;GARMIN-215;REF-0215;Garmin Striker Cast GPS С GPS;GARMIN;Эхолоты;Striker;12990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Забрасываемый сонар + GPS.
+216;GARMIN-216;REF-0216;Garmin Striker Cast GPS Без GPS;GARMIN;Эхолоты;Striker;9990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Забрасываемый сонар + GPS.
+217;GARMIN-217;REF-0217;Garmin Panoptix LiveScope Plus LVS34 + GLS10 LVS34 система;GARMIN;Эхолоты;Panoptix;159990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Живое сканирование, LVS34.
+218;GARMIN-218;REF-0218;Garmin Panoptix LiveScope Plus LVS34 + GLS10 LVS62 XR глубоководный;GARMIN;Эхолоты;Panoptix;199990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Живое сканирование, LVS34.
+219;GARMIN-219;REF-0219;Garmin Panoptix LiveScope LVS32 + GLS10 LVS32;GARMIN;Эхолоты;Panoptix;119990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Живой сонар, комплект.
+220;GARMIN-220;REF-0220;Датчик Garmin GT20-TM 4-pin 4-pin;GARMIN;Эхолоты;Датчики;14990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Транцевый CHIRP 77/200 + ClearVü.
+221;GARMIN-221;REF-0221;Датчик Garmin GT20-TM 4-pin 8-pin;GARMIN;Эхолоты;Датчики;16490;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Транцевый CHIRP 77/200 + ClearVü.
+222;GARMIN-222;REF-0222;Датчик Garmin GT52HW-TM Транцевый;GARMIN;Эхолоты;Датчики;32990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Высокочастотный CHIRP + SideVü.
+223;GARMIN-223;REF-0223;Датчик Garmin GT56UHD-TM Транцевый;GARMIN;Эхолоты;Датчики;44990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;UHD + SideVü, топ.
+224;GARMIN-224;REF-0224;Датчик Garmin GT8HW-IH вклеиваемый Вклеиваемый;GARMIN;Эхолоты;Датчики;12990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Вклеиваемый CHIRP.
+225;GARMIN-225;REF-0225;Датчик Garmin GT15M-IH + GT36 Комплект;GARMIN;Эхолоты;Датчики;39990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Комплект вклеиваемых UHD.
+226;GARMIN-226;REF-0226;Крепление Garmin для Striker на транец Универсальное;GARMIN;Эхолоты;Аксессуары;4990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Поворотное крепление.
+227;GARMIN-227;REF-0227;Крепление Garmin для Striker на транец Быстросъёмное;GARMIN;Эхолоты;Аксессуары;7490;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Поворотное крепление.
+228;GARMIN-228;REF-0228;Кабель питания Garmin 4-pin 2 м 2 м;GARMIN;Эхолоты;Аксессуары;2990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Оригинальный кабель.
+229;GARMIN-229;REF-0229;Кабель питания Garmin 4-pin 2 м 6 м;GARMIN;Эхолоты;Аксессуары;4490;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Оригинальный кабель.
+230;GARMIN-230;REF-0230;"Чехол Garmin Striker 5/7 защитный 5""";GARMIN;Эхолоты;Аксессуары;3990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Защита экрана.
+231;GARMIN-231;REF-0231;"Чехол Garmin Striker 5/7 защитный 7/9""";GARMIN;Эхолоты;Аксессуары;4990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Защита экрана.
+232;GARMIN-232;REF-0232;Аккумулятор Garmin 12Ач для эхолота 12 Ач;GARMIN;Эхолоты;Аксессуары;8990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Li-ion бокс.
+233;GARMIN-233;REF-0233;Аккумулятор Garmin 12Ач для эхолота 20 Ач;GARMIN;Эхолоты;Аксессуары;12990;;4;1;0;uploads/catalog/b9d6f4ef6615.jpg;Li-ion бокс.
+234;GARMIN-234;REF-0234;Garmin Edge 130 Plus HRM Bundle HRM Bundle;GARMIN;Велокомпьютеры;Edge;18990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Компактный, пульс в комплекте.
+235;GARMIN-235;REF-0235;Garmin Edge 130 Plus HRM Bundle Solo;GARMIN;Велокомпьютеры;Edge;13990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Компактный, пульс в комплекте.
+236;GARMIN-236;REF-0236;Garmin Edge 540 Solar Solo;GARMIN;Велокомпьютеры;Edge;34990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Solar, ClimbPro, 60 часов.
+237;GARMIN-237;REF-0237;Garmin Edge 540 Solar Sensor Bundle;GARMIN;Велокомпьютеры;Edge;43990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Solar, ClimbPro, 60 часов.
+238;GARMIN-238;REF-0238;Garmin Edge 540 HRM Bundle HRM Bundle;GARMIN;Велокомпьютеры;Edge;32990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Пульс и датчики в комплекте.
+239;GARMIN-239;REF-0239;Garmin Edge 840 Solar Solo;GARMIN;Велокомпьютеры;Edge;44990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Сенсорный + кнопки, solar.
+240;GARMIN-240;REF-0240;Garmin Edge 840 Solar Sensor Bundle;GARMIN;Велокомпьютеры;Edge;53990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Сенсорный + кнопки, solar.
+241;GARMIN-241;REF-0241;Garmin Edge 840 HRM Bundle HRM Bundle;GARMIN;Велокомпьютеры;Edge;42990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Комплект с HRM-Pro.
+242;GARMIN-242;REF-0242;Garmin Edge 1040 Solar Solo;GARMIN;Велокомпьютеры;Edge;54990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Флагман, solar, мульти-GNSS.
+243;GARMIN-243;REF-0243;Garmin Edge 1040 Solar Bundle;GARMIN;Велокомпьютеры;Edge;66990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Флагман, solar, мульти-GNSS.
+244;GARMIN-244;REF-0244;Garmin Edge 1050 Premium Solo;GARMIN;Велокомпьютеры;Edge;59990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Яркий дисплей, динамик, Garmin Pay.
+245;GARMIN-245;REF-0245;Garmin Edge Explore 2 Solo;GARMIN;Велокомпьютеры;Edge;29990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Туринг, карты, сенсорный.
+246;GARMIN-246;REF-0246;Garmin Edge Explore 2 Power Bundle;GARMIN;Велокомпьютеры;Edge;44990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Туринг, карты, сенсорный.
+247;GARMIN-247;REF-0247;Garmin Varia RTL515 Radar + Light RTL515;GARMIN;Велокомпьютеры;Varia;14990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Радар + фонарь.
+248;GARMIN-248;REF-0248;Garmin Varia RTL515 Radar + Light RVR315 без фонаря;GARMIN;Велокомпьютеры;Varia;11990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Радар + фонарь.
+249;GARMIN-249;REF-0249;Garmin Varia UT800 Smart Headlight UT800;GARMIN;Велокомпьютеры;Varia;9990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Умная фара 800 люмен.
+250;GARMIN-250;REF-0250;Garmin Varia Vue Headlight Camera Vue;GARMIN;Велокомпьютеры;Varia;39990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Фара + камера 4K.
+251;GARMIN-251;REF-0251;Garmin Rally RK100 Single Power Meter RK100 Look Keo;GARMIN;Велокомпьютеры;Rally;44990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Ватты, односенсорные.
+252;GARMIN-252;REF-0252;Garmin Rally RK100 Single Power Meter RS100 Shimano;GARMIN;Велокомпьютеры;Rally;46990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Ватты, односенсорные.
+253;GARMIN-253;REF-0253;Garmin Rally RK100 Single Power Meter XC100 SPD;GARMIN;Велокомпьютеры;Rally;46990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Ватты, односенсорные.
+254;GARMIN-254;REF-0254;Garmin Rally RK200 Dual Power Meter RK200;GARMIN;Велокомпьютеры;Rally;79990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Двусторонние ватты.
+255;GARMIN-255;REF-0255;Garmin HRM-Pro Plus Pro Plus;GARMIN;Велокомпьютеры;Датчики;12990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Пульс, динамика бега, ANT+/BLE.
+256;GARMIN-256;REF-0256;Garmin HRM-Pro Plus HRM-Dual;GARMIN;Велокомпьютеры;Датчики;8990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Пульс, динамика бега, ANT+/BLE.
+257;GARMIN-257;REF-0257;Garmin Speed Sensor 2 + Cadence Sensor 2 Комплект;GARMIN;Велокомпьютеры;Датчики;7990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Скорость + каденс.
+258;GARMIN-258;REF-0258;Garmin Speed Sensor 2 + Cadence Sensor 2 По одному;GARMIN;Велокомпьютеры;Датчики;7490;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Скорость + каденс.
+259;GARMIN-259;REF-0259;Garmin Out-front Mount Edge Стандарт;GARMIN;Велокомпьютеры;Крепления;2990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Выносное крепление.
+260;GARMIN-260;REF-0260;Garmin Out-front Mount Edge MTB;GARMIN;Велокомпьютеры;Крепления;3790;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Выносное крепление.
+261;GARMIN-261;REF-0261;Garmin Out-front Mount Edge Aero;GARMIN;Велокомпьютеры;Крепления;4190;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Выносное крепление.
+262;GARMIN-262;REF-0262;Garmin Charge Power Pack Edge 1030+ Power Pack;GARMIN;Велокомпьютеры;Крепления;8990;;4;1;0;uploads/catalog/7ccfea8dd6a3.jpg;Допбатарея для Edge.
+263;GARMIN-263;REF-0263;Garmin GPSMAP 67 67;GARMIN;GPS навигаторы;GPSMAP;44990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Кнопочный, мульти-GNSS, 180 часов.
+264;GARMIN-264;REF-0264;Garmin GPSMAP 67 67i inReach;GARMIN;GPS навигаторы;GPSMAP;64990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Кнопочный, мульти-GNSS, 180 часов.
+265;GARMIN-265;REF-0265;Garmin GPSMAP H1i Plus H1i Plus;GARMIN;GPS навигаторы;GPSMAP;79990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Тактический, inReach, NVG.
+266;GARMIN-266;REF-0266;Garmin GPSMAP 79s Морской 79s;GARMIN;GPS навигаторы;GPSMAP;32990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Плавучий, морской.
+267;GARMIN-267;REF-0267;Garmin GPSMAP 79s Морской 79sc с картами;GARMIN;GPS навигаторы;GPSMAP;40990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Плавучий, морской.
+268;GARMIN-268;REF-0268;Garmin Montana 700 700;GARMIN;GPS навигаторы;Montana;59990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;"Сенсорный 5"", карты Topo."
+269;GARMIN-269;REF-0269;Garmin Montana 700 700i inReach;GARMIN;GPS навигаторы;Montana;84990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;"Сенсорный 5"", карты Topo."
+270;GARMIN-270;REF-0270;Garmin Montana 700 750i с камерой;GARMIN;GPS навигаторы;Montana;94990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;"Сенсорный 5"", карты Topo."
+271;GARMIN-271;REF-0271;Garmin eTrex SE SE;GARMIN;GPS навигаторы;eTrex;18990;;4;1;0;uploads/catalog/fd4a8e81c7c3.jpg;Компактный, 168 часов.
+272;GARMIN-272;REF-0272;Garmin eTrex SE 32x с картами;GARMIN;GPS навигаторы;eTrex;27990;;4;1;0;uploads/catalog/fd4a8e81c7c3.jpg;Компактный, 168 часов.
+273;GARMIN-273;REF-0273;Garmin eTrex SE 22x;GARMIN;GPS навигаторы;eTrex;15990;;4;1;0;uploads/catalog/fd4a8e81c7c3.jpg;Компактный, 168 часов.
+274;GARMIN-274;REF-0274;Garmin Alpha 200i K 5 Bundle K 5 Bundle;GARMIN;GPS навигаторы;Alpha;89990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Охота + inReach, 5 ошейников.
+275;GARMIN-275;REF-0275;Garmin Alpha 200i K 5 Bundle Solo;GARMIN;GPS навигаторы;Alpha;59990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Охота + inReach, 5 ошейников.
+276;GARMIN-276;REF-0276;Garmin Alpha 300 + TT25 Bundle TT25 Bundle;GARMIN;GPS навигаторы;Alpha;109990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Новый Alpha, сенсорный.
+277;GARMIN-277;REF-0277;Garmin Alpha 300 + TT25 Bundle Solo;GARMIN;GPS навигаторы;Alpha;74990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Новый Alpha, сенсорный.
+278;GARMIN-278;REF-0278;Garmin Alpha 300i + TT25 Bundle TT25 Bundle;GARMIN;GPS навигаторы;Alpha;129990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Alpha + inReach.
+279;GARMIN-279;REF-0279;Garmin TT25 Collar TT25;GARMIN;GPS навигаторы;Ошейники;32990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Ошейник с GPS/ГЛОНАСС.
+280;GARMIN-280;REF-0280;Garmin TT25 Collar T 20;GARMIN;GPS навигаторы;Ошейники;27990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Ошейник с GPS/ГЛОНАСС.
+281;GARMIN-281;REF-0281;Garmin TT25 Collar K 5x;GARMIN;GPS навигаторы;Ошейники;35990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Ошейник с GPS/ГЛОНАСС.
+282;GARMIN-282;REF-0282;Garmin Astro 430 + T5 Bundle T5 Bundle;GARMIN;GPS навигаторы;Astro;64990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Слежение за собаками.
+283;GARMIN-283;REF-0283;Garmin inReach Mini 2 Mini 2;GARMIN;GPS навигаторы;inReach;39990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Спутниковый SOS, 14 дней.
+284;GARMIN-284;REF-0284;Garmin inReach Mini 2 Mini 2 Marine;GARMIN;GPS навигаторы;inReach;44990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Спутниковый SOS, 14 дней.
+285;GARMIN-285;REF-0285;Garmin inReach Messenger Messenger;GARMIN;GPS навигаторы;inReach;29990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Сообщения вне сети.
+286;GARMIN-286;REF-0286;Garmin inReach Messenger Messenger Plus;GARMIN;GPS навигаторы;inReach;37990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Сообщения вне сети.
+287;GARMIN-287;REF-0287;Garmin inReach SE+ SE+;GARMIN;GPS навигаторы;inReach;34990;;4;1;0;uploads/catalog/117ad77b91d1.jpg;Экран, SOS, трекинг.
+288;GARMIN-288;REF-0288;Garmin vivoactive 5 Metallic Navy Metallic Navy;GARMIN;Фитнес-трекеры;vívoactive;24900;;4;1;0;uploads/catalog/e36e28f939b8.jpg;AMOLED, Body Battery, 11 дней.
+289;GARMIN-289;REF-0289;Garmin vivoactive 5 Metallic Navy Black;GARMIN;Фитнес-трекеры;vívoactive;24900;;4;1;0;uploads/catalog/e36e28f939b8.jpg;AMOLED, Body Battery, 11 дней.
+290;GARMIN-290;REF-0290;Garmin vivoactive 5 Metallic Navy Ivory;GARMIN;Фитнес-трекеры;vívoactive;25400;;4;1;0;uploads/catalog/153b0d88851f.jpg;AMOLED, Body Battery, 11 дней.
+291;GARMIN-291;REF-0291;Garmin Venu Sq 2 Music French Grey French Grey;GARMIN;Фитнес-трекеры;Venu;23990;;4;1;0;uploads/catalog/e36e28f939b8.jpg;Музыка, AMOLED, сон.
+292;GARMIN-292;REF-0292;Garmin Venu Sq 2 Music French Grey Shadow Grey;GARMIN;Фитнес-трекеры;Venu;23990;;4;1;0;uploads/catalog/929de68596eb.jpg;Музыка, AMOLED, сон.
+293;GARMIN-293;REF-0293;Garmin vivomove Trend Black Black;GARMIN;Фитнес-трекеры;vivomove;26990;;4;1;0;uploads/catalog/153b0d88851f.jpg;Аналог + скрытый дисплей.
+294;GARMIN-294;REF-0294;Garmin vivomove Trend Black Cream;GARMIN;Фитнес-трекеры;vivomove;27490;;4;1;0;uploads/catalog/153b0d88851f.jpg;Аналог + скрытый дисплей.
+295;GARMIN-295;REF-0295;Garmin vivomove Sport Black Black;GARMIN;Фитнес-трекеры;vivomove;19990;;4;1;0;uploads/catalog/153b0d88851f.jpg;Гибрид, скрытый дисплей.
+296;GARMIN-296;REF-0296;Garmin vivomove Sport Black Cocoa;GARMIN;Фитнес-трекеры;vivomove;19990;;4;1;0;uploads/catalog/153b0d88851f.jpg;Гибрид, скрытый дисплей.
+297;GARMIN-297;REF-0297;Garmin vivomove Sport Black White;GARMIN;Фитнес-трекеры;vivomove;19990;;4;1;0;uploads/catalog/153b0d88851f.jpg;Гибрид, скрытый дисплей.
+298;GARMIN-298;REF-0298;Garmin vivomove Luxe Gold Black Gold Black;GARMIN;Фитнес-трекеры;vivomove;44990;;4;1;0;uploads/catalog/153b0d88851f.jpg;Сапфир, сталь, премиум.
+299;GARMIN-299;REF-0299;Garmin vivosmart 5 Black S/M Black S/M;GARMIN;Фитнес-трекеры;vivosmart;14990;;4;1;0;uploads/catalog/153b0d88851f.jpg;Браслет, сон, Pulse Ox.
+300;GARMIN-300;REF-0300;Garmin vivosmart 5 Black S/M White L;GARMIN;Фитнес-трекеры;vivosmart;15490;;4;1;0;uploads/catalog/153b0d88851f.jpg;Браслет, сон, Pulse Ox.
+301;GARMIN-301;REF-0301;Garmin vivosmart 5 Black S/M Cool Mint;GARMIN;Фитнес-трекеры;vivosmart;15490;;4;1;0;uploads/catalog/e36e28f939b8.jpg;Браслет, сон, Pulse Ox.
+302;GARMIN-302;REF-0302;Garmin Lily 2 Classic Cream Gold Cream Gold;GARMIN;Фитнес-трекеры;Lily;24990;;4;1;0;uploads/catalog/05faaf765e6d.jpg;Женские, скрытый дисплей.
+303;GARMIN-303;REF-0303;Garmin Lily 2 Classic Cream Gold Dark Bronze;GARMIN;Фитнес-трекеры;Lily;25990;;4;1;0;uploads/catalog/05faaf765e6d.jpg;Женские, скрытый дисплей.
+304;GARMIN-304;REF-0304;Garmin Lily 2 Active Lunar Gold Bone Lunar Gold Bone;GARMIN;Фитнес-трекеры;Lily;27500;;4;1;0;uploads/catalog/05faaf765e6d.jpg;Active: GPS, спорт.
+305;GARMIN-305;REF-0305;Garmin Lily 2 Active Lunar Gold Bone Jasmine Green;GARMIN;Фитнес-трекеры;Lily;28000;;4;1;0;uploads/catalog/05faaf765e6d.jpg;Active: GPS, спорт.
+306;GARMIN-306;REF-0306;Garmin Bounce Black Kids Black;GARMIN;Фитнес-трекеры;Bounce;14990;;4;1;0;uploads/catalog/e36e28f939b8.jpg;Детские, LTE, SOS.
+307;GARMIN-307;REF-0307;Garmin Bounce Black Kids Lilac;GARMIN;Фитнес-трекеры;Bounce;14990;;4;1;0;uploads/catalog/e36e28f939b8.jpg;Детские, LTE, SOS.
+308;GARMIN-308;REF-0308;Garmin Descent G1 Solar Hurricane Hurricane;GARMIN;Дайвинг компьютеры;Descent;44990;;4;1;0;uploads/catalog/105a631e64ce.jpg;Solar, 200 м, MIL-STD.
+309;GARMIN-309;REF-0309;Garmin Descent G1 Solar Hurricane Black;GARMIN;Дайвинг компьютеры;Descent;44990;;4;1;0;uploads/catalog/0253abaf21c3.jpg;Solar, 200 м, MIL-STD.
+310;GARMIN-310;REF-0310;Garmin Descent G1 Solar Ocean Edition Azure;GARMIN;Дайвинг компьютеры;Descent;47990;;4;1;0;uploads/catalog/3b5381df9988.jpg;Переработанный пластик.
+311;GARMIN-311;REF-0311;Garmin Descent Mk2 Stainless Steel Steel;GARMIN;Дайвинг компьютеры;Descent;79990;;4;1;0;uploads/catalog/105a631e64ce.jpg;Титан? Сталь, 6 режимов.
+312;GARMIN-312;REF-0312;Garmin Descent Mk2S Carbon Grey Carbon Grey;GARMIN;Дайвинг компьютеры;Descent;69990;;4;1;0;uploads/catalog/0253abaf21c3.jpg;Компактный 43 мм.
+313;GARMIN-313;REF-0313;Garmin Descent Mk3 43 мм Stainless Fog Grey;GARMIN;Дайвинг компьютеры;Descent;95890;;4;1;0;uploads/catalog/3b5381df9988.jpg;AMOLED, 200 м.
+314;GARMIN-314;REF-0314;Garmin Descent Mk3 51 мм Carbon Grey DLC Carbon Grey;GARMIN;Дайвинг компьютеры;Descent;109990;;4;1;0;uploads/catalog/105a631e64ce.jpg;Крупный, фонарик.
+315;GARMIN-315;REF-0315;Garmin Descent Mk3i 43 мм Bronze Titanium Bronze;GARMIN;Дайвинг компьютеры;Descent;115260;;4;1;0;uploads/catalog/0253abaf21c3.jpg;SubWave, титан.
+316;GARMIN-316;REF-0316;Дайвинг компьютер Garmin Descent Mk3i 51 мм Carbon Grey Carbon Grey;GARMIN;Дайвинг компьютеры;Descent;125350;;4;1;1;uploads/catalog/3b5381df9988.jpg;SubWave сонар, 200 м, AMOLED.
+317;GARMIN-317;REF-0317;Garmin Descent X50i Large Format Black;GARMIN;Дайвинг компьютеры;Descent;91770;;4;1;0;uploads/catalog/105a631e64ce.jpg;Большой формат, техно.
+318;GARMIN-318;REF-0318;Трансмиттер Garmin Descent T2 T2;GARMIN;Дайвинг компьютеры;Descent;44990;;4;1;0;uploads/catalog/0253abaf21c3.jpg;Давление баллона, SubWave.
+319;GARMIN-319;REF-0319;Трансмиттер Garmin Descent T1 T1;GARMIN;Дайвинг компьютеры;Descent;39990;;4;1;0;uploads/catalog/3b5381df9988.jpg;Первое поколение SubWave.
+320;GARMIN-320;REF-0320;Garmin Alpha 200 + TT15X Bundle TT15X Bundle;GARMIN;Охота и дрессировка;Alpha;79990;;4;1;0;uploads/catalog/c1a51daed239.jpg;Навигатор + ошейник.
+321;GARMIN-321;REF-0321;Garmin Alpha 300 + TT25 Collar Bundle TT25 Bundle;GARMIN;Охота и дрессировка;Alpha;104990;;4;1;0;uploads/catalog/c1a51daed239.jpg;Флагман охоты.
+322;GARMIN-322;REF-0322;Garmin TT25 Collar Охотничий TT25;GARMIN;Охота и дрессировка;Ошейники;32990;;4;1;0;uploads/catalog/c1a51daed239.jpg;GPS/ГЛОНАСС ошейник.
+323;GARMIN-323;REF-0323;Garmin T 20 Collar T 20;GARMIN;Охота и дрессировка;Ошейники;27990;;4;1;0;uploads/catalog/c1a51daed239.jpg;Лёгкий ошейник.
+324;GARMIN-324;REF-0324;Garmin Astro 430 + T5X Bundle T5X Bundle;GARMIN;Охота и дрессировка;Astro;59990;;4;1;0;uploads/catalog/c1a51daed239.jpg;Классика слежения.
+325;GARMIN-325;REF-0325;Garmin Astro 430 + T5X Bundle Solo;GARMIN;Охота и дрессировка;Astro;34990;;4;1;0;uploads/catalog/c1a51daed239.jpg;Классика слежения.
+326;GARMIN-326;REF-0326;Garmin DriveTrack 71 71;GARMIN;Охота и дрессировка;DriveTrack;44990;;4;1;0;uploads/catalog/c1a51daed239.jpg;Авто + Alpha в паре.
+327;GARMIN-327;REF-0327;"Garmin Tread 2 8"" Overland 8""";GARMIN;Охота и дрессировка;Tread;89990;;4;1;0;uploads/catalog/c1a51daed239.jpg;Внедорожная навигация.
+328;GARMIN-328;REF-0328;Garmin PRO 550 Plus TT15 Bundle TT15 Bundle;GARMIN;Охота и дрессировка;PRO;54990;;4;1;0;uploads/catalog/c1a51daed239.jpg;Дрессировка + GPS.
+329;GARMIN-329;REF-0329;Garmin HRM-Dual Dual;GARMIN;Пульсометры;HRM;8990;;4;1;0;uploads/catalog/hrm-dual.jpg;ANT+/BLE, базовый.
+330;GARMIN-330;REF-0330;Garmin HRM-Pro Plus;GARMIN;Пульсометры;HRM;12990;;4;1;1;uploads/catalog/hrm-600.jpg;Динамика бега, память.
+331;GARMIN-331;REF-0331;Garmin HRM-Fit White White;GARMIN;Пульсометры;HRM;16990;;4;1;0;uploads/catalog/hrm-600.jpg;Женский, на бюстгальтер.
+332;GARMIN-332;REF-0332;Garmin HRM-Fit White Black;GARMIN;Пульсометры;HRM;16990;;4;1;0;uploads/catalog/hrm-600.jpg;Женский, на бюстгальтер.
+333;GARMIN-333;REF-0333;Ремешок Garmin QuickFit 26 мм Black;GARMIN;Аксессуары;QuickFit;5990;;4;1;0;uploads/catalog/strap-26-orange.jpg;Силикон, быстросъём.
+334;GARMIN-334;REF-0334;Ремешок Garmin QuickFit 26 мм Orange;GARMIN;Аксессуары;QuickFit;6490;;4;1;0;uploads/catalog/strap-26-orange.jpg;Силикон, быстросъём.
+335;GARMIN-335;REF-0335;Ремешок Garmin QuickFit 26 мм Green;GARMIN;Аксессуары;QuickFit;6490;;4;1;0;uploads/catalog/strap-26-orange.jpg;Силикон, быстросъём.
+336;GARMIN-336;REF-0336;Ремешок Garmin QuickFit 26 мм Titanium;GARMIN;Аксессуары;QuickFit;11990;;4;1;0;uploads/catalog/strap-26-orange.jpg;Силикон, быстросъём.
+337;GARMIN-337;REF-0337;Ремешок Garmin QuickFit 22 мм Black;GARMIN;Аксессуары;QuickFit;4990;;4;1;0;uploads/catalog/strap-22-orange.jpg;Силикон/нейлон.
+338;GARMIN-338;REF-0338;Ремешок Garmin QuickFit 22 мм Navy;GARMIN;Аксессуары;QuickFit;5390;;4;1;0;uploads/catalog/strap-22-olive.jpg;Силикон/нейлон.
+339;GARMIN-339;REF-0339;Ремешок Garmin QuickFit 22 мм Leather Brown;GARMIN;Аксессуары;QuickFit;7490;;4;1;0;uploads/catalog/strap-22-orange.jpg;Силикон/нейлон.
+340;GARMIN-340;REF-0340;Кабель зарядки Garmin USB-C USB-C 1 м;GARMIN;Аксессуары;Зарядка;2990;;4;1;0;uploads/catalog/1a03db850d60.jpg;Оригинал, 1 м.
+341;GARMIN-341;REF-0341;Кабель зарядки Garmin USB-C USB-A 0.5 м;GARMIN;Аксессуары;Зарядка;2490;;4;1;0;uploads/catalog/1a03db850d60.jpg;Оригинал, 1 м.
+342;GARMIN-342;REF-0342;Защитное стекло Garmin Fenix 7X/8 51 мм 51 мм;GARMIN;Аксессуары;Защита;1490;;4;1;0;uploads/catalog/60612ffd7012.jpg;Комплект 2 шт.
+343;GARMIN-343;REF-0343;Защитное стекло Garmin Fenix 7X/8 51 мм 47 мм;GARMIN;Аксессуары;Защита;1490;;4;1;0;uploads/catalog/60612ffd7012.jpg;Комплект 2 шт.
+344;GARMIN-344;REF-0344;Защитное стекло Garmin Fenix 7X/8 51 мм 43 мм;GARMIN;Аксессуары;Защита;1490;;4;1;0;uploads/catalog/60612ffd7012.jpg;Комплект 2 шт.
+345;GARMIN-345;REF-0345;Чехол Garmin Edge силиконовый Black;GARMIN;Аксессуары;Чехлы;1990;;4;1;0;uploads/catalog/8a692ef52c16.jpg;Для Edge 540/840.
+346;GARMIN-346;REF-0346;Чехол Garmin Edge силиконовый Red;GARMIN;Аксессуары;Чехлы;2290;;4;1;0;https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=900&q=85&auto=format&fit=crop&fm=webp;Для Edge 540/840.
+347;GARMIN-347;REF-0347;Часы Garmin Fenix 9 Pro - 47mm, inReach, Carbon Gray DLC Titanium with Black/Pebble Gray Silicone Band;GARMIN;Спортивные часы;Fenix;147200;;4;1;0;uploads/catalog/cb0bbeb006cb.jpg;Fenix 9 Pro inReach — часы для тех, кто отправляется туда, где заканчивается сотовая связь.  Garmin Fenix 9 Pro inReach — это больше, чем просто спортивные часы. Они созданы для многодневных походов, экспедиций, альпинизма, трейлраннинга, дайвинга и других видов активности, где особенно важны точная навигация, надёжность и длительная автономная работа вдали от цивилизации.  Модель получила принципиально новый дисплей: 1,3-дюймовую AMOLED-матрицу с яркостью до 3000 нит — втрое выше, чем у Fenix 8. Благодаря этому информация остаётся хорошо читаемой даже под ярким солнцем.  Корпус диаметром 43 мм выполнен из нано-формованного титана в оттенке Autumn Gold Titanium и дополнен ремешком Bone Leather Band. Экран защищён прочным сапфировым стеклом.  Объём встроенной памяти увеличен до 64 ГБ, что позволяет загружать карты нескольких стран и хранить до 7000 треков одновременно. Обновлённый картографический движок прокладывает маршруты на 30–40% быстрее.  Среди дополнительных возможностей — встроенный фонарик, датчик глубины до 40 метров, водозащита, динамик и микрофон. Часы также прошли испытания на соответствие военным стандартам США по прочности и надёжности.  Для тренировок предусмотрено более 100 спортивных профилей. За точность позиционирования отвечает мультидиапазонный GNSS с технологией SatIQ, а за мониторинг состояния организма — датчики Elevate 5-го поколения, пульсоксиметр и датчик температуры кожи.  Главная особенность модели — встроенная технология inReach, обеспечивающая спутниковую связь и возможность отправлять сообщения даже там, где нет покрытия мобильной сети.

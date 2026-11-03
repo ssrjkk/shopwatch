@@ -4,7 +4,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
-COPY server.js catalog-export.js sync-pages.js vibe-clean.js products-data.js index.html manifest.json ./
+COPY server.js catalog-export.js cms-bridge.js sync-pages.js vibe-clean.js products-data.js index.html manifest.json robots.txt sitemap.xml ./
+COPY cms ./cms
 COPY public ./public
 RUN mkdir -p /data /data/uploads /app/uploads
 ENV DB_PATH=/data/watchop.db UPLOADS_DIR=/data/uploads PORT=3000

@@ -1,0 +1,95 @@
+# Готовый Docker-стек для запуска Watchop на базе OpenCart 4, WooCommerce или PrestaShop 8
+# совместно с сервером Telegram/MAX ботов (watchop-bot).
+#
+# Запуск с OpenCart:     docker compose -f cms/docker-compose.cms.yml --profile opencart up -d
+# Запуск с WooCommerce:  docker compose -f cms/docker-compose.cms.yml --profile woocommerce up -d
+# Запуск с PrestaShop:   docker compose -f cms/docker-compose.cms.yml --profile prestashop up -d
+
+services:
+  watchop-bot:
+    build: ..
+    container_name: watchop-bot
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../.env
+    volumes:
+      - watchop_bot_data:/data
+
+  cms-db:
+    image: mariadb:10.11
+    container_name: watchop-cms-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: watchop_root_pass
+      MARIADB_DATABASE: watchop_cms
+      MARIADB_USER: watchop
+      MARIADB_PASSWORD: watchop_pass
+    volumes:
+      - cms_db_data:/var/lib/mysql
+
+  opencart:
+    image: bitnami/opencart:4
+    container_name: watchop-opencart
+    profiles: ["opencart"]
+    restart: unless-stopped
+    depends_on:
+      - cms-db
+      - watchop-bot
+    ports:
+      - "8081:8080"
+    environment:
+      OPENCART_HOST: localhost:8081
+      OPENCART_DATABASE_HOST: cms-db
+      OPENCART_DATABASE_PORT_NUMBER: 3306
+      OPENCART_DATABASE_USER: watchop
+      OPENCART_DATABASE_PASSWORD: watchop_pass
+      OPENCART_DATABASE_NAME: watchop_cms
+      WATCHOP_BOT_WEBHOOK: http://watchop-bot:3000/api/webhooks/opencart
+    volumes:
+      - ./opencart/upload:/bitnami/opencart_ext
+
+  woocommerce:
+    image: wordpress:6.6-apache
+    container_name: watchop-woocommerce
+    profiles: ["woocommerce"]
+    restart: unless-stopped
+    depends_on:
+      - cms-db
+      - watchop-bot
+    ports:
+      - "8082:80"
+    environment:
+      WORDPRESS_DB_HOST: cms-db:3306
+      WORDPRESS_DB_USER: watchop
+      WORDPRESS_DB_PASSWORD: watchop_pass
+      WORDPRESS_DB_NAME: watchop_cms
+      WATCHOP_BOT_WEBHOOK: http://watchop-bot:3000/api/webhooks/woocommerce
+    volumes:
+      - ./woocommerce/watchop-tg-max-bridge:/var/www/html/wp-content/plugins/watchop-tg-max-bridge
+
+  prestashop:
+    image: prestashop/prestashop:8.1
+    container_name: watchop-prestashop
+    profiles: ["prestashop"]
+    restart: unless-stopped
+    depends_on:
+      - cms-db
+      - watchop-bot
+    ports:
+      - "8083:80"
+    environment:
+      DB_SERVER: cms-db
+      DB_NAME: watchop_cms
+      DB_USER: watchop
+      DB_PASSWD: watchop_pass
+      PS_INSTALL_AUTO: 1
+      PS_DOMAIN: localhost:8083
+      WATCHOP_BOT_WEBHOOK: http://watchop-bot:3000/api/webhooks/prestashop
+    volumes:
+      - ./prestashop/watchopbridge:/var/www/html/modules/watchopbridge
+
+volumes:
+  watchop_bot_data:
+  cms_db_data:

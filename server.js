@@ -1,3 +1,4 @@
+try { require('./sqlite-compat.js'); } catch (_) {}
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -1655,6 +1656,125 @@ app.post('/api/checkout-started', (req, res) => {
     db.prepare("INSERT INTO checkout_events (session_id, cart_json, total, status) VALUES (?,?,?,'started')").run(sid, JSON.stringify(cart), total);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: 'Не записалось' }); }
+});
+
+
+// ---------- CMS Bridge: WooCommerce / OpenCart 4 / PrestaShop 8 ----------
+let cmsBridge = null;
+try { cmsBridge = require('./cms-bridge'); } catch (_) {}
+
+app.get('/wp-json/wc/v3/products', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM products ORDER BY id ASC').all();
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const perPage = Math.min(100, Math.max(1, parseInt(req.query.per_page, 10) || 20));
+    const slice = rows.slice((page - 1) * perPage, page * perPage);
+    res.setHeader('X-WP-Total', String(rows.length));
+    res.setHeader('X-WP-TotalPages', String(Math.ceil(rows.length / perPage)));
+    res.json(cmsBridge ? slice.map((p) => cmsBridge.toWooCommerceRestProduct(p)) : slice);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/opencart/products', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM products ORDER BY id ASC').all();
+    res.json({
+      engine: 'OpenCart 4.0.2.3',
+      total: rows.length,
+      products: rows.map((p) => ({
+        product_id: p.id,
+        model: 'REF-' + String(p.id).padStart(4, '0'),
+        sku: 'WOP-' + String(p.id).padStart(4, '0'),
+        name: p.name,
+        manufacturer: p.brand,
+        category: p.category,
+        price: p.old_price || p.price,
+        special: p.old_price && p.old_price > p.price ? p.price : null,
+        quantity: p.stock != null ? p.stock : 5,
+        status: p.stock === 0 ? 0 : 1,
+        image: p.image,
+      })),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/prestashop/products', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM products ORDER BY id ASC').all();
+    res.json({
+      engine: 'PrestaShop 8.1',
+      total: rows.length,
+      products: rows.map((p) => ({
+        id: p.id,
+        reference: 'REF-' + String(p.id).padStart(4, '0'),
+        name: p.name,
+        brand: p.brand,
+        category: p.category,
+        price_tax_incl: p.price,
+        wholesale_price: p.old_price || p.price,
+        quantity: p.stock != null ? p.stock : 5,
+        active: p.stock === 0 ? 0 : 1,
+        cover_image: p.image,
+      })),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/cms/export/:engine', (req, res) => {
+  if (!cmsBridge) return res.status(500).json({ error: 'cms-bridge unavailable' });
+  const engine = String(req.params.engine || 'woocommerce').toLowerCase();
+  const rows = db.prepare('SELECT * FROM products ORDER BY id ASC').all();
+  if (engine === 'woocommerce' || engine === 'wc') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="watchop-woocommerce-products.csv"');
+    return res.send(cmsBridge.toWooCommerceCsv(rows));
+  }
+  if (engine === 'opencart' || engine === 'oc') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="watchop-opencart-products.csv"');
+    return res.send(cmsBridge.toOpenCartCsv(rows));
+  }
+  if (engine === 'opencart-sql') {
+    res.setHeader('Content-Type', 'application/sql; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="watchop-opencart-seed.sql"');
+    return res.send(cmsBridge.toOpenCartSql(rows));
+  }
+  if (engine === 'prestashop' || engine === 'ps') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="watchop-prestashop-products.csv"');
+    return res.send(cmsBridge.toPrestaShopCsv(rows));
+  }
+  return res.status(400).json({ error: 'Unsupported CMS engine. Use woocommerce, opencart, opencart-sql, or prestashop' });
+});
+
+['woocommerce', 'opencart', 'prestashop'].forEach((engine) => {
+  app.post('/api/webhooks/' + engine, (req, res) => {
+    const lip = req.ip || req.socket.remoteAddress || 'unknown';
+    if (!lookupAllowed(lip, 60)) return res.status(429).json({ error: 'Too many requests' });
+    try {
+      if (!cmsBridge) return res.status(500).json({ error: 'cms-bridge unavailable' });
+      const norm = cmsBridge.normalizeCmsWebhookOrder(engine, req.body || {});
+      const code = norm.code && /^TG-\d{4,6}$/.test(norm.code) ? norm.code : allocateOrderCode();
+      const customer = {
+        fio: cleanText(norm.customer_name || 'Клиент ' + engine.toUpperCase()).slice(0, 100),
+        phone: cleanText(norm.customer_phone || '').slice(0, 30),
+        email: '',
+        address: cleanText(norm.customer_comment || '').slice(0, 300),
+        delivery: 'СДЭК',
+      };
+      db.prepare('INSERT OR IGNORE INTO orders (order_code, items_json, total, status, customer_json, owner_tg, promo_code, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(code, JSON.stringify(norm.items || []), norm.total || 0, 'Новый', JSON.stringify(customer), null, null, 0);
+      res.json({ ok: true, engine, code, total: norm.total });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
+  });
 });
 
 app.post('/api/order', async (req, res) => {

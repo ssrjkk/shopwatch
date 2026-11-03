@@ -65,9 +65,14 @@ function main() {
   const srcPath = path.join(ROOT, 'public', 'index.html');
   const raw = fs.readFileSync(srcPath, 'utf8');
   const cleaned = normalizeHtml(raw);
-  for (const dst of FILES_TO_SYNC) {
+  for (const dst of [path.join(ROOT, 'index.html'), path.join(ROOT, 'public', 'index.html'), path.join(ROOT, 'public', 'index-classic.html')]) {
     fs.writeFileSync(dst, cleaned, 'utf8');
   }
+  const stealthHtml = cleaned
+    .replace('selection:text-[#07090E] classic-edition">', 'selection:text-[#07090E] stealth-edition">')
+    .replace("heroPaused:false,designEdition:'classic'", "heroPaused:false,designEdition:'stealth'")
+    .replace('<span id="design-switch-label">Дизайн: Светлый</span>', '<span id="design-switch-label">Дизайн: Stealth 3D</span>');
+  fs.writeFileSync(path.join(ROOT, 'public', 'index-stealth.html'), stealthHtml, 'utf8');
   const metrics = syncReadmeCompressionMetrics();
   console.log('[vibe-clean] Normalized HTML synced across index.html & public/*.html');
   console.log('[vibe-clean] Compression metrics updated:', JSON.stringify(metrics));
