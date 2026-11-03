@@ -2393,6 +2393,7 @@ function copyProductLink(id){
   showToast('Ссылка на модель скопирована!');
 }
 
+function foldDia(s){try{return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u0451/g,'\u0435');}catch(e){return String(s||'').toLowerCase();}}
 function searchSuggestions(raw){
   const parsed=parseSearch(raw);
   const q=parsed.q;
@@ -2400,7 +2401,7 @@ function searchSuggestions(raw){
   const seen=new Set();
   for(const p of state.products){
     const sKey='s:'+p.series;
-    if(!seen.has(sKey)&&(!q||p.series.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q))){
+    if(!seen.has(sKey)&&(!q||foldDia(p.series).includes(foldDia(q))||foldDia(p.brand).includes(foldDia(q)))){
       seen.add(sKey);
       const cnt=state.products.filter(x=>x.series===p.series).length;
       out.push({label:`${p.brand} ${p.series}`,query:p.series,count:cnt,type:'series'});

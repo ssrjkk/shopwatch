@@ -1107,6 +1107,6 @@ Garmin Fenix 9 Pro inReach — это больше, чем просто спор
 
 Для тренировок предусмотрено более 100 спортивных профилей. За точность позиционирования отвечает мультидиапазонный GNSS с технологией SatIQ, а за мониторинг состояния организма — датчики Elevate 5-го поколения, пульсоксиметр и датчик температуры кожи.
 
-Главная особенность модели — встроенная технология inReach, обеспечивающая спутниковую связь и возможность отправлять сообщения даже там, где нет покрытия мобильной сети.', 'Fenix', 'Часы Garmin Fenix 9 Pro - 47mm, inReach, Carbon Gray DLC Titanium with Black/Pebble Gray Silicone Band') ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);
+Главная особенность модели — встроенная технология inReach, обеспечивающая спутниковую связь и возможность отправлять сообщения даже там, где нет покрытия мобильной сети.', 'fēnix', 'Часы Garmin Fenix 9 Pro - 47mm, inReach, Carbon Gray DLC Titanium with Black/Pebble Gray Silicone Band') ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);
 INSERT IGNORE INTO oc_product_to_category (product_id, category_id) VALUES (347, 100);
 COMMIT;
