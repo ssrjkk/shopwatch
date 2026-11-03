@@ -377,8 +377,20 @@ ${extractBackupBlock()}
     assert.match(api.lastTo(999).body.text, /нет/i, 'отзыв несуществующего кода — отказ, а не тихая ошибка');
   });
 
-  it('кнопка «Промокоды» прерывает ввод, а не уезжает в него', async () => {
-    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Реквизиты оплаты'));
+  it('красные ценники гасятся и возвращаются одной кнопкой, цены не трогает', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Промокоды'));
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Красные ценники: выкл'), 'по умолчанию подсветка выключена');
+    const priceBefore = api.db.prepare('SELECT price, old_price FROM products WHERE id=1').get();
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Красные ценники: выкл'));
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='promo_highlight'").get().value, '1');
+    assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Красные ценники: вкл'), 'кнопка отражает новое состояние');
+    const priceAfter = api.db.prepare('SELECT price, old_price FROM products WHERE id=1').get();
+    assert.deepEqual(priceAfter, priceBefore, 'переключатель не трогает цены');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Красные ценники: вкл'));
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='promo_highlight'").get().value, '0');
+  });
+
+  it('кнопка «Промокоды» прерывает ввод, а не уезжает в него', async () => {    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Реквизиты оплаты'));
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Изменить реквизиты'));
     assert.ok(api.maxSessions.has('999'));
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Промокоды'));

@@ -358,10 +358,16 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.ok(/aborted|aborted/i.test(HTML) || HTML.includes('8000'), 'таймаут задан');
   });
 
-  it('скидка видна сразу: старая цена зачёркнута, новая — красная', () => {
-    const off = g.productCardHTML({ id: 90003, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Тест со скидкой', price: 50000, old_price: 60000, image: 'x', specs: '' });
-    assert.match(off, /line-through/, 'старая цена зачёркнута');
-    assert.match(off, /text-\[#FF5A5A\]/, 'новая цена красная');
+  it('скидка видна сразу: старая цена зачёркнута всегда, красное — только с подсветкой из админки', () => {
+    const item = { id: 90003, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Тест со скидкой', price: 50000, old_price: 60000, image: 'x', specs: '' };
+    g.state.settings.promo_highlight = '0';
+    const off = g.productCardHTML(item);
+    assert.match(off, /line-through/, 'старая цена зачёркнута серым всегда');
+    assert.doesNotMatch(off, /text-\[#FF5A5A\]/, 'по умолчанию красного нет — ценники нейтральные');
+    g.state.settings.promo_highlight = '1';
+    const on = g.productCardHTML(item);
+    assert.match(on, /text-\[#FF5A5A\]/, 'админ вернул красные ценники одной кнопкой');
+    g.state.settings.promo_highlight = '0';
     const full = g.productCardHTML({ id: 90004, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Тест без скидки', price: 50000, image: 'x', specs: '' });
     assert.doesNotMatch(full, /text-\[#FF5A5A\]/, 'без скидки красного нет');
   });

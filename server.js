@@ -218,16 +218,21 @@ function showTgAdminsPanel(ctx) {
 }
 
 function tgPromoKb() {
+  const hl = getSetting('promo_highlight') === '1';
   return Markup.inlineKeyboard([
     [Markup.button.callback('Добавить промокод', 'promo_add'), Markup.button.callback('Убрать промокод', 'promo_rm')],
-    [Markup.button.callback('Обновить список', 'promo_list')]
+    [Markup.button.callback('Обновить список', 'promo_list'), Markup.button.callback(hl ? 'Красные ценники: вкл' : 'Красные ценники: выкл', 'promo_hl')]
   ]);
+}
+
+function promoHighlightLine() {
+  return `Красные ценники на витрине: ${getSetting('promo_highlight') === '1' ? 'ВКЛ (как было)' : 'ВЫКЛ (нейтральные цены)'}. Переключается кнопкой ниже, цены и скидки не трогает.`;
 }
 
 function showTgPromoPanel(ctx, note) {
   const list = promoRulesText(getSetting('promo_codes'));
   ctx.reply(
-    `${note ? note + '\n\n' : ''}${list}\n\nПравило задаётся строкой «КОД ПРОЦЕНТ [БРЕНД] [minСУММА]» — например «VIP20 20 GARMIN min100000». Скидку считает сервер по ценам своей базы, а клиент присылает только код: подделать сумму с сайта нельзя.`,
+    `${note ? note + '\n\n' : ''}${list}\n\n${promoHighlightLine()}\n\nПравило задаётся строкой «КОД ПРОЦЕНТ [БРЕНД] [minСУММА]» — например «VIP20 20 GARMIN min100000». Скидку считает сервер по ценам своей базы, а клиент присылает только код: подделать сумму с сайта нельзя.`,
     tgPromoKb()
   );
 }
@@ -337,6 +342,7 @@ const defaultSettings = {
   store_design: 'stealth',
   payment_details: 'СБП / Т-Банк / Сбер: +7 (900) 000-00-00 (Татьяна Ю.)\nВ комментарии к переводу укажите номер заказа.',
   show_payment: '1',
+  promo_highlight: '0',
   last_order_num: '1175'
 };
 
@@ -2833,6 +2839,12 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     ctx.answerCbQuery();
     showTgPromoPanel(ctx);
   });
+  tgBot.action('promo_hl', (ctx) => {
+    if (!isTgAdmin(ctx)) return;
+    ctx.answerCbQuery();
+    setSetting('promo_highlight', getSetting('promo_highlight') === '1' ? '0' : '1');
+    showTgPromoPanel(ctx, `Красные ценники ${getSetting('promo_highlight') === '1' ? 'ВКЛЮЧЕНЫ' : 'ВЫКЛЮЧЕНЫ'}.`);
+  });
   tgBot.action('adm_add_id', (ctx) => {
     if (!isTgAdmin(ctx)) return;
     ctx.answerCbQuery();
@@ -2997,14 +3009,15 @@ function maxAdminsKb() {
 }
 
 function maxPromoKb() {
-  return [['Добавить промокод', 'Убрать промокод'], ['Отмена']];
+  const hl = getSetting('promo_highlight') === '1';
+  return [['Добавить промокод', 'Убрать промокод'], [hl ? 'Красные ценники: вкл' : 'Красные ценники: выкл'], ['Отмена']];
 }
 
 const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках'], ['Статистика', 'Журнал'], ['Промокоды', 'Дизайн'], ['Бекап БД', 'Отмена']];
 const MAX_CANCEL = [['Отмена']];
 // Кнопки меню и навигации админки. Пока бот ждёт значение поля или шаг мастера,
 // нажатие такой кнопки обязано прервать ввод, а не уехать в него текстом.
-const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Категории', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Статистика', 'Журнал', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Дизайн', 'Дизайн: Stealth', 'Дизайн: Classic', 'Бекап БД', 'Добавить промокод', 'Убрать промокод', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
+const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Категории', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Статистика', 'Журнал', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Дизайн', 'Дизайн: Stealth', 'Дизайн: Classic', 'Бекап БД', 'Добавить промокод', 'Убрать промокод', 'Красные ценники: вкл', 'Красные ценники: выкл', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
 function maxIsMenuCommand(text) {
   const t = String(text || '').trim();
   return MAX_MENU_COMMANDS.has(t)
@@ -3599,6 +3612,10 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   if (text === 'Убрать промокод') {
     maxSessions.set(senderId, { step: 'max_promo_rm' });
     return sendMaxMessage(senderId, 'Какой промокод убрать? Пришли его код.', MAX_CANCEL);
+  }
+  if (text === 'Красные ценники: вкл' || text === 'Красные ценники: выкл') {
+    setSetting('promo_highlight', getSetting('promo_highlight') === '1' ? '0' : '1');
+    return sendMaxMessage(senderId, `Красные ценники ${getSetting('promo_highlight') === '1' ? 'ВКЛЮЧЕНЫ' : 'ВЫКЛЮЧЕНЫ'}. Цены и скидки не тронуты.`, maxPromoKb());
   }
   if (text === 'Добавить по ID') {
     maxSessions.set(senderId, { step: 'max_add_admin' });
