@@ -5,7 +5,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { chromium } = require('D:/Dev/Temp/opencode/shot/node_modules/playwright');
+let chromium;
+try {
+  chromium = require('playwright').chromium;
+} catch (e) {
+  chromium = require('D:/Dev/Temp/opencode/shot/node_modules/playwright').chromium;
+}
 
 describe('E2E демо-витрина: каталог → корзина → промо → оформление', () => {
   const PORT = 3221;
@@ -53,8 +58,8 @@ describe('E2E демо-витрина: каталог → корзина → п�
     assert.match(await page.textContent('#demo-banner'), /Демо-проект/, label + ': banner');
     // пагинация: 10 по умолчанию
     assert.equal(await page.locator('#products-grid > *').count(), 10, label + ': 10 cards');
-    // добавить в корзину
-    await page.locator('[data-cart-btn]').first().click();
+    // добавить в корзину (клик через JS: устойчиво к липкой шапке)
+    await page.evaluate(() => { const b = document.querySelector('[data-cart-btn]'); if (b) b.click(); });
     await page.waitForFunction(() => document.getElementById('cart-badge').textContent.trim() === '1', null, { timeout: 10000 });
     // показать ещё — без скролла страницы (клик через JS, без автоскролла драйвера)
     const y0 = await page.evaluate(() => window.scrollY);
@@ -65,7 +70,12 @@ describe('E2E демо-витрина: каталог → корзина → п�
     await page.goto(`${BASE}/#/cart`, { waitUntil: 'load', timeout: 45000 });
     await page.waitForSelector('#cart-list > *', { timeout: 15000 });
     assert.equal(await page.locator('#cart-list > *').count(), 1, label + ': one cart row');
-    await page.locator('#cart-list button:has-text("+")').first().click();
+    const plus = await page.evaluate(() => {
+      const btns = [...document.querySelectorAll('#cart-list button')].filter((b) => b.textContent.trim() === '+');
+      if (btns[0]) { btns[0].click(); return true; }
+      return false;
+    });
+    assert.ok(plus, label + ': qty button present');
     await page.waitForFunction(() => document.getElementById('cart-badge').textContent.trim() === '2', null, { timeout: 10000 });
     // промокод
     await page.locator('#promo-input').fill('WATCH10');
