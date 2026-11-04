@@ -3191,7 +3191,7 @@ async function maxClientOrderView(senderId, senderName, rawCode, text) {
     return true;
   }
   if (order.owner_max && String(order.owner_max) !== String(senderId)) {
-    await sendMaxMessage(senderId, 'Заказ ' + code + ' оформлен другим покупателем. Состав и реквизиты пришлёт менеджер.');
+    await sendMaxMessage(senderId, 'Заказ ' + code + ' оформлен другим покупателем (демо-режим).');
     return true;
   }
   if (!maxOrderPhoneLast4(order)) {
@@ -3211,7 +3211,7 @@ async function maxShowClientOrder(senderId, senderName, code) {
   const items = JSON.parse((db.prepare('SELECT items_json FROM orders WHERE order_code = ?').get(code) || {}).items_json || '[]');
   const row = db.prepare('SELECT total FROM orders WHERE order_code = ?').get(code) || { total: 0 };
   const list = items.map((i) => '• ' + i.name + ' (' + Number(i.price).toLocaleString('ru-RU') + ' ₽)').join('\n');
-  await sendMaxMessage(senderId, 'Заказ ' + code + ' принят!\n\n' + list + '\nК оплате: ' + Number(row.total).toLocaleString('ru-RU') + ' ₽\n\nРеквизиты:\n' + getSetting('payment_details'));
+  await sendMaxMessage(senderId, 'Заказ ' + code + ' принят!\n\n' + list + '\nИтого: ' + Number(row.total).toLocaleString('ru-RU') + ' ₽\n\nДемо-режим: реквизитов нет, оплата не принимается.');
 }
 async function answerMaxOrderAuth(senderId, senderName, digits) {
   const pend = pendingMaxOrderAuth.get(String(senderId));
@@ -3232,7 +3232,7 @@ async function answerMaxOrderAuth(senderId, senderName, digits) {
   }
   if (pend.tries >= 3) {
     pendingMaxOrderAuth.delete(String(senderId));
-    await sendMaxMessage(senderId, 'Трижды мимо — проверка сброшена. Напишите номер заявки заново или обратитесь к менеджеру.', MAX_MENU);
+    await sendMaxMessage(senderId, 'Трижды мимо — проверка сброшена. Напишите номер заявки заново (демо-режим, менеджеров нет).', MAX_MENU);
     return true;
   }
   await sendMaxMessage(senderId, 'Не совпало с телефоном из заказа. Осталось попыток: ' + (3 - pend.tries) + '.');
@@ -3367,7 +3367,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
 
   if (!isMaxAdmin) {
     await maxNotifyAdmin(`Сообщение в MAX от ${senderName} (${senderId}):\n${text || '(без текста)'}`);
-    return sendMaxMessage(senderId, 'Здравствуйте! Напишите номер заказа (например, TG-1176) или дождитесь менеджера.');
+    return sendMaxMessage(senderId, 'Здравствуйте! Это демо-витрина «Вектор» (учебный проект). Напишите номер заказа (например, TG-1176).');
   }
 
   if (text === 'Статистика' || text === '/stats') {

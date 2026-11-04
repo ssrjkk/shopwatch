@@ -237,10 +237,10 @@ ${extractBackupBlock()}
     assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('В сборку TG-9000'));
   });
 
-  it('client lookup returns order + requisites, forwards to admin', async () => {
+  it('client lookup returns order + demo note, forwards to admin', async () => {
     await api.handleMaxUpdate(api.upd(555, 'Ivan', 'TG-9000'));
     const m = api.lastTo(555);
-    assert.ok(m.body.text.includes('К оплате') && m.body.text.includes('СБП 123'));
+    assert.ok(m.body.text.includes('Демо-режим') && !m.body.text.includes('СБП 123'));
     assert.ok(api.lastTo(999).body.text.includes('по заказу TG-9000'));
     await api.handleMaxUpdate(api.upd(555, 'Ivan', 'а есть скидка?'));
     assert.ok(api.lastTo(999).body.text.includes('а есть скидка?'));
@@ -275,9 +275,9 @@ ${extractBackupBlock()}
     assert.match(api.lastTo(555).body.text, /другим покупателем/);
     assert.equal(api.lastTo(555).body.text.includes('СБП 123'), false, 'реквизиты чужому не отдаём');
     await api.handleMaxUpdate(api.upd(444, 'Vera', 'TG-9000'));
-    assert.match(api.lastTo(444).body.text, /К оплате/);
+    assert.match(api.lastTo(444).body.text, /Демо-режим/);
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'TG-9000'));
-    assert.match(api.lastTo(999).body.text, /К оплате/);
+    assert.match(api.lastTo(999).body.text, /Демо-режим/);
     api.db.prepare("UPDATE orders SET owner_max = NULL WHERE order_code = 'TG-9000'").run();
   });
 
