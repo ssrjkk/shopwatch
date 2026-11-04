@@ -731,7 +731,7 @@ function insertImportedRows(conn, rows) {
 const ADMIN_PAGE = 8;
 const ADMIN_ORDER_PAGE = 6;
 const PRODUCT_FIELD_LABELS = { name: 'Название', brand: 'Бренд', series: 'Серия', category: 'Полка', price: 'Цена', stock: 'Наличие', specs: 'Описание', image: 'Фото' };
-const ORDER_STATUS_SET = ['Новый', 'Новый (сайт)', 'Trade-In', 'Trade-In (сайт)', 'В сборке', 'Оплачен', 'Отменен'];
+const ORDER_STATUS_SET = ['Новый', 'Новый (сайт)', 'Trade-In', 'Trade-In (сайт)', 'Заявка на звонок', 'Оценка Trade-In', 'В сборке', 'Оплачен', 'Отменен'];
 // Кнопки статусов в обоих ботах: короткий ключ -> значение в базе
 const ORDER_STATUS_BUTTONS = { neu: 'Новый', trade: 'Trade-In', work: 'В сборке', paid: 'Оплачен', cancel: 'Отменен' };
 
@@ -1021,7 +1021,7 @@ function adminSummary(conn, settings) {  const shelves = catalogShelves(conn);
   const discounted = Number(conn.prepare('SELECT COUNT(*) AS c FROM products WHERE old_price > price').get().c);
   const orders = Number(conn.prepare('SELECT COUNT(*) AS c FROM orders').get().c);
   const week = Number(conn.prepare("SELECT COUNT(*) AS c FROM orders WHERE created_at >= datetime('now','-7 days')").get().c);
-  const waiting = Number(conn.prepare("SELECT COUNT(*) AS c FROM orders WHERE status IN ('Новый','Новый (сайт)','Trade-In','Trade-In (сайт)')").get().c);
+  const waiting = Number(conn.prepare("SELECT COUNT(*) AS c FROM orders WHERE status IN ('Новый','Новый (сайт)','Trade-In','Trade-In (сайт)','Заявка на звонок','Оценка Trade-In')").get().c);
   const paid = Number(conn.prepare("SELECT COALESCE(SUM(total),0) AS s FROM orders WHERE status = 'Оплачен'").get().s);
   const lines = [
     'Сводка сайта',

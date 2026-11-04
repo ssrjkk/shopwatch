@@ -274,7 +274,7 @@ younger than 24 hours, otherwise `403`).
 
 ## Tests
 
-`npm test` — 288 tests in 34 suites, the built-in Node runner (nothing to install):
+`npm test` — 289 tests in 35 suites, the built-in Node runner (nothing to install):
 
 - `tests/api.test.js` — a live server on a temporary port with an empty database: state (300+ products), order `TG-XXXX`, anti-spam `429`, `400`/`403`, price recalculation, customer data, `healthz`, static files, compression and `immutable` caching of uploads, promo codes: `/api/promo-check` answers with the server's own arithmetic, an order carries the discounted total, an unknown code is refused, a callback request gets a real order number and is findable in the cabinet
 - `tests/promo.test.js` — the promo engine as pure functions: rules parse and serialize back without loss, garbage and out-of-range percents never become a discount, a brand code counts only that brand's lines in a mixed cart, the minimum cart is inclusive, a code that does not apply leaves the full sum and a readable reason, prices come from the lookup and not from the request, the discount is capped at the cart total, and the admin list prints code, percent and conditions

@@ -233,3 +233,20 @@ describe('Админка: что можно переписывать в наст
   });
 });
 
+describe('Админка: заявки на связь', () => {
+  it('звонок и оценка Trade-In видны в фильтре и считаются в «ждут действия»', () => {
+    const db = memdb();
+    for (const s of ['Заявка на звонок', 'Оценка Trade-In']) {
+      assert.ok(api.ORDER_STATUS_SET.includes(s), `${s} нет в словаре статусов — фильтр админки её не покажет`);
+    }
+    const mk = (code, status, fio, phone) => db
+      .prepare('INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES (?, ?, 0, ?, ?)')
+      .run(code, JSON.stringify([{ id: 0, name: 'Заявка на связь', price: 0, qty: 1 }]), status, JSON.stringify({ fio, phone }));
+    mk('TG-1900', 'Заявка на звонок', 'Мария', '+7 900 000-11-22');
+    mk('TG-1901', 'Оценка Trade-In', 'Иван', '+7 900 000-33-44');
+    assert.deepEqual(api.ordersPage(db, { status: 'Заявка на звонок' }).items.map((r) => r.order_code), ['TG-1900']);
+    assert.deepEqual(api.ordersPage(db, { status: 'Оценка Trade-In' }).items.map((r) => r.order_code), ['TG-1901']);
+    // в memdb три заявки, две из них ждут действия — обе заявки на связь добавляются к ним
+    assert.match(flat(api.adminSummary(db, { show_payment: '0' })), /Заявок: 5 · за 7 дней: 5 · ждут действия: 4/);
+  });
+});
