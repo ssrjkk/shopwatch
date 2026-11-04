@@ -1662,6 +1662,8 @@ INSERT INTO oc_product (product_id, model, sku, quantity, stock_status_id, image
 INSERT INTO oc_product_description (product_id, language_id, name, description, tag, meta_title) VALUES (219, 1, 'Garmin Panoptix LiveScope LVS32 + GLS10 LVS32', 'Живой сонар, комплект.', 'Panoptix', 'Garmin Panoptix LiveScope LVS32 + GLS10 LVS32') ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);
 INSERT IGNORE INTO oc_product_to_category (product_id, category_id) VALUES (219, 103);
 INSERT INTO oc_product_image (product_id, image, sort_order) VALUES (219, 'https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-lvs32-r0.jpg', 1) ON DUPLICATE KEY UPDATE image=VALUES(image);
+INSERT INTO oc_product_image (product_id, image, sort_order) VALUES (219, 'https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-02233-00-b.jpg', 2) ON DUPLICATE KEY UPDATE image=VALUES(image);
+INSERT INTO oc_product_image (product_id, image, sort_order) VALUES (219, 'https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-02233-00-e.jpg', 3) ON DUPLICATE KEY UPDATE image=VALUES(image);
 DELETE FROM oc_product_special WHERE product_id = 219;
 INSERT INTO oc_product_special (product_id, customer_group_id, priority, price) VALUES (219, 1, 1, 101990);
 INSERT INTO oc_product (product_id, model, sku, quantity, stock_status_id, image, manufacturer_id, shipping, price, status, date_added, date_modified) VALUES (220, 'GARMIN-220', 'REF-0220', 4, 7, 'https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-01960-00.jpg', 100, 1, 14990, 1, NOW(), NOW()) ON DUPLICATE KEY UPDATE price=VALUES(price), quantity=VALUES(quantity), image=VALUES(image);
@@ -2152,6 +2154,7 @@ INSERT INTO oc_product (product_id, model, sku, quantity, stock_status_id, image
 INSERT INTO oc_product_description (product_id, language_id, name, description, tag, meta_title) VALUES (279, 1, 'Garmin TT25 Collar TT25', 'Ошейник с GPS/ГЛОНАСС.', 'Ошейники', 'Garmin TT25 Collar TT25') ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);
 INSERT IGNORE INTO oc_product_to_category (product_id, category_id) VALUES (279, 105);
 INSERT INTO oc_product_image (product_id, image, sort_order) VALUES (279, 'https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-tt25-r0.jpg', 1) ON DUPLICATE KEY UPDATE image=VALUES(image);
+INSERT INTO oc_product_image (product_id, image, sort_order) VALUES (279, 'https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-02447-20-r0.jpg', 2) ON DUPLICATE KEY UPDATE image=VALUES(image);
 DELETE FROM oc_product_special WHERE product_id = 279;
 INSERT INTO oc_product_special (product_id, customer_group_id, priority, price) VALUES (279, 1, 1, 28040);
 INSERT INTO oc_product (product_id, model, sku, quantity, stock_status_id, image, manufacturer_id, shipping, price, status, date_added, date_modified) VALUES (280, 'GARMIN-280', 'REF-0280', 4, 7, 'https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-02447-00.jpg', 100, 1, 27990, 1, NOW(), NOW()) ON DUPLICATE KEY UPDATE price=VALUES(price), quantity=VALUES(quantity), image=VALUES(image);
@@ -2512,6 +2515,7 @@ INSERT INTO oc_product (product_id, model, sku, quantity, stock_status_id, image
 INSERT INTO oc_product_description (product_id, language_id, name, description, tag, meta_title) VALUES (322, 1, 'Garmin TT25 Collar Охотничий TT25', 'GPS/ГЛОНАСС ошейник.', 'Ошейники', 'Garmin TT25 Collar Охотничий TT25') ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);
 INSERT IGNORE INTO oc_product_to_category (product_id, category_id) VALUES (322, 106);
 INSERT INTO oc_product_image (product_id, image, sort_order) VALUES (322, 'https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-tt25-r0.jpg', 1) ON DUPLICATE KEY UPDATE image=VALUES(image);
+INSERT INTO oc_product_image (product_id, image, sort_order) VALUES (322, 'https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-02447-20-r0.jpg', 2) ON DUPLICATE KEY UPDATE image=VALUES(image);
 DELETE FROM oc_product_special WHERE product_id = 322;
 INSERT INTO oc_product_special (product_id, customer_group_id, priority, price) VALUES (322, 1, 1, 28040);
 INSERT INTO oc_product (product_id, model, sku, quantity, stock_status_id, image, manufacturer_id, shipping, price, status, date_added, date_modified) VALUES (323, 'GARMIN-323', 'REF-0323', 4, 7, 'https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-02447-00.jpg', 100, 1, 27990, 1, NOW(), NOW()) ON DUPLICATE KEY UPDATE price=VALUES(price), quantity=VALUES(quantity), image=VALUES(image);
