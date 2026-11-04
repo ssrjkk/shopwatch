@@ -2178,7 +2178,7 @@ function getFiltered(){
 }
 
 function onSearchInput(){
-  try{showView('catalog');}catch(_){}
+  try{if(state.currentView!=='catalog'){showView('catalog');}}catch(_){}
   const val=(document.getElementById('search-input')||{}).value||'';
   try{openSearchDropdown(!!String(val).trim());}catch(_){}
   const clr=document.getElementById('search-clear-btn');
