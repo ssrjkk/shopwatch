@@ -1,7 +1,7 @@
 {
-  "name": "watchop-store-tg-max",
+  "name": "demo-shop-vector",
   "version": "1.0.0",
-  "description": "Watchop Smartwatch Store with Telegram & MAX Admin Bots",
+  "description": "Demo storefront (fictional brand Vector): catalog, cart, checkout demo. Educational project.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

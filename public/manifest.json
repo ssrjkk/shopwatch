@@ -1,7 +1,7 @@
 {
-  "name": "Watchop — Магазин Garmin и наручных смарт-часов",
-  "short_name": "Watchop",
-  "description": "Официальный каталог Garmin, Seiko, Tissot, Apple Watch и смарт-часов с доставкой по всей России",
+  "name": "Вектор — демо-витрина часов (учебный проект)",
+  "short_name": "Вектор-демо",
+  "description": "Демонстрационный каталог часов. Заказы не обрабатываются, все данные вымышлены.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F4F5F7",

@@ -22,12 +22,12 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.match(HTML, /<meta charset="UTF-8"\s*\/>/i);
     assert.match(HTML, /<meta name="viewport" content="width=device-width, initial-scale=1\.0"\s*\/>/);
     assert.match(HTML, /<meta name="robots" content="index, follow, max-image-preview:large/);
-    assert.match(HTML, /<link rel="canonical" href="https:\/\/ssrjkk\.github\.io\/shopwatch\/"\s*\/>/);
+    assert.match(HTML, /<link rel="canonical" href="https:\/\/example\.invalid\/demo\/"\s*\/>/);
 
     const titleMatch = HTML.match(/<title>([^<]+)<\/title>/);
     assert.ok(titleMatch, 'тег <title> присутствует');
     assert.ok(titleMatch[1].length >= 30 && titleMatch[1].length <= 120, `длина title оптимальна: ${titleMatch[1].length}`);
-    assert.match(titleMatch[1], /Watchop.*Garmin/i);
+    assert.match(titleMatch[1], /Вектор.*Garmin/i);
 
     const descMatch = HTML.match(/<meta name="description" content="([^"]+)"/);
     assert.ok(descMatch, 'meta description присутствует');
@@ -50,7 +50,7 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     const storeLd = JSON.parse(m[1]);
     assert.equal(storeLd['@context'], 'https://schema.org');
     assert.equal(storeLd['@type'], 'Store');
-    assert.equal(storeLd.name, 'Watchop');
+    assert.equal(storeLd.name, 'Вектор');
     assert.equal(storeLd.currenciesAccepted, 'RUB');
     assert.ok(storeLd.potentialAction && storeLd.potentialAction['@type'] === 'SearchAction', 'SearchAction для быстрых ссылок поисковика');
   });
@@ -71,11 +71,11 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     // Возврат в каталог очищает только product-jsonld и возвращает каталожный title
     g.setProductJsonLd(null);
     assert.equal(g.document.getElementById('product-jsonld').textContent, '');
-    assert.match(String(g.document.title), /Watchop/);
+    assert.match(String(g.document.title), /Вектор/);
   });
 
   it('5. Индексация без JS (<noscript>) и семантические ориентиры (a11y landmarks)', () => {
-    assert.match(HTML_NO_SCRIPTS, /<noscript>[\s\S]*Watchop[\s\S]*<\/noscript>/, 'блок <noscript> для поисковых ботов');
+    assert.match(HTML_NO_SCRIPTS, /<noscript>[\s\S]*Вектор[\s\S]*<\/noscript>/, 'блок <noscript> для поисковых ботов');
     for (const tag of ['<header', '<nav', '<main', '<aside', '<footer', '<h1']) {
       assert.ok(HTML_NO_SCRIPTS.includes(tag), `семантический тег ${tag} присутствует`);
     }

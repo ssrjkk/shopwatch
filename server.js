@@ -329,13 +329,13 @@ db.exec(`
 
 const defaultSettings = {
   hero_title: 'Магазин оригинальной продукции Garmin и смарт-часов — поможем выбрать под ваши задачи',
-  phone: '+7 (473) 300-40-95',
-  email: 'watchopp@gmail.com',
+  phone: '+7 (000) 000-00-00',
+  email: 'demo@example.invalid',
   address: 'Доставка по всей России — СДЭК, Почта России, Boxberry',
-  tg_link: 'https://t.me/wwwatchshop_bot',
-  max_link: 'https://max.ru/watchop',
+  tg_link: '',
+  max_link: '',
   legal_name: 'ИП Жукова Татьяна Юрьевна',
-  legal_inn: '362703988401',
+  legal_inn: '0000000000',
   legal_ogrnip: '304362725400110',
   delivery_methods: 'СДЭК,Почта России,Boxberry',
   extra_categories: '',
@@ -362,7 +362,7 @@ const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?')
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
 
 // Миграция старой ссылки менеджера на рабочего бота + колонка хитов для существующих БД
-if (getSetting('tg_link') === 'https://t.me/watchop_manager') setSetting('tg_link', 'https://t.me/wwwatchshop_bot');
+if (getSetting('tg_link') === 'https://t.me/watchop_manager') setSetting('tg_link', '');
 if (getSetting('hero_title').includes('Воронеже')) setSetting('hero_title', 'Магазин оригинальной продукции Garmin и смарт-часов с доставкой по всей России — поможем выбрать под ваши задачи');
 if (getSetting('address').includes('Воронеж') || getSetting('address').includes('Пушкинская')) setSetting('address', 'Доставка по всей России — СДЭК, Почта России, Boxberry');
 try { db.exec('ALTER TABLE products ADD COLUMN is_hit INTEGER DEFAULT 0'); } catch (e) {}
