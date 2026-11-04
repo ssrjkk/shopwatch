@@ -77,10 +77,6 @@ describe('E2E витрина: каталог → корзина → промо �
     });
     assert.ok(plus, label + ': qty button present');
     await page.waitForFunction(() => document.getElementById('cart-badge').textContent.trim() === '2', null, { timeout: 10000 });
-    // промокод
-    await page.locator('#promo-input').fill('WATCH10');
-    await page.getByRole('button', { name: 'Применить' }).click();
-    await page.waitForSelector('#cart-discount-row:not(.hidden)', { timeout: 15000 });
     // оформление
     await page.getByRole('button', { name: 'Перейти к оформлению' }).click();
     await page.waitForSelector('#view-checkout:not(.hidden)', { timeout: 15000 });

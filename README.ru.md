@@ -77,7 +77,7 @@ Rules live in the database setting `promo_codes` as one line — `WATCH10=10,GAR
 are 10% off the whole cart, 5% off Garmin positions only, and 15% off orders from 50 000 ₽. Thresholds are
 inclusive, the discount rounds to 10 ₽ and never exceeds the cart total.
 
-The promo field sits in the cart. `Применить` calls `POST /api/promo-check`, and the server — not the page —
+There is no promo field on the storefront: a code is applied automatically from the manager link or bundle, and the server — not the page —
 takes prices from its own database and returns the discount and the new total. `POST /api/order` re-evaluates
 the same code, stores `promo_code` and `discount` on the order and answers with the discounted total, so a
 price edited in devtools changes nothing. An unknown or expired code is rejected with its reason instead of
@@ -222,7 +222,7 @@ neither corrupt the working file nor overwrite the backup.
 
 Measured against the working catalog of 391 products, not eyeballed:
 
-- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 246 234 B → 50 559 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 167 713 B → 16 351 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
+- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 243 463 B → 50 206 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 167 713 B → 16 351 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
 - **Windowed catalog grid.** Never more than 60 cards in the DOM, however far you scroll: spacers above and below hold the height of what is hidden, so the scrollbar does not jump. Before this the grid only ever grew — after scrolling to the end it held 347 cards and 3470 nodes instead of 60 and 600. The numeric check is in `tests/virtual.test.js`.
 - **Images sized to their slot.** The database baked in `w=600` although a card in the `max-w-md` layout is 181 px and a cart thumbnail is 64 px. The storefront now asks for `w=400` on a card, `w=700` on the product page and `w=160`/`w=140` for thumbnails. Unsplash URLs also get `fm=webp`, verified by fact — `Content-Type: image/webp`, a `RIFF…WEBP` signature, 7 786 B instead of 10 882 B per card (−28%). Other hosts (Wikimedia) are left as they are: they do not understand the width parameter.
 - **Photo cache.** `/uploads/...` is served with `Cache-Control: public, max-age=31536000, immutable` — the file name is unique per upload, so it cannot go stale. The storefront HTML itself cannot be cached forever (`max-age=0`), otherwise a price change would not appear until the visitor cleared the cache.

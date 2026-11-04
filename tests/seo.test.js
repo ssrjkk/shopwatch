@@ -89,7 +89,7 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.match(card, /width="600"\s+height="600"/, 'явные размеры изображения предотвращают CLS');
     assert.match(card, /loading="lazy"/, 'ленивая загрузка картинок сетки');
     assert.match(card, /decoding="async"/, 'асинхронное декодирование картинок');
-    assert.match(card, /По коду WATCH10:/, 'клубная цена 585 Золотой в карточке');
+    assert.match(card, /Долями 4/, 'рассрочка Долями в карточке');
     assert.match(card, /Арт\. REF-\d{4}/, 'артикул товара в карточке');
   });
 
@@ -367,7 +367,7 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.ok(!detailHtml.includes('switchProductGalleryPhoto'), 'PDP must not render fake multi-angle switcher');
     assert.ok(!detailHtml.includes('product-3d-stage'), 'PDP must not render SVG 3D stage');
     assert.ok(!detailHtml.includes('renderModelStudioSVG'), 'PDP must not embed drawn renders');
-    assert.match(detailHtml, /По коду WATCH10:/, 'PDP must render 585 Золотой club price box');
+    assert.ok(!detailHtml.includes('WATCH10'), 'no promo code marketing in PDP');
     g.setProductJsonLd(null);
 
     // PDP товара с галереей: миниатюры переключают главное фото, все кадры локальные

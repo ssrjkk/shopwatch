@@ -538,7 +538,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
       
     </div>
     <div class="hidden md:flex items-center gap-4 shrink-0 font-semibold text-[11px]">
-      <button id="promo-header-btn" onclick="openPromoModal()" class="text-gray-800 hover:underline font-extrabold">Промокод −10%: WATCH10</button>
+      
       <button onclick="openDeliveryCalc()" class="text-gray-600 hover:text-gray-900">Доставка 0 ₽</button>
       <button onclick="openTradeInModal()" class="text-gray-600 hover:text-gray-900">Trade-In обмен</button>
       <button onclick="openCallbackModal()" class="text-brand hover:underline font-bold">Заказать звонок</button>
@@ -790,13 +790,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
       </div>
       <span class="chip-arrow w-8 h-8 rounded-full bg-white/[0.05] border border-white/10 flex items-center justify-center text-slate-300 font-bold">→</span>
     </button>
-    <button onclick="openPromoModal()" class="collection-chip rounded-2xl p-4 flex items-center justify-between text-left border-[#38BDF8]/30">
-      <div>
-        <div class="text-[9.5px] font-extrabold uppercase tracking-[0.18em] text-brand">Клубный код WATCH10</div>
-        <div class="text-sm font-extrabold text-ink mt-1">Привилегия −10%</div>
-      </div>
-      <span class="chip-arrow w-8 h-8 rounded-full flex items-center justify-center font-bold">→</span>
-    </button>
+
   </div>
 
   <!-- ФЛАГМАНСКАЯ ГАЛЕРЕЯ ХИТОВ -->
@@ -947,11 +941,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
   </div>
   <div id="cart-list" class="space-y-2.5"></div>
   <div class="bg-[#0E121B] rounded-3xl p-6 border border-white/10 space-y-4 shadow-xl">
-    <div class="flex gap-2">
-      <input id="promo-input" type="text" placeholder="Промокод (WATCH10, GARMIN5, VIP15)" class="flex-1 bg-white/[0.04] border border-white/10 text-xs text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#38BDF8] uppercase font-mono font-bold" />
-      <button onclick="applyPromoCode()" class="btn-luxury-gold text-xs font-extrabold px-5 py-2.5 rounded-xl">Применить</button>
-    </div>
-    <div id="promo-status" class="hidden text-xs text-[#10B981] font-semibold"></div>
+
     <div id="cart-discount-row" class="hidden items-center justify-between text-xs text-[#E2E8F0] bg-[#38BDF8]/10 border border-[#38BDF8]/30 px-3.5 py-2.5 rounded-xl"><span id="cart-discount-label">Скидка по промокоду:</span><span id="cart-discount-value" class="font-bold">0 ₽</span></div>
     <div class="flex items-center justify-between pt-1">
       <span class="text-sm font-medium text-slate-400">Итого к оплате:</span>
@@ -2529,7 +2519,6 @@ function productCardHTML(p){
   const oldNum=Math.trunc(Number(p.old_price||p.oldPrice))||0;
   const hasDisc=oldNum>priceNum&&priceNum>0;
   const discPct=hasDisc?Math.max(1,Math.round((1-priceNum/oldNum)*100)):0;
-  const clubPrice=Math.round((priceNum*0.9)/10)*10;
   const splitPrice=Math.round(priceNum/4).toLocaleString('ru-RU');
   const ratingVal=(4.8+((Number(p.id)||1)%3)*0.1).toFixed(1);
   const revCount=14+((Number(p.id)||1)*7)%52;
@@ -2568,7 +2557,6 @@ function productCardHTML(p){
         <span class="text-[16px] sm:text-[17px] font-extrabold tracking-tight tabular-nums whitespace-nowrap ${hasDisc?(saleHl?'text-[#FF5A5A]':'text-gray-900'):'text-gray-900'}">${priceNum.toLocaleString('ru-RU')} ₽${oldPriceHTML(p,'ml-1.5 text-[11px] font-normal text-soft line-through whitespace-nowrap truncate min-w-0')}</span>
       </div>
       <div class="flex flex-wrap items-center gap-1 mb-2">
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${saleHl?'bg-rose-50 text-[#E11D48]':'bg-gray-100 text-gray-800'} text-[10px] font-extrabold tabular-nums">По коду WATCH10: ${clubPrice.toLocaleString('ru-RU')} ₽</span>
         <span class="text-[10px] font-mono text-gray-500 tabular-nums">Долями 4 × ${splitPrice} ₽</span>
       </div>
 
@@ -2725,7 +2713,7 @@ function openProduct(id){
   const stockBannerHTML=`<div class="mb-4 p-3 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between text-xs font-bold text-slate-200"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${stk.dotClass}"></span><span>${esc(stk.label)}</span></div><span class="text-[11px] text-[#E2E8F0] font-mono">${esc(getDispatchCountdown())}</span></div>`;
   const relHTML=bundleHTML+(related.length?`<div class="mt-8 pt-6 border-t border-white/10"><h3 class="text-sm font-extrabold text-white uppercase tracking-wider mb-4">Модели из коллекции ${esc(p.series)}</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">${related.map(r=>productCardHTML(r)).join('')}</div></div>`:'');
   const pdpGal=productGallery(p);
-  document.getElementById('product-detail-box').innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-7 items-start"><div class="space-y-3"><div><div id="product-photo-pane" class="relative rounded-[28px] watch-stage h-72 sm:h-96 flex items-center justify-center p-4 overflow-hidden group"><img id="product-main-img" src="${esc(imgSrc(pdpGal[0]?pdpGal[0].src:p.image))}" alt="${esc(p.name)}" width="900" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')" onclick="openLightbox()" class="absolute inset-0 w-full h-full object-contain p-4 cursor-zoom-in transition-transform duration-500 group-hover/php:scale-[1.03] img-skeleton" onload="this.classList.remove('img-skeleton')" /><button onclick="openLightbox()" class="absolute bottom-3 right-3 z-20 text-[10px] font-mono text-slate-300 bg-black/55 px-3 py-1 rounded-full border border-white/10 hover:text-white">🔍 Фото · ${pdpGal.length} ${pdpGal.length===1?'вид':'вида'}</button></div>${pdpGal.length>1?`<div class="flex gap-2 mt-2 flex-wrap">${pdpGal.map((g,i)=>`<button id="pdp-th${i}" onclick="setPdpPhoto(${i})" aria-label="${esc(g.label)}" class="rounded-2xl overflow-hidden border border-white/10 ${i===0?'pdp-thumb-active':''}"><img src="${esc(g.src)}" alt="${esc(p.name)} — ${esc(g.label)}" width="128" height="128" loading="lazy" decoding="async" class="pdp-thumb${i===0?' pdp-thumb-active':''}" /></button>`).join('')}</div>`:''}</div><div class="grid grid-cols-3 gap-2 text-[11px] text-center"><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-[#E2E8F0]">Проверка</div><div class="text-slate-400 text-[10px]">Серийный номер</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">Предпродажа</div><div class="text-slate-400 text-[10px]">Обновление карт</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">СДЭК 0 ₽</div><div class="text-slate-400 text-[10px]">Со страховкой</div></div></div></div><div><div class="flex items-center justify-between"><div class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#38BDF8]">${esc(p.brand)} • ${esc(p.series)}</div><button onclick="copyProductLink(${p.id})" class="text-[11px] font-semibold text-slate-300 hover:text-white bg-white/[0.05] border border-white/10 px-3 py-1 rounded-full">🔗 Ссылка</button></div><h1 class="font-display text-xl sm:text-2xl font-extrabold text-white mt-1.5 leading-snug">${esc(p.name)}</h1><div class="my-4 p-4 rounded-2xl bg-white border border-gray-200 space-y-2.5 shadow-2xs"><div class="flex flex-wrap items-baseline justify-between gap-2"><div class="text-2xl sm:text-3xl font-extrabold tabular-nums ${((Math.trunc(Number(p.old_price||p.oldPrice))||0)>Number(p.price)?(String((state.settings||{}).promo_highlight)==='1'?'text-[#FF5A5A]':'text-gray-900'):'text-gray-900')}">${Number(p.price).toLocaleString('ru-RU')} ₽${oldPriceHTML(p,'ml-2 text-base font-bold text-soft line-through')}</div><button onclick="openDeliveryCalc()" class="text-[11px] font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-xl border border-gray-200">Долями 0%: 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽</button></div><div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 flex-wrap"><div class="text-xs font-extrabold ${String((state.settings||{}).promo_highlight)==='1'?'text-[#E11D48]':'text-gray-800'}">🔥 По клубному коду WATCH10 (−10%): ${(Math.round((Number(p.price)*0.9)/10)*10).toLocaleString('ru-RU')} ₽</div><button type="button" onclick="copyPromoCode()" class="px-2.5 py-1 rounded-lg ${String((state.settings||{}).promo_highlight)==='1'?'bg-rose-50 hover:bg-rose-100 text-[#E11D48] border-rose-200':'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200'} text-[11px] font-extrabold border">Скопировать WATCH10</button></div></div>${stockBannerHTML}${wristBoxHTML}<div id="battery-calc-widget" class="mb-4 p-4 rounded-2xl bg-gray-50 border border-gray-200">
+  document.getElementById('product-detail-box').innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-7 items-start"><div class="space-y-3"><div><div id="product-photo-pane" class="relative rounded-[28px] watch-stage h-72 sm:h-96 flex items-center justify-center p-4 overflow-hidden group"><img id="product-main-img" src="${esc(imgSrc(pdpGal[0]?pdpGal[0].src:p.image))}" alt="${esc(p.name)}" width="900" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')" onclick="openLightbox()" class="absolute inset-0 w-full h-full object-contain p-4 cursor-zoom-in transition-transform duration-500 group-hover/php:scale-[1.03] img-skeleton" onload="this.classList.remove('img-skeleton')" /><button onclick="openLightbox()" class="absolute bottom-3 right-3 z-20 text-[10px] font-mono text-slate-300 bg-black/55 px-3 py-1 rounded-full border border-white/10 hover:text-white">🔍 Фото · ${pdpGal.length} ${pdpGal.length===1?'вид':'вида'}</button></div>${pdpGal.length>1?`<div class="flex gap-2 mt-2 flex-wrap">${pdpGal.map((g,i)=>`<button id="pdp-th${i}" onclick="setPdpPhoto(${i})" aria-label="${esc(g.label)}" class="rounded-2xl overflow-hidden border border-white/10 ${i===0?'pdp-thumb-active':''}"><img src="${esc(g.src)}" alt="${esc(p.name)} — ${esc(g.label)}" width="128" height="128" loading="lazy" decoding="async" class="pdp-thumb${i===0?' pdp-thumb-active':''}" /></button>`).join('')}</div>`:''}</div><div class="grid grid-cols-3 gap-2 text-[11px] text-center"><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-[#E2E8F0]">Проверка</div><div class="text-slate-400 text-[10px]">Серийный номер</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">Предпродажа</div><div class="text-slate-400 text-[10px]">Обновление карт</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">СДЭК 0 ₽</div><div class="text-slate-400 text-[10px]">Со страховкой</div></div></div></div><div><div class="flex items-center justify-between"><div class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#38BDF8]">${esc(p.brand)} • ${esc(p.series)}</div><button onclick="copyProductLink(${p.id})" class="text-[11px] font-semibold text-slate-300 hover:text-white bg-white/[0.05] border border-white/10 px-3 py-1 rounded-full">🔗 Ссылка</button></div><h1 class="font-display text-xl sm:text-2xl font-extrabold text-white mt-1.5 leading-snug">${esc(p.name)}</h1><div class="my-4 p-4 rounded-2xl bg-white border border-gray-200 space-y-2.5 shadow-2xs"><div class="flex flex-wrap items-baseline justify-between gap-2"><div class="text-2xl sm:text-3xl font-extrabold tabular-nums ${((Math.trunc(Number(p.old_price||p.oldPrice))||0)>Number(p.price)?(String((state.settings||{}).promo_highlight)==='1'?'text-[#FF5A5A]':'text-gray-900'):'text-gray-900')}">${Number(p.price).toLocaleString('ru-RU')} ₽${oldPriceHTML(p,'ml-2 text-base font-bold text-soft line-through')}</div><button onclick="openDeliveryCalc()" class="text-[11px] font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-xl border border-gray-200">Долями 0%: 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽</button></div></div>${stockBannerHTML}${wristBoxHTML}<div id="battery-calc-widget" class="mb-4 p-4 rounded-2xl bg-gray-50 border border-gray-200">
           <div class="flex items-center justify-between gap-2 mb-2">
             <span class="text-[11px] font-bold uppercase tracking-wider text-gray-700">Калькулятор автономности</span>
             <span id="bat-days-output" class="text-sm font-extrabold text-brand font-mono">${computeBatteryLife(p).days} дн.</span>
@@ -2874,23 +2862,6 @@ async function applyPromoCode(){
 function clearPromo(){state.promoCode='';state.promoDiscount=0;state.promoDiscountRub=0;const inp=document.getElementById('promo-input');if(inp)inp.value='';const st=document.getElementById('promo-status');if(st)st.classList.add('hidden');try{renderCart();}catch(e){}}
 function deepLinkPromo(){const c=String(state.promoCode||'').toUpperCase();return /^[A-Z0-9_-]{1,24}$/.test(c)?c:'';}
 
-function openPromoModal(){
-  const m=document.getElementById('promo-modal');
-  if(m){m.classList.remove('hidden');m.classList.add('flex');}
-}
-function closePromoModal(){
-  const m=document.getElementById('promo-modal');
-  if(m){m.classList.add('hidden');m.classList.remove('flex');}
-}
-function copyPromoCode(){
-  try{
-    if(navigator.clipboard&&navigator.clipboard.writeText){const r=navigator.clipboard.writeText('WATCH10');if(r&&r.catch)r.catch(()=>{});}
-  }catch(e){}
-  const inp=document.getElementById('promo-input');
-  if(inp)inp.value='WATCH10';
-  closePromoModal();
-  applyPromoCode();
-}
 
 function renderCart(){
   const box=document.getElementById('cart-list');
