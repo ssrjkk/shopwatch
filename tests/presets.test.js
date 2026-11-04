@@ -136,9 +136,9 @@ describe('подбор по пресетам и цене, лайтбокс, пр
     assert.equal(g.state.recent.length, g.RECENT_MAX, 'длина списка ограничена');
     assert.ok(g.recentItems().length <= 6, 'на витрине показывается не больше шести');
     g.renderCatalog();
-    const sec = g.document.getElementById('recent-section');
+    const sec = g.document.getElementById('recent-viewed-section');
     assert.equal(sec.classList.contains('hidden'), false, 'блок виден, когда есть что показать');
-    const cards = (String(g.document.getElementById('recent-grid').innerHTML).match(/data-fav-heart="/g) || []).length;
+    const cards = (String(g.document.getElementById('recent-viewed-grid').innerHTML).match(/data-fav-heart="/g) || []).length;
     assert.ok(cards > 0 && cards <= 6, `карточек в блоке: ${cards}`);
     g.setSearchQuery('fenix');
     g.renderCatalog();

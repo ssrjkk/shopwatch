@@ -443,7 +443,6 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
 <input id="price-max" type="hidden" value="" />
 <span id="filter-btn-label" class="hidden">Фильтры</span>
 <span id="filter-summary" class="hidden"></span>
-<section id="recent-section" class="hidden"><div id="recent-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3.5"></div></section>
 <div id="lightbox" class="hidden"></div>
 <script id="product-jsonld" type="application/ld+json"></script>
 <script id="schema-jsonld" type="application/ld+json">
@@ -1620,7 +1619,6 @@ function showView(tab){
   if(tab==='cart')renderCart();
   if(tab==='checkout')renderCheckout();
   if(tab==='catalog')requestAnimationFrame(function(){try{renderWindow();}catch(e){}});
-  try{const rs=document.getElementById('recent-section');if(rs)rs.classList.toggle('hidden',tab==='product');}catch(e){}
   syncMiniAppNav(tab);
   if(typeof window!=='undefined'&&window.scrollTo)window.scrollTo({top:0,behavior:'auto'});
 }
@@ -1891,13 +1889,11 @@ function recentItems(){
 function renderRecent(){
   const items=recentItems();
   const q=String((document.getElementById('search-input')||{}).value||'').trim();
-  for(const [secId, gridId] of [['recent-section','recent-grid'],['recent-viewed-section','recent-viewed-grid']]){
-    const sec=document.getElementById(secId);
-    const grid=document.getElementById(gridId);
-    if(!sec||!grid)continue;
-    if(!items.length||q){sec.classList.add('hidden');grid.innerHTML='';}
-    else{sec.classList.remove('hidden');grid.innerHTML=items.map((p)=>productCardHTML(p)).join('');}
-  }
+  const sec=document.getElementById('recent-viewed-section');
+  const grid=document.getElementById('recent-viewed-grid');
+  if(!sec||!grid)return;
+  if(!items.length||q){sec.classList.add('hidden');grid.innerHTML='';}
+  else{sec.classList.remove('hidden');grid.innerHTML=items.map((p)=>productCardHTML(p)).join('');}
 }
 function productJsonLd(p){
   const id=Number(p.id)||0;
