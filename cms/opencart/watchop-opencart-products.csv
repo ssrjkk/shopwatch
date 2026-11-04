@@ -23,8 +23,8 @@
 22;SAMSUNG-22;REF-0022;Samsung Galaxy Watch Ultra 47 мм LTE Titanium Gray;SAMSUNG;Спортивные часы;Galaxy Watch;49990;42490;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/sam-ultra-r2.jpg;Титан, сапфир, 10 АТМ, Galaxy AI.
 23;SAMSUNG-23;REF-0023;Samsung Galaxy Watch 7 44 мм Green;SAMSUNG;Спортивные часы;Galaxy Watch;26990;22940;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/sam-watch7-green-r0.jpg;3 нм, BioActive, двухчастотный GPS.
 24;SUUNTO-24;REF-0024;Suunto Vertical Titanium Solar Canyon;SUUNTO;Спортивные часы;Suunto;64900;55160;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/24-r0.jpg;Офлайн-карты, 60 дней.
-25;SUUNTO-25;REF-0025;Suunto Race S Titanium Canary AMOLED;SUUNTO;Спортивные часы;Suunto;41500;35280;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/fa58d622c06a.jpg;Мультиспорт, AMOLED.
-28;COROS-28;REF-0028;COROS VERTIX 2S Space;COROS;Спортивные часы;COROS;63500;53980;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-vertix-space.jpg;40 дней, офлайн-карты, сапфир+титан.
+25;SUUNTO-25;REF-0025;Suunto Race S Titanium Canary AMOLED;SUUNTO;Спортивные часы;Suunto;41500;35280;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/25-r0.jpg;Мультиспорт, AMOLED.
+28;COROS-28;REF-0028;COROS VERTIX 2S Space;COROS;Спортивные часы;COROS;63500;53980;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/28-r0.jpg;40 дней, офлайн-карты, сапфир+титан.
 29;COROS-29;REF-0029;COROS Pace 3 White Nylon;COROS;Спортивные часы;COROS;22990;19540;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-pace-white.jpg;Легкие 30 г, 38 часов GPS.
 30;HUAWEI-30;REF-0030;Huawei Watch Ultimate Green Zirconium;HUAWEI;Спортивные часы;Huawei Watch;59990;50990;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/huawei-ultimate-a.jpg;Жидкий металл, 100 м.
 31;HUAWEI-31;REF-0031;Huawei Watch GT 5 Pro Black Titanium;HUAWEI;Спортивные часы;Huawei Watch;32990;28040;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/83fbf2100a11.jpg;Титан, ECG, 14 дней.
@@ -138,23 +138,20 @@
 139;SAMSUNG-139;REF-0139;Samsung Galaxy Watch 5 Pro 45 мм Titanium Grey Titanium;SAMSUNG;Спортивные часы;Galaxy Watch;25990;22090;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/b0ed6f196f1b.jpg;Титан, 80 часов, треки GPX.
 142;SUUNTO-142;REF-0142;Suunto Vertical Titanium Solar Canyon GPS Canyon;SUUNTO;Спортивные часы;Suunto;64900;55160;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/24-r1.jpg;Офлайн-карты, solar, 60 дней.
 143;SUUNTO-143;REF-0143;Suunto Vertical Titanium Solar Canyon GPS Black;SUUNTO;Спортивные часы;Suunto;66900;56860;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/0c0cc5828a34.jpg;Офлайн-карты, solar, 60 дней.
-144;SUUNTO-144;REF-0144;Suunto Race S Titanium Canary AMOLED Canary;SUUNTO;Спортивные часы;Suunto;41500;35280;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/fa58d622c06a.jpg;Мультиспорт, AMOLED, лёгкие.
-145;SUUNTO-145;REF-0145;Suunto Race S Titanium Canary AMOLED All Black;SUUNTO;Спортивные часы;Suunto;42500;36120;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/fa58d622c06a.jpg;Мультиспорт, AMOLED, лёгкие.
-146;SUUNTO-146;REF-0146;Suunto Race Titanium Charcoal Charcoal;SUUNTO;Спортивные часы;Suunto;49900;42420;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/fa58d622c06a.jpg;Гонки, карты, 40 часов GPS.
-147;SUUNTO-147;REF-0147;Suunto Race Titanium Charcoal Birch;SUUNTO;Спортивные часы;Suunto;50900;43260;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/fa58d622c06a.jpg;Гонки, карты, 40 часов GPS.
+144;SUUNTO-144;REF-0144;Suunto Race S Titanium Canary AMOLED Canary;SUUNTO;Спортивные часы;Suunto;41500;35280;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/25-r0.jpg;Мультиспорт, AMOLED, лёгкие.
+145;SUUNTO-145;REF-0145;Suunto Race S Titanium Canary AMOLED All Black;SUUNTO;Спортивные часы;Suunto;42500;36120;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/25-r2.jpg;Мультиспорт, AMOLED, лёгкие.
 148;SUUNTO-148;REF-0148;Suunto 9 Peak Pro Forest Green;SUUNTO;Спортивные часы;Suunto;34900;29660;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/suunto-9pp-green.jpg;Ультратонкие, титан, 21 день.
 149;SUUNTO-149;REF-0149;Suunto 9 Peak Pro Ocean Blue;SUUNTO;Спортивные часы;Suunto;34900;29660;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/suunto-9pp-blue.jpg;Ультратонкие, титан, 21 день.
 150;SUUNTO-150;REF-0150;Suunto Ocean Steel Black Black;SUUNTO;Спортивные часы;Suunto;58900;50060;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/suunto-ocean-black.jpg;Дайвинг + мультиспорт, AMOLED.
-151;SUUNTO-151;REF-0151;Suunto Ocean Steel Black Sand;SUUNTO;Спортивные часы;Suunto;59900;50920;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/suunto-ocean-sand.jpg;Дайвинг + мультиспорт, AMOLED.
-162;COROS-162;REF-0162;COROS VERTIX 2S Adventure Space Space;COROS;Спортивные часы;COROS;63500;53980;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-vertix-space.jpg;40 дней, офлайн-карты, сапфир+титан.
-163;COROS-163;REF-0163;COROS VERTIX 2S Adventure Space Earth;COROS;Спортивные часы;COROS;64500;54820;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-vertix-earth.jpg;40 дней, офлайн-карты, сапфир+титан.
+151;SUUNTO-151;REF-0151;Suunto Ocean Steel Black Sand;SUUNTO;Спортивные часы;Suunto;59900;50920;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/151-r0.jpg;Дайвинг + мультиспорт, AMOLED.
+162;COROS-162;REF-0162;COROS VERTIX 2S Adventure Space Space;COROS;Спортивные часы;COROS;63500;53980;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/28-r1.jpg;40 дней, офлайн-карты, сапфир+титан.
 164;COROS-164;REF-0164;COROS Pace 3 White Nylon White Nylon;COROS;Спортивные часы;COROS;22990;19540;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-pace-white.jpg;Лёгкие 30 г, 38 часов GPS.
 165;COROS-165;REF-0165;COROS Pace 3 White Nylon Black Silicone;COROS;Спортивные часы;COROS;22990;19540;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-pace-black.jpg;Лёгкие 30 г, 38 часов GPS.
 166;COROS-166;REF-0166;COROS Apex 2 Pro Black;COROS;Спортивные часы;COROS;44900;38160;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-apex2pro-black.jpg;Титан, сапфир, 75 часов.
 167;COROS-167;REF-0167;COROS Apex 2 Pro Grey;COROS;Спортивные часы;COROS;45400;38590;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-apex2pro-grey.jpg;Титан, сапфир, 75 часов.
 168;COROS-168;REF-0168;COROS Apex 2 Black;COROS;Спортивные часы;COROS;34900;29660;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-apex2-black.jpg;Мультиспорт, 43 часа GPS.
 169;COROS-169;REF-0169;COROS Apex 2 Grey;COROS;Спортивные часы;COROS;34900;29660;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-apex2-grey.jpg;Мультиспорт, 43 часа GPS.
-170;COROS-170;REF-0170;COROS Dura Solar Bike Computer Black;COROS;Спортивные часы;COROS;24990;21240;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-dura.jpg;Велокомпьютер, solar, 120 часов.
+170;COROS-170;REF-0170;COROS Dura Solar Bike Computer Black;COROS;Спортивные часы;COROS;24990;21240;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/170-r0.jpg;Велокомпьютер, solar, 120 часов.
 171;HUAWEI-171;REF-0171;Huawei Watch Ultimate Green Zirconium Green;HUAWEI;Спортивные часы;Huawei Watch;59990;50990;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/huawei-ultimate-a.jpg;Жидкий металл, дайвинг 100 м.
 172;HUAWEI-172;REF-0172;Huawei Watch Ultimate Green Zirconium Blue Voyage;HUAWEI;Спортивные часы;Huawei Watch;62990;53540;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/172-r0.jpg;Жидкий металл, дайвинг 100 м.
 173;HUAWEI-173;REF-0173;Huawei Watch GT 5 46 мм Black Black;HUAWEI;Спортивные часы;Huawei Watch;21990;18690;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/173-r0.jpg;TruSense, 14 дней, звонки.
@@ -335,7 +332,7 @@
 351;GARMIN-351;REF-0351;Garmin Venu X1 46 мм Black Slate Titanium;GARMIN;Фитнес-трекеры;Venu;59990;50990;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/b9be435821f2.jpg;AMOLED 2″, титан, толщина 8 мм, GPS, звонки с часов, до 8 дней.
 352;SAMSUNG-352;REF-0352;Samsung Galaxy Watch 8 44 мм Graphite;SAMSUNG;Спортивные часы;Galaxy Watch;19990;16990;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/21e6e8b54831.jpg;Super AMOLED 1,47″ 480×480, Exynos W1000, Wear OS, GPS, NFC, 32 ГБ.
 353;HUAWEI-353;REF-0353;Huawei Watch GT 6 46 мм Green;HUAWEI;Спортивные часы;Huawei Watch;16390;13930;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/abab639295cb.jpg;AMOLED 1,43″, GPS, Bluetooth-звонки, 5 ATM/IP69, до 21 дня.
-354;SUUNTO-354;REF-0354;Suunto Run All Black;SUUNTO;Спортивные часы;Suunto;24900;21160;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/705b4833de45.jpg;AMOLED, GPS, 46 мм, нейлоновый ремешок, беговые метрики и тренировочная нагрузка.
+354;SUUNTO-354;REF-0354;Suunto Run All Black;SUUNTO;Спортивные часы;Suunto;24900;21160;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/354-r0.jpg;AMOLED, GPS, 46 мм, нейлоновый ремешок, беговые метрики и тренировочная нагрузка.
 355;COROS-355;REF-0355;COROS PACE 4 Pro Black Nylon;COROS;Спортивные часы;COROS;51990;44190;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/b51f6af2a838.jpg;LTPO AMOLED 1,47″ 466×466, титан + сапфир, 32 ГБ, offline-карты, до 21 дня.
 356;GARMIN-356;REF-0356;Garmin Edge MTB;GARMIN;Велокомпьютеры;Edge;39000;33150;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-02993-00.jpg;Велокомпьютер для MTB, карты Trailforks.
 357;GARMIN-357;REF-0357;Garmin Edge 850;GARMIN;Велокомпьютеры;Edge;57000;48450;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-03023-00.jpg;Сенсорный, карты, ClimbPro.
