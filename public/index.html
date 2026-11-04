@@ -1119,6 +1119,28 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
   <a id="ui-float-max" href="https://max.ru/watchop" target="_blank" title="Написать в MAX" class="w-11 h-11 rounded-full bg-[#0E121B] border border-white/15 shadow-lg flex items-center justify-center text-white text-xs font-extrabold hover:border-[#38BDF8] transition-all">M</a>
 </div>
 
+<!-- ПАНЕЛЬ СРАВНЕНИЯ МОДЕЛЕЙ -->
+<div id="compare-bar" class="hidden fixed bottom-5 left-5 z-30 items-center gap-2 bg-white border border-gray-200 shadow-xl rounded-2xl pl-4 pr-2 py-2">
+  <span class="text-xs font-extrabold text-gray-900">К сравнению: <span id="compare-count" class="font-mono text-[#0E9F6E]">0</span></span>
+  <button onclick="openCompareModal()" class="px-4 py-2 rounded-xl btn-luxury-gold text-xs font-extrabold whitespace-nowrap">Сравнить</button>
+  <button onclick="clearCompare()" class="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold" title="Очистить сравнение">✕</button>
+</div>
+
+<!-- МОДАЛКА СРАВНЕНИЯ -->
+<div id="compare-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/60" onclick="closeCompareModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[86vh] flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div class="text-sm font-extrabold text-gray-900">Сравнение моделей <span class="text-[11px] font-bold text-gray-400">до 4 штук</span></div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleCompareDiffOnly()" class="text-[11px] font-bold text-[#0E9F6E] hover:underline">Только различия</button>
+        <button onclick="closeCompareModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold">✕</button>
+      </div>
+    </div>
+    <div id="compare-table-box" class="overflow-auto p-2"></div>
+  </div>
+</div>
+
 <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0E121B] text-[#E2E8F0] text-xs font-bold px-5 py-3 rounded-full shadow-2xl border border-[#38BDF8]/40"></div>
 
 <script src="products-data.js"></script>
@@ -1665,6 +1687,9 @@ function route(){
         openProduct(id);
         return;
       }
+      showView('catalog');
+      try{showToast('Модель снята с продажи — вот актуальный каталог');}catch(e){}
+      return;
     }
     if(r0==='share'){
       const qPart=rawHash.split('?')[1]||'';
