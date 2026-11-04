@@ -93,30 +93,11 @@ describe('корзина: суммы целыми, очистка, восста�
   });
 });
 
-describe('тема: переключатель светлой/тёмной, запоминание', () => {
+describe('квиз и состояние витрины', () => {
   let g;
   before(async () => {
     g = mountFrontend();
     await new Promise((r) => setTimeout(r, 30));
-  });
-
-  it('toggleTheme меняет класс и data-theme, выбор переживает перезапуск', () => {
-    globalThis.__themestore = {};
-    const mem = "{ getItem: (k) => (globalThis.__themestore[k] ?? null), setItem: (k, v) => { globalThis.__themestore[k] = String(v); } }";
-    const m1 = mountFrontend({ storage: mem });
-    m1.applyTheme('light');
-    assert.ok(!m1.document.body.classList.contains('stealth-edition'));
-    assert.equal(m1.document.documentElement.getAttribute('data-theme'), 'light');
-    m1.toggleTheme();
-    assert.ok(m1.document.body.classList.contains('stealth-edition'));
-    assert.equal(m1.document.documentElement.getAttribute('data-theme'), 'dark');
-    assert.equal(globalThis.__themestore.app_theme, 'dark', 'выбор записан');
-    // «перезапуск»: новый маунт читает сохранённую тему и применяет её сам
-    const m2 = mountFrontend({ storage: mem });
-    assert.ok(m2.document.body.classList.contains('stealth-edition'), 'после перезапуска тёмная тема сама встала');
-    m2.toggleTheme();
-    assert.ok(!m2.document.body.classList.contains('stealth-edition'));
-    assert.equal(globalThis.__themestore.app_theme, 'light');
   });
 
   it('квиз-модалка есть во всех витринах и открывается/закрывается', () => {

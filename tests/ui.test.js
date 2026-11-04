@@ -358,6 +358,15 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     g.applySettingsToUI();
   });
 
+  it('переключателя темы на витрине больше нет', () => {
+    for (const f of ['index.html', 'public/index.html']) {
+      const html = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+      for (const needle of ['id="theme-btn"', 'toggleTheme(', 'applyTheme(', "localStorage.getItem('app_theme')", 'body.stealth-edition', 'body.dark-theme']) {
+        assert.ok(!html.includes(needle), f + ': остался хвост темы — ' + needle);
+      }
+    }
+  });
+
   it('размеры файлов витрины в README совпадают с фактическими (обе языки)', () => {
     const zlib = require('zlib');
     const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'));

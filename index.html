@@ -41,20 +41,14 @@
   --border: #E2E8F0;
   --transition: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
-body.stealth-edition{--bg:#0B0F17;--brand-green:#34d399;--surface:#141926;--surface-2:#0E121B;--text:#F8FAFC;--text-muted:#94a3b8;--brand:#10B981;--brand-light:#34d399;--tg:#38BDF8;--border:#26314a;}
 body{background-color:var(--bg);color:var(--text);}
 :root{--brand-green:#047857;--ink:#141619;--wrist-ok:#047857;--wrist-info:#0284C7;--wrist-warn:#B45309;}
-body.stealth-edition{--brand-green:#34d399;--ink:#F8FAFC;--wrist-ok:#34d399;--wrist-info:#7DD3FC;--wrist-warn:#FBBF24;}
 .text-brand{color:var(--brand-green);}
 .text-soft{color:var(--app-muted);}
 .text-ink{color:var(--ink);}
-body.stealth-edition .wrist-fit-box{background-color:#0F172A !important;border-color:#1E293B !important;}
 .collection-chip{color:var(--ink);}
-body.stealth-edition .collection-chip{background-color:#141926;border-color:#26314a;}
 .collection-chip .chip-arrow{background-color:#f3f4f6 !important;border-color:#e5e7eb !important;color:#374151 !important;}
-body.stealth-edition .collection-chip .chip-arrow{background-color:rgba(255,255,255,.08) !important;border-color:rgba(255,255,255,.15) !important;color:#F8FAFC !important;}
 .hero-badge{background-color:#ecfdf5 !important;border-color:#a7f3d0 !important;}
-body.stealth-edition .hero-badge{background-color:#064e3b !important;border-color:#065f46 !important;}
 }
 html {
   scrollbar-gutter: stable;
@@ -328,10 +322,7 @@ body:not(.stealth-edition):not(.dark-theme) .divide-white\/10 > :not([hidden]) ~
 .watch-stage-overlay{
   display: none !important;
 }
-body.stealth-edition .watch-card-pill,
-body.stealth-edition .watch-card-icon-btn{background:rgba(20,27,45,.94) !important;color:#F8FAFC !important;border-color:rgba(255,255,255,.15) !important;}
 .rating-star{color:var(--star,#B45309);}
-body.stealth-edition{--star:#FBBF24;}
 :root{--star:#B45309;}
 body:not(.stealth-edition):not(.dark-theme) .watch-card-pill,
 body:not(.stealth-edition):not(.dark-theme) .watch-card-icon-btn{
@@ -340,75 +331,7 @@ body:not(.stealth-edition):not(.dark-theme) .watch-card-icon-btn{
   border-color: #E2E8F0 !important;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08) !important;
 }
-
-/* Тёмная тема: подписи, верхняя полоса и акценты — то, что светлая нормализация
-   больше не трогает. Без этих пар в тёмной теме slate-подписи дают 2.3, а белый
-   текст верхней полосы падает на светлый же фон (1.0). */
-body.stealth-edition .text-slate-300,
-body.stealth-edition .text-slate-400,
-body.stealth-edition .text-slate-300\/90,
-body.stealth-edition .text-gray-500,
-body.stealth-edition .text-gray-600 { color: #94A3B8 !important; }
-body.stealth-edition .bg-\[\#F8F9FB\] { background-color: #0B0F17 !important; border-bottom-color: #1E293B !important; color: #94A3B8 !important; }
-body.stealth-edition .bg-\[\#F8F9FB\] a,
-body.stealth-edition .bg-\[\#F8F9FB\] .text-gray-900 { color: #F8FAFC !important; }
-body.stealth-edition .text-\[\#E11D48\] { color: #FF6B7E !important; }
 .bg-\[\#2AABEE\] { background-color: #0E6BA8 !important; }
-/* Темный режим (Obsidian Night / Stealth Titanium 3D) при переключении темы или дизайна */
-body.dark-theme,
-body.stealth-edition {
-  background-color: #0B0F17 !important;
-  color: #F8FAFC !important;
-}
-body.dark-theme header,
-body.stealth-edition header,
-body.dark-theme .watch-card,
-body.stealth-edition .watch-card,
-body.dark-theme .collection-chip,
-body.stealth-edition .collection-chip,
-body.dark-theme #catalog-anchor,
-body.stealth-edition #catalog-anchor,
-body.dark-theme #product-detail-box,
-body.stealth-edition #product-detail-box,
-body.dark-theme #cms-catalog-sidebar,
-body.stealth-edition #cms-catalog-sidebar,
-body.dark-theme #cms-engine-bar,
-body.stealth-edition #cms-engine-bar,
-body.dark-theme .hero-obsidian,
-body.stealth-edition .hero-obsidian,
-body.dark-theme #drawer,
-body.stealth-edition #drawer,
-body.dark-theme #filter-drawer,
-body.stealth-edition #filter-drawer {
-  background: #111827 !important;
-  background-color: #111827 !important;
-  color: #F8FAFC !important;
-  border-color: #1F2937 !important;
-}
-body.dark-theme .watch-stage,
-body.stealth-edition .watch-stage,
-body.dark-theme .watch-stage img.watch-bg-photo,
-body.stealth-edition .watch-stage img.watch-bg-photo {
-  background-color: #0F172A !important;
-  border-color: #1E293B !important;
-}
-body.dark-theme h1, body.dark-theme h2, body.dark-theme h3, body.dark-theme .text-gray-900, body.dark-theme .text-gray-800, body.dark-theme .text-gray-700,
-body.stealth-edition h1, body.stealth-edition h2, body.stealth-edition h3, body.stealth-edition .text-gray-900, body.stealth-edition .text-gray-800, body.stealth-edition .text-gray-700 {
-  color: #F8FAFC !important;
-}
-body.dark-theme .text-gray-600, body.dark-theme .text-gray-500,
-body.stealth-edition .text-gray-600, body.stealth-edition .text-gray-500 {
-  color: #94A3B8 !important;
-}
-body.dark-theme .bg-white, body.dark-theme .bg-gray-50, body.dark-theme .bg-gray-100,
-body.stealth-edition .bg-white, body.stealth-edition .bg-gray-50, body.stealth-edition .bg-gray-100 {
-  background-color: #1E293B !important;
-  color: #F8FAFC !important;
-  border-color: #334155 !important;
-}
-body.stealth-edition #product-3d-stage {
-  display: flex !important;
-}
 
 /* Автономный базовый слой утилит на случай блокировки cdn.tailwindcss.com */
 .hidden { display: none !important; }
@@ -488,15 +411,13 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
 /* Контраст состояний: счётчик активной полки был чёрным по чёрному, «Добавлено» —
    белым по салатовому (3.4), а сервисные подписи и красный акцент в светлой теме
    не дотягивали до 4.5. */
-body.stealth-edition .text-black\/80,
-body.dark-theme .text-black\/80 { color: #F8FAFC !important; }
 .btn-luxury-added { background-color: #067A54 !important; border-color: #067A54 !important; }
 body:not(.stealth-edition):not(.dark-theme) .text-\[\#E11D48\] { color: #BE123C !important; }
 body:not(.stealth-edition):not(.dark-theme) .text-gray-500 { color: #4B5563 !important; }
 body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 !important; }
 </style></head>
-<div id="tw-preseed" class="hidden classic-edition ivory-theme dark-theme stage-lume-active stage-redshift-active btn-luxury-added btn-luxury-gold text-red-500 text-soft flex"></div>
-<body class="min-h-screen flex flex-col pb-24 selection:bg-[#38BDF8] selection:text-[#07090E] classic-edition ivory-theme">
+<div id="tw-preseed" class="hidden stage-lume-active stage-redshift-active btn-luxury-added btn-luxury-gold text-red-500 text-soft flex"></div>
+<body class="min-h-screen flex flex-col pb-24 selection:bg-[#38BDF8] selection:text-[#07090E]">
 
 <noscript>
   <div style="max-width:960px;margin:0 auto;padding:16px;font-family:sans-serif;background:#fff;color:#141619">
@@ -639,7 +560,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 
       <!-- Правая панель иконок с подписями в стиле стиль витрины -->
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-        <button onclick="toggleTheme()" id="theme-btn" aria-label="Переключить тему" title="Тёмная/светлая тема" class="flex flex-col items-center justify-center px-2.5 py-1 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"><span id="theme-icon" class="text-base leading-none">🌙</span><span class="text-[10px] font-semibold mt-0.5">Тема</span></button>
+        
         <button onclick="openQuizModal()" class="hidden lg:flex flex-col items-center justify-center px-2.5 py-1 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors" title="Подбор часов за 30 секунд">
           <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span class="text-[10px] font-semibold mt-0.5">Подбор</span>
@@ -1411,21 +1332,6 @@ function allBrands(){
 }
 
 
-function currentTheme(){try{return localStorage.getItem('app_theme')||'light';}catch(e){return 'light';}}
-function applyTheme(t){
-  const dark=t==='dark';
-  try{document.body.classList.toggle('stealth-edition',dark);}catch(e){}
-  try{document.body.classList.toggle('classic-edition',!dark);}catch(e){}
-  try{const ic=document.getElementById('theme-icon');if(ic)ic.textContent=dark?'☀️':'🌙';}catch(e){}
-  try{document.documentElement.setAttribute('data-theme',dark?'dark':'light');}catch(e){}
-}
-function toggleTheme(){
-  const next=currentTheme()==='dark'?'light':'dark';
-  try{localStorage.setItem('app_theme',next);}catch(e){}
-  applyTheme(next);
-  try{showToast(next==='dark'?'Тёмная тема включена':'Светлая тема включена');}catch(e){}
-}
-try{applyTheme(currentTheme());}catch(e){}
 function showToast(msg){
   const t=document.getElementById('toast');
   if(!t)return;
@@ -3120,7 +3026,6 @@ function setupMiniApp(){
   if(!MiniApp)return;
   try{MiniApp.ready();MiniApp.expand();}catch(e){}
   try{MiniApp.disableVerticalSwipes();}catch(e){}
-  try{const p=MiniApp.themeParams||{};if(p.bg_color)document.body.style.background=p.bg_color;}catch(e){}
   try{MiniApp.BackButton.onClick(()=>switchTab('catalog'));}catch(e){}
   syncMiniAppNav('catalog');
 }
@@ -3890,7 +3795,6 @@ function copyCartShareLink(){
 }
 
 
-try{if(typeof applyTheme==='function')applyTheme((function(){try{return localStorage.getItem('app_theme')||'light';}catch(e){return 'light';}})());else if(document.body&&document.body.classList)document.body.classList.add('classic-edition');}catch(e){}
 // Живая виртуализация: окно карточек следует за прокруткой и шириной экрана.
 try{
   if(typeof window!=='undefined'&&window&&typeof window.addEventListener==='function'&&!window.__watchopGridBound){
