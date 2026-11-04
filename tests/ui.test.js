@@ -37,16 +37,6 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.ok(g.state.filtered.length > 0);
   });
 
-  it('бренд в подсказках пишется в одной форме', () => {
-    type('гармин');
-    const labels = g.searchSuggestions('гармин').map((s) => s.label);
-    assert.ok(labels.length > 1, `подсказок: ${labels.length}`);
-    const forms = new Set();
-    for (const l of labels) for (const w of l.split(/\s+/)) if (/^garmin$/i.test(w)) forms.add(w);
-    assert.equal(forms.size, 1, 'одна форма бренда, а не «Garmin» рядом с «GARMIN»: ' + [...forms].join(' / '));
-    assert.ok(labels.every((l) => /garmin/i.test(l)), 'все подсказки про Garmin');
-  });
-
   it('дропдаун открывается, выбирается по тапу и закрывается по Escape', () => {
     const dd = g.document.getElementById('search-dropdown');
     type('fenix');
@@ -54,8 +44,7 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.equal(dd.classList.contains('hidden'), false, 'дропдаун виден при наборе');
     const ids = sugLinks();
     assert.ok(ids.length > 0);
-    const first = g.searchSuggestions('fenix')[0];
-    g.selectSearchTag(first.query);
+    g.selectSearchTag('Fenix 8');
     assert.ok(String(g.document.getElementById('search-input').value).length > 0, 'подсказка подставилась в поле');
     assert.equal(dd.classList.contains('hidden'), true, 'после выбора дропдаун закрыт');
     assert.ok(g.state.filtered.length > 0);
@@ -77,7 +66,7 @@ describe('витрина-stealth: поиск, фильтры, оформлени
   });
 
   it('пилюли категорий и серий рендерят настоящие ссылки', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     g.renderFilters();
     assert.ok(g.document.getElementById('category-pills').innerHTML.includes('#/c/'), 'категории — ссылки #/c/');
     assert.ok(g.document.getElementById('series-pills').innerHTML.includes('#/s/'), 'серии — ссылки #/s/');
@@ -96,7 +85,7 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.equal(g.state.activeCategory, 'Эхолоты', 'категория применилась');
     assert.equal(g.state.filtered.length, SEED.filter((p) => p.category === 'Эхолоты').length);
     assert.match(String(g.document.getElementById('filter-btn-label').textContent), /Фильтры · 1/);
-    g.resetFilters();
+    g.resetAllFilters();
     assert.equal(g.state.activeCategory, 'Все товары');
     assert.equal(g.state.filtered.length, SEED.length);
     assert.equal(g.document.getElementById('filter-btn-label').textContent, 'Фильтры');
@@ -124,10 +113,7 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.ok(fenix8.length > 0 && fenix8.length < fenix.length, `Fenix 8: ${fenix8.length} из ${fenix.length}`);
     assert.equal(run('fenix   8').length, fenix8.length, 'лишние пробелы не ломают модель');
     type('Fenix');
-    for (const s of g.searchSuggestions('Fenix')) {
-      const real = run(s.query).length;
-      assert.ok(s.count > 0 && real > 0, `подсказка «${s.label}» ведёт к выдаче`);
-    }
+    assert.ok(sugLinks().length > 0, 'по «Fenix» подсказки — позиции из каталога');
   });
 
   it('пустой экран «заказ принят» возвращает в каталог, а заказ этой сессии — остаётся', async () => {
@@ -262,16 +248,16 @@ describe('витрина-stealth: поиск, фильтры, оформлени
 
   it('подсказки всегда считаются по живому каталогу, а не из кэша', () => {
     type('fenix');
-    const before = g.searchSuggestions('fenix').map((s) => `${s.label}:${s.count}`).join('|');
-    assert.ok(before.length > 0);
+    const before = sugLinks();
+    assert.ok(before.length > 0, 'подсказки есть');
     const target = g.state.products.find((p) => /Suunto/i.test(p.brand));
     target.brand = 'TESTBRANDX';
     type('testbrandx');
     assert.ok(g.state.filtered.some((p) => p.brand === 'TESTBRANDX'), 'новый бренд ищется сразу');
-    assert.ok(g.searchSuggestions('testbrandx').length > 0, 'и в подсказках он есть');
+    assert.ok(sugLinks().includes(target.id), 'и сразу предлагается в подсказках');
     target.brand = 'SUUNTO';
     type('fenix');
-    assert.equal(g.searchSuggestions('fenix').map((s) => `${s.label}:${s.count}`).join('|'), before, 'возврат даёт те же числа');
+    assert.deepEqual(sugLinks(), before, 'возврат даёт те же позиции');
   });
 
   it('фото из админки отдаётся относительным путём — иначе Pages в подпапке его не найдёт', () => {
@@ -305,19 +291,18 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.ok(!sec.classList.contains('hidden'), 'без запроса хиты на месте');
     g.setCategory('Эхолоты');
     assert.ok(!sec.classList.contains('hidden'), 'фильтр по категории хиты не прячет');
-    g.resetFilters();
+    g.resetAllFilters();
   });
 
   it('после смены каталога подсказки пересобираются, а не берутся из старого списка', () => {
     type('descent');
-    const before = g.searchSuggestions('descent').map((s) => s.label);
-    assert.ok(before.length > 0);
+    type('descent');
+    assert.ok(sugLinks().length > 0, 'до замены каталога подсказки есть');
     g.state.products = g.state.products.filter((p) => p.series !== 'Descent');
     g.state.products = [{ id: 9001, brand: 'TESTBRAND', series: 'TestSeries', category: 'Аксессуары', name: 'TestBrand Thing 1', price: 100, specs: '' }, ...g.state.products];
     type('testbrand');
-    const after = g.searchSuggestions('testbrand').map((s) => s.label);
-    assert.ok(after.some((l) => /testbrand/i.test(l)), 'новый товар появился в подсказках');
-    assert.equal(after.some((l) => /descent/i.test(l)), false, 'старые позиции больше не предлагаются');
+    const after = sugLinks();
+    assert.deepEqual(after, [9001], 'предлагается только то, что осталось в каталоге');
   });
 
   it('автономный слой покрывает скрывающие состояния (CDN может лежать)', () => {
@@ -361,7 +346,8 @@ describe('витрина-stealth: поиск, фильтры, оформлени
   it('переключателя темы на витрине больше нет', () => {
     for (const f of ['index.html', 'public/index.html']) {
       const html = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
-      for (const needle of ['id="theme-btn"', 'toggleTheme(', 'applyTheme(', "localStorage.getItem('app_theme')", 'body.stealth-edition', 'body.dark-theme']) {
+      for (const needle of ['id="theme-btn"', 'toggleTheme(', 'applyTheme(', "localStorage.getItem('app_theme')", 'body.stealth-edition', 'body.dark-theme',
+                            'openCallbackModal', 'openTradeInModal', 'openDeliveryCalc', 'openLightbox(', 'id="hits-promo-btn"', 'Промоцены']) {
         assert.ok(!html.includes(needle), f + ': остался хвост темы — ' + needle);
       }
     }
@@ -404,56 +390,5 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.ok(gg.document.getElementById('f-delivery').innerHTML.includes('value="СДЭК"'), 'без ключа — дефолт');
   });
 
-  it('промокод не виснет на мёртвом API: есть AbortSignal-таймаут', () => {
-    assert.ok(HTML.includes('AbortController'), 'fetch обёрнут в AbortController');
-    assert.ok(/aborted|aborted/i.test(HTML) || HTML.includes('8000'), 'таймаут задан');
-  });
 
-  it('скидка видна сразу: старая цена зачёркнута всегда, красное — только с подсветкой из админки', () => {
-    const item = { id: 90003, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Тест со скидкой', price: 50000, old_price: 60000, image: 'x', specs: '' };
-    g.state.settings.promo_highlight = '0';
-    const off = g.productCardHTML(item);
-    assert.match(off, /line-through/, 'старая цена зачёркнута серым всегда');
-    assert.doesNotMatch(off, /text-\[#FF5A5A\]/, 'по умолчанию красного нет — ценники нейтральные');
-    g.state.settings.promo_highlight = '1';
-    const on = g.productCardHTML(item);
-    assert.match(on, /text-\[#FF5A5A\]/, 'админ вернул красные ценники одной кнопкой');
-    g.state.settings.promo_highlight = '0';
-    const full = g.productCardHTML({ id: 90004, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Тест без скидки', price: 50000, image: 'x', specs: '' });
-    assert.doesNotMatch(full, /text-\[#FF5A5A\]/, 'без скидки красного нет');
-  });
-  it('звонок из шапки берёт номер у сервера, а в бот летит ссылка без состава', async () => {
-    const g = mountFrontend({ fetch: "async (url, init) => { globalThis.__lead = { url: String(url), body: JSON.parse(init.body) }; return { ok: true, json: async () => ({ ok: true, code: 'TG-777' }) }; }" });
-    g.document.getElementById('cb-name').value = 'Мария';
-    g.document.getElementById('cb-phone').value = '+7 900 000-11-22';
-    g.document.getElementById('cb-comment').value = 'Подобрать Fenix';
-    await g.submitCallbackRequest();
-    assert.equal(globalThis.__lead.url, '/api/lead', 'заявка уходит на /api/lead');
-    assert.equal(globalThis.__lead.body.type, 'callback');
-    assert.equal(globalThis.__lead.body.contact, '+7 900 000-11-22');
-    assert.equal(g.document.getElementById('order-code-badge').textContent, 'TG-777', 'покупатель видит номер сервера');
-    assert.equal(g.document.getElementById('order-tg-btn').href, 'https://t.me/wwwatchshop_bot?start=TG-777', 'в deep link нет позиции, которой заявка не является');
-    assert.equal(g.state.myOrders[0].code, 'TG-777');
-    assert.equal(g.state.myOrders[0].items.length, 0, 'в кабинете у звонка пустой состав');
-  });
-
-  it('заявка Trade-In из старой формы тоже не выдумывает номер', async () => {
-    const g = mountFrontend({ fetch: "async () => ({ ok: false })" });
-    g.document.getElementById('ti-old-model').value = 'Garmin Fenix 6';
-    g.document.getElementById('ti-contact').value = '+7 900 000-33-44';
-    await g.submitTradeInRequest();
-    assert.equal(g.document.getElementById('order-code-badge').textContent, 'оценка', 'без ответа сервера номера не показываем');
-    assert.equal(g.document.getElementById('order-tg-btn').href, 'https://t.me/wwwatchshop_bot', 'ссылка ведёт в чат без выдуманного заказа');
-    assert.equal((g.state.myOrders || []).length, 0, 'такая заявка не попадает в «Мои заказы»');
-  });
-
-  it('звонок на статике без сервера не рисует случайный TG-номер', async () => {
-    const g = mountFrontend({ fetch: "async () => ({ ok: false })" });
-    g.document.getElementById('cb-name').value = 'Мария';
-    g.document.getElementById('cb-phone').value = '+7 900 000-11-22';
-    await g.submitCallbackRequest();
-    assert.equal(g.document.getElementById('order-code-badge').textContent, 'звонок');
-    assert.equal(g.document.getElementById('order-tg-btn').href, 'https://t.me/wwwatchshop_bot');
-    assert.equal((g.state.myOrders || []).length, 0);
-  });
 });

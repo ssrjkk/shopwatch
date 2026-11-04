@@ -16,62 +16,61 @@ describe('подбор по пресетам и цене, лайтбокс, пр
   const getField = (id) => String(g.document.getElementById(id).value);
 
   it('счётчик на пилюле «Хиты» равен числу позиций в выдаче', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     const declared = g.presetCount('hits');
     assert.ok(declared > 0, 'хиты в каталоге есть');
     g.applyPreset('hits');
     const list = g.getFiltered();
     assert.equal(list.length, declared, `${declared} на пилюле, ${list.length} в выдаче`);
     assert.ok(list.every((p) => Number(p.hit || p.is_hit) === 1), 'в выдаче только хиты');
-    g.resetFilters();
+    g.resetAllFilters();
   });
 
   it('границы пресета и поля цены пересекаются, а не перекрывают друг друга', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     g.applyPreset('premium');
     assert.ok(g.getFiltered().every((p) => Number(p.price) >= 60000), 'премиум — от 60 000');
     setField('price-min', '');
     setField('price-max', '70000');
-    g.applyPriceRange();
+    g.renderCatalog();
     const both = g.getFiltered();
     assert.ok(both.length > 0, 'вилка 60 000 — 70 000 не пустая');
     assert.ok(both.every((p) => Number(p.price) >= 60000 && Number(p.price) <= 70000), 'работают обе границы');
-    g.setSearchQuery('до 65000');
+    setField('search-input', 'до 65000'); g.onSearchInput();
     const txt = g.getFiltered();
     assert.ok(txt.every((p) => Number(p.price) >= 60000 && Number(p.price) <= 65000), 'текстовый потолок учтён вместе с пресетом');
-    g.resetFilters();
+    g.resetAllFilters();
   });
 
   it('перепутанный порядок границ читается как вилка', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     setField('price-min', '70000');
     setField('price-max', '20000');
     const f = g.priceRangeFromInputs();
     assert.equal(f.min, 20000);
     assert.equal(f.max, 70000);
     assert.equal(String(g.priceRangeLabel(f)).replace(/[  \s]/g, ' '), '20 000 — 70 000 ₽');
-    g.resetFilters();
+    g.resetAllFilters();
   });
 
   it('число в запросе и потолок из поля не спорят: ±5% считается внутри диапазона', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     setField('price-min', '');
     setField('price-max', '30000');
-    g.setSearchQuery('60000');
+    setField('search-input', '60000'); g.onSearchInput();
     const list = g.getFiltered();
     assert.equal(list.length, 0, '60 000 ±5% не влезает в потолок 30 000 — пустая выдача честнее подмены');
-    g.resetFilters();
+    g.resetAllFilters();
   });
 
   it('выбранный подбор попадает в ссылку и восстанавливается из неё', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     setField('price-min', '15000');
     g.applyPreset('premium');
-    g.applyPriceRange();
     const hash = String(global.location.hash);
     assert.match(hash, /preset=premium/, hash);
     assert.match(hash, /min=15000/, hash);
-    g.resetFilters();
+    g.resetAllFilters();
     assert.equal(g.state.preset, '');
     assert.equal(getField('price-min'), '', 'сброс чистит поле цены');
     global.location.hash = hash;
@@ -79,41 +78,24 @@ describe('подбор по пресетам и цене, лайтбокс, пр
     assert.equal(g.state.preset, 'premium', 'пресет приехал по ссылке');
     assert.equal(getField('price-min'), '15000', 'диапазон приехал по ссылке');
     assert.ok(g.getFiltered().every((p) => Number(p.price) >= 60000), 'восстановленный фильтр реально ограничивает выдачу');
-    g.resetFilters();
+    g.resetAllFilters();
     global.location.hash = '';
   });
 
   it('счётчик «Фильтры · N» видит пресет и цену', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     assert.equal(g.activeFilterCount(), 0);
     g.applyPreset('hits');
     assert.equal(g.activeFilterCount(), 1);
     setField('price-max', '40000');
-    g.applyPriceRange();
+    g.renderFilters();
     assert.equal(g.activeFilterCount(), 2);
     assert.match(String(g.document.getElementById('filter-btn-label').textContent), /^Фильтры · 2$/);
     assert.match(String(g.document.getElementById('filter-summary').textContent), /Хиты/, 'в сводке фильтров назван пресет');
-    g.resetFilters();
+    g.resetAllFilters();
     assert.equal(g.activeFilterCount(), 0);
     setField('price-min', '');
     setField('price-max', '');
-  });
-
-  it('фото товара открывается крупно: в лайтбоксе — его же локальное фото', () => {
-    g.resetFilters();
-    const item = g.state.products.find((p) => String(p.image || '').startsWith('uploads/'));
-    assert.ok(item, 'в каталоге есть позиция с локальным фото');
-    g.openProduct(item.id);
-    g.openLightbox();
-    const box = g.document.getElementById('lightbox');
-    const img = g.document.getElementById('lightbox-img');
-    assert.equal(box.classList.contains('hidden'), false, 'оверлей показан');
-    assert.ok(String(img.src).includes('uploads/'), 'в лайтбоксе — локальное фото, а не хотлинк');
-    assert.ok(!/unsplash\.com|placeholder/.test(String(img.src)), 'в лайтбоксе нет чужих картинок');
-    assert.ok(String(img.src).includes('uploads/catalog/'), 'локальное фото каталога в лайтбоксе');
-    assert.ok(String(img.alt).includes(item.name), 'альт подписан названием товара');
-    g.closeLightbox();
-    assert.equal(box.classList.contains('hidden'), true, 'закрытие прячет оверлей');
   });
 
   it('ссылка вида javascript: в источник картинки не проходит', () => {
@@ -141,10 +123,10 @@ describe('подбор по пресетам и цене, лайтбокс, пр
     assert.equal(sec.classList.contains('hidden'), false, 'блок виден, когда есть что показать');
     const cards = (String(g.document.getElementById('recent-viewed-grid').innerHTML).match(/data-fav-heart="/g) || []).length;
     assert.ok(cards > 0 && cards <= 6, `карточек в блоке: ${cards}`);
-    g.setSearchQuery('fenix');
+    setField('search-input', 'fenix'); g.onSearchInput();
     g.renderCatalog();
     assert.equal(sec.classList.contains('hidden'), true, 'при поиске личное уступает место выдаче');
-    g.setSearchQuery('');
+    setField('search-input', ''); g.onSearchInput();
     g.clearRecentViewed();
     assert.equal(g.state.recent.length, 0);
     g.renderCatalog();
@@ -166,7 +148,7 @@ describe('подбор по пресетам и цене, лайтбокс, пр
   });
 
   it('schema.org на странице товара собирается из реальных данных и не содержит availability', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     const p = g.state.products.find((x) => Number(x.price) > 0 && String(x.name).length > 0);
     const ld = g.productJsonLd(p);
     assert.equal(ld['@context'], 'https://schema.org');
@@ -197,7 +179,7 @@ describe('подбор по пресетам и цене, лайтбокс, пр
   });
 
   it('уход в каталог убирает schema прошлого товара, а не оставляет её висеть', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     const a = g.state.products[0];
     g.openProduct(a.id);
     const el = g.document.getElementById('product-jsonld');
@@ -220,7 +202,7 @@ describe('фильтры по бренду и характеристикам, с
   const brandCount = (b) => g.state.products.filter((p) => p.brand === b).length;
 
   it('бренды берутся из каталога, а число на чипе равно выдаче', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     g.renderFilters();
     const brands = g.allBrands().filter((b) => b !== 'ALL');
     assert.ok(brands.length > 1, 'брендов несколько');
@@ -236,7 +218,7 @@ describe('фильтры по бренду и характеристикам, с
   });
 
   it('метки характеристик существуют только если по ним есть позиции', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     const counts = {};
     for (const k of ['amoled', 'solar', 'sapphire', 'titanium', 'size_s', 'size_m', 'size_l']) {
       g.toggleSpecFilter(k);
@@ -255,7 +237,7 @@ describe('фильтры по бренду и характеристикам, с
   });
 
   it('несколько меток — пересечение, а не объединение', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     g.toggleSpecFilter('amoled');
     const amoled = g.getFiltered();
     assert.ok(amoled.length > 0, 'по amoled что-то есть');
@@ -265,19 +247,19 @@ describe('фильтры по бренду и характеристикам, с
     const brand = g.allBrands().find((b) => b !== 'ALL');
     g.setBrandFilter(brand);
     assert.ok(g.getFiltered().every((p) => p.brand === brand), 'бренд + метки работают вместе');
-    g.resetFilters();
+    g.resetAllFilters();
     assert.equal(g.activeFilterCount(), 0, 'сброс снимает и бренд, и метки');
   });
 
   it('бренд и метки доезжают по ссылке', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     const brand = g.allBrands().find((b) => b !== 'ALL');
     g.setBrandFilter(brand);
     g.toggleSpecFilter('solar');
     const hash = String(global.location.hash);
     assert.ok(hash.includes('brand='), hash);
     assert.match(hash, /spec=solar/, hash);
-    g.resetFilters();
+    g.resetAllFilters();
     global.location.hash = hash;
     g.route();
     assert.equal(g.state.activeBrand, brand, 'бренд восстановлен из ссылки');
@@ -288,12 +270,12 @@ describe('фильтры по бренду и характеристикам, с
     g.route();
     assert.deepEqual(g.state.activeSpecs, [], 'неизвестной метке в state не место');
     assert.equal(g.state.activeBrand, brand, 'бренд при этом применился');
-    g.resetFilters();
+    g.resetAllFilters();
     global.location.hash = '';
   });
 
   it('счётчик «Фильтры · N» и сводка видят бренд и метки', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     const first = g.allBrands().find((b) => b !== 'ALL');
     g.setBrandFilter(first);
     g.toggleSpecFilter('solar');
@@ -303,11 +285,11 @@ describe('фильтры по бренду и характеристикам, с
     const sum = String(g.document.getElementById('filter-summary').textContent);
     assert.match(sum, new RegExp(first.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'в сводке назван бренд');
     assert.match(String(g.document.getElementById('filter-btn-label').textContent), /^Фильтры · 2$/);
-    g.resetFilters();
+    g.resetAllFilters();
   });
 
   it('сравнение: потолок четыре, повтор убирает, панель показывает число', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     g.clearCompare();
     const ids = g.state.products.slice(0, 6).map((p) => p.id);
     for (const id of ids) g.toggleCompare({ stopPropagation() {} }, id);
@@ -321,7 +303,7 @@ describe('фильтры по бренду и характеристикам, с
   });
 
   it('таблица сравнения несёт реальные поля и экранирует название', () => {
-    g.resetFilters();
+    g.resetAllFilters();
     const picks = g.state.products.filter((p) => Number(p.price) > 0).slice(0, 3).map((p) => p.id);
     g.clearCompare();
     for (const id of picks) g.toggleCompare({ stopPropagation() {} }, id);
@@ -361,44 +343,5 @@ describe('фильтры по бренду и характеристикам, с
     globalThis.__pstore = undefined;
   });
 
-  it('промокод: сумму считает сервер, витрина её только показывает', async () => {
-    const srv = mountFrontend({ fetch: "async (url, opts) => ({ ok: true, json: async () => ({ code: 'WATCH10', percent: 10, subtotal: 100000, discount: 10000, total: 90000 }) })" });
-    srv.state.cart = [{ id: srv.state.products[0].id, qty: 1 }];
-    srv.document.getElementById('promo-input').value = 'watch10';
-    await srv.applyPromoCode();
-    assert.equal(srv.state.promoCode, 'WATCH10');
-    assert.equal(srv.state.promoDiscountRub, 10000, 'скидку в рублях вернул сервер, витрина её только показывает');
-    assert.match(srv.document.getElementById('promo-status').textContent.replace(/[\u0020\u00a0\u202f]/g, ' '), /10 000/);
-    assert.equal(srv.document.getElementById('cart-discount-row').classList.contains('hidden'), false, 'строка скидки видна');
-    srv.clearPromo();
-    assert.equal(srv.state.promoCode, '', 'сброс чистит и код, и скидку');
-    assert.equal(srv.state.promoDiscountRub, 0);
-  });
 
-  it('отклонённый промокод очищается и показывает ошибку', async () => {
-    const rejected = mountFrontend({ fetch: "async () => ({ ok: false, status: 400, json: async () => ({ error: 'Промокод не найден или истёк' }) })" });
-    rejected.state.cart = [{ id: rejected.state.products[0].id, qty: 1 }];
-    rejected.document.getElementById('promo-input').value = 'NETAKOGO';
-    await rejected.applyPromoCode();
-    assert.equal(rejected.state.promoCode, '', 'отклонённый код не остаётся');
-    assert.equal(rejected.state.promoDiscountRub, 0);
-    assert.match(rejected.document.getElementById('promo-status').textContent, /не найден/);
-  });
-
-  it('на статической витрине промокод не выдумывает скидку, а уходит в deep link', () => {
-    const pages = mountFrontend({ location: { hostname: 'ssrjkk.github.io', protocol: 'https:' }, fetch: "async () => ({ ok: false })" });
-    assert.equal(pages.IS_STATIC, true, 'хост *.github.io опознан как статический');
-    pages.document.getElementById('promo-input').value = 'watch10';
-    pages.applyPromoCode();
-    assert.equal(pages.state.promoCode, 'WATCH10');
-    assert.equal(pages.state.promoDiscountRub, 0, 'без сервера скидку не рисуем — посчитает сервер в боте');
-    assert.match(pages.document.getElementById('promo-status').textContent, /сервер/i);
-    assert.equal(pages.deepLinkPromo(), 'WATCH10');
-    const link = pages.tgOrderLink('TG-1234', [{ id: 5, qty: 1, price: 1000 }]);
-    assert.match(link, /\?start=TG-1234_5x1x1000_PROMOWATCH10$/, link);
-    pages.clearPromo();
-    assert.equal(pages.tgOrderLink('TG-1234', [{ id: 5, qty: 1, price: 1000 }]).includes('PROMO'), false, 'без кода в ссылке его нет');
-    pages.clearPromo();
-    assert.equal(pages.deepLinkPromo(), '', 'мусорный код в deep link не кладём');
-  });
 });

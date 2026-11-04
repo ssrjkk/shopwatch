@@ -179,7 +179,7 @@ describe('витрина: поиск, фильтры и оформление н�
     global.location.hash = '#/s/' + encodeURIComponent('fēnix');
     g.route();
     assert.equal(g.state.activeSeries, 'fēnix');
-    g.goAllProducts();
+    g.goCatalogHome();
     assert.equal(g.state.activeSeries, 'Все модели');
     assert.equal(g.state.filtered.length, TOTAL);
     g.document.getElementById('search-input').value = 'эхолот';

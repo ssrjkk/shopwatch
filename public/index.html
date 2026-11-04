@@ -402,7 +402,6 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
 <input id="price-max" type="hidden" value="" />
 <span id="filter-btn-label" class="hidden">Фильтры</span>
 <span id="filter-summary" class="hidden"></span>
-<div id="lightbox" class="hidden"></div>
 <script id="product-jsonld" type="application/ld+json"></script>
 <script id="schema-jsonld" type="application/ld+json">
 {"@context":"https://schema.org","@type":"Store","name":"OneWatch","description":"Магазин оригинальной продукции Garmin, Apple Watch, Samsung, Suunto и эхолотов с доставкой по всей России","url":"https://ssrjkk.github.io/shopwatch/","image":"https://ssrjkk.github.io/shopwatch/uploads/catalog/f88df70ab8a2.jpg","telephone":"+7 (000) 000-00-00","priceRange":"₽₽–₽₽₽","currenciesAccepted":"RUB","paymentAccepted":"Банковская карта, СБП, Наличные при получении, Долями, Сплит","areaServed":{"@type":"Country","name":"RU"},"address":{"@type":"PostalAddress","addressCountry":"RU","addressLocality":"Воронеж"},"potentialAction":{"@type":"SearchAction","target":"https://ssrjkk.github.io/shopwatch/#/catalog?q={search_term_string}","query-input":"required name=search_term_string"}}
@@ -473,19 +472,17 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 <div class="bg-[#F8F9FB] text-gray-600 text-[11px] border-b border-gray-200 px-3 sm:px-4 py-1.5">
   <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
     <div class="flex items-center gap-3 min-w-0 truncate">
-      <button onclick="openDeliveryCalc()" class="inline-flex items-center gap-1 font-semibold text-gray-800 hover:text-[#E11D48] shrink-0">
+      <span class="inline-flex items-center gap-1 font-semibold text-gray-800 shrink-0">
         <span class="text-[#E11D48]">📍</span>
         <span>Москва и РФ (СДЭК с примеркой)</span>
-      </button>
+      </span>
       <span class="text-gray-300 hidden sm:inline">|</span>
-      <a href="tel:+70000000000" class="font-bold text-gray-900 hover:text-[#E11D48] hidden sm:inline shrink-0">+7 (000) 000-00-00</a>
+      <a id="ui-phone-top" href="tel:" class="font-bold text-gray-900 hover:text-[#E11D48] hidden sm:inline shrink-0"></a>
       
     </div>
     <div class="hidden md:flex items-center gap-4 shrink-0 font-semibold text-[11px]">
       
-      <button onclick="openDeliveryCalc()" class="text-gray-600 hover:text-gray-900">Доставка 0 ₽</button>
-      <button onclick="openTradeInModal()" class="text-gray-600 hover:text-gray-900">Trade-In обмен</button>
-      <button onclick="openCallbackModal()" class="text-brand hover:underline font-bold">Заказать звонок</button>
+
     </div>
   </div>
 </div>
@@ -528,7 +525,6 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   <div class="border-t border-gray-100 pt-4 space-y-2 text-xs text-gray-500">
     <div class="font-bold text-gray-900">Горячая линия и Telegram</div>
     <a id="drawer-phone" href="tel:+70000000000" class="block font-semibold text-gray-900">+7 (000) 000-00-00</a>
-    <button onclick="toggleDrawer(false);openCallbackModal()" class="w-full mt-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-xs py-2.5 rounded-xl transition-colors">Заказать обратный звонок</button>
     <a id="drawer-tg-btn" href="#contacts" target="_blank" class="block w-full text-center bg-[#2AABEE] text-white font-bold py-2.5 rounded-xl hover:opacity-95 transition-opacity mt-1" style="color:#FFFFFF !important">Написать в Telegram</a>
   </div>
 </aside>
@@ -1395,7 +1391,6 @@ function initRevealObserver(){
 }
 
 
-
 function computeBatteryLife(p, gpsHoursPerWeek = 4, alwaysOn = false, solarSunny = false) {
   const s = String((p && p.specs) || '') + ' ' + String((p && p.name) || '');
   const mDays = s.match(/до\s*(\d{1,3})\s*дн/i);
@@ -1448,9 +1443,6 @@ function copyCompareShareLink() {
   } catch (e) {}
   showToast('Ссылка на сравнение скопирована');
   return hash;
-}
-function isPriceWatched(id) {
-  return (state.watchlist || []).includes(Number(id));
 }
 function togglePriceWatch(id) {
   const n = Number(id);
@@ -1554,6 +1546,7 @@ function applySettingsToUI(){
   setTxt('ui-hero-title',s.hero_title);
   setTxt('ui-address',s.address);
   setTxt('ui-phone',s.phone);
+  try{const top=document.getElementById('ui-phone-top');if(top){const d=String(s.phone||'').replace(/\D/g,'');top.textContent=s.phone||'';top.href=d?'tel:+'+d:'#contacts';if(!d)top.classList.add('hidden');}}catch(e){}
   setHref('ui-phone','tel:'+String(s.phone||'').replace(/[^\d+]/g,''));
   setTxt('drawer-phone',s.phone);
   setHref('drawer-phone','tel:'+String(s.phone||'').replace(/[^\d+]/g,''));
@@ -1751,12 +1744,6 @@ state.compareDiffOnly = false;
 
 function isHit(p){return Number(p&&(p.hit!=null?p.hit:p.is_hit))>0;}
 function presetOf(k){for(const p of PRESETS){if(p.key===k)return p;}return null;}
-function presetBounds(){
-  const k = state.preset || (state.presetFilter && state.presetFilter !== 'all' ? state.presetFilter : '');
-  const p=presetOf(k);
-  if(!p)return{min:0,max:0};
-  return{min:Number(p.min)||0,max:Number(p.max)||0};
-}
 function presetCount(k){
   const p=presetOf(k);
   if(!p)return 0;
@@ -1770,28 +1757,10 @@ function priceRangeFromInputs(){
   if(min&&max&&min>max){const t=min;min=max;max=t;}
   return{min,max};
 }
-function lowestCap(list){
-  let v=0;
-  for(const x of list){const n=Number(x)||0;if(n>0&&(v===0||n<v))v=n;}
-  return v;
-}
-function effectivePriceRange(min,max){
-  const f=priceRangeFromInputs(),b=presetBounds();
-  return{min:Math.max(Number(min)||0,f.min||0,b.min||0),max:lowestCap([max,f.max,b.max])};
-}
-function applyPresetTo(list){
-  const k = state.preset || (state.presetFilter && state.presetFilter !== 'all' ? state.presetFilter : '');
-  return k==='hits'?list.filter((p)=>isHit(p)):list;
-}
 function applyPreset(k){
   state.preset=(state.preset===k?'':k);
   state.activePreset=state.preset||'all';
   state.presetFilter=state.preset||'all';
-  renderFilters();
-  renderCatalog();
-  syncCatalogHash();
-}
-function applyPriceRange(){
   renderFilters();
   renderCatalog();
   syncCatalogHash();
@@ -1835,26 +1804,6 @@ function activeFilterCount(){
   const f=priceRangeFromInputs();
   if(f.min||f.max)n++;
   return n;
-}
-function resetFilters(){
-  setSearchQuery('');
-  state.activeCategory='Все товары';
-  state.activeSeries='Все модели';
-  state.activeBrand='ALL';
-  state.preset='';
-  state.activePreset='all';
-  state.presetFilter='all';
-  state.activeSpecs=[];
-  try{
-    document.getElementById('sort-select').value='popular';
-    document.getElementById('price-min').value='';
-    document.getElementById('price-max').value='';
-    document.getElementById('filter-price-min').value='';
-    document.getElementById('filter-price-max').value='';
-  }catch(e){}
-  renderFilters();
-  renderCatalog();
-  syncCatalogHash();
 }
 function safeImageSrc(u){
   const s=String(u==null?'':u).trim();
@@ -1923,25 +1872,6 @@ function applyHashFilters(hp){
     document.getElementById('price-min').value=(hp&&hp.min)?String(hp.min):'';
     document.getElementById('price-max').value=(hp&&hp.max)?String(hp.max):'';
   }catch(e){}
-}
-function extractSpecRows(p){
-  const s = String((p&&p.specs)||'')+' '+String((p&&p.name)||'');
-  const mm = s.match(/(\d{2})\s*мм/i);
-  const disp = /amoled/i.test(s)?'AMOLED':/mip|трансфлектив/i.test(s)?'MIP Transflective':/oled/i.test(s)?'OLED':'Цветной дисплей';
-  const glass = /сапфир|sapphire/i.test(s)?'Сапфировое (Sapphire)':/gorilla/i.test(s)?'Corning Gorilla Glass':'Закалённое минеральное';
-  const body = /титан|titanium|dlc/i.test(s)?'Титан Grade 5 / DLC':/сталь|steel/i.test(s)?'Нержавеющая сталь 316L':'Армированный полимер';
-  const solar = /solar|солнечн/i.test(s)?'Да (Solar Charging)':'Стандартная';
-  const nav = /inreach/i.test(s)?'inReach + Multi-band GNSS':/multi-band|мульти-gnss|двухчастот/i.test(s)?'Multi-band GNSS (L1+L5)':/gps|gnss|глонасс/i.test(s)?'GPS / ГЛОНАСС / Galileo':'Датчики движения';
-  return [
-    { key: 'price', label: 'Цена', val: `${Number(p.price||0).toLocaleString('ru-RU')} ₽` },
-    { key: 'brand', label: 'Бренд / Серия', val: `${p.brand||''} · ${p.series||''}` },
-    { key: 'size', label: 'Размер корпуса', val: mm ? `${mm[1]} мм` : 'Стандартный' },
-    { key: 'display', label: 'Тип экрана', val: disp },
-    { key: 'glass', label: 'Стекло', val: glass },
-    { key: 'body', label: 'Материал корпуса', val: body },
-    { key: 'solar', label: 'Солнечная зарядка', val: solar },
-    { key: 'nav', label: 'Навигация', val: nav },
-  ];
 }
 function toggleCompareDiffOnly(){
   state.compareDiffOnly = !state.compareDiffOnly;
@@ -2079,15 +2009,17 @@ function resetAllFilters(){
   state.activeSeries='Все модели';
   state.activeBrand='ALL';
   state.activePreset='all';
+  state.preset='';
+  state.presetFilter='all';
   state.activeSpecs=[];
   const sInp=document.getElementById('search-input');
   if(sInp)sInp.value='';
   const dInp=document.getElementById('search-input-desktop');
   if(dInp)dInp.value='';
-  const minInp=document.getElementById('filter-price-min');
-  if(minInp)minInp.value='';
-  const maxInp=document.getElementById('filter-price-max');
-  if(maxInp)maxInp.value='';
+  for (const id of ['price-min', 'price-max', 'filter-price-min', 'filter-price-max']) {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  }
   renderFilters();
   renderCatalog();
 }
@@ -2297,25 +2229,6 @@ function renderCatalog(){
   }
 }
 
-function safeCardHTML(p){
-  try{
-    if(!p||typeof p!=='object'||!Number.isSafeInteger(Number(p.id)))return '';
-    return productCardHTML(p);
-  }catch(e){return '';}
-}
-function updateGridStatus(){
-  const total=state.filtered.length;
-  document.getElementById('found-count').textContent=`Найдено: ${total}`;
-  const st=document.getElementById('grid-status');
-  if(!total){
-    st.textContent='Ничего не найдено. Попробуйте изменить запрос.';
-  }else if(state.shownCount<total){
-    st.textContent=`Показано 1–${Math.min(state.shownMax||10,total)} из ${total} — листайте вниз или нажмите «Показать ещё»`;
-  }else{
-    st.textContent=total>(state.pageSize||10)?`Показаны все ${total}`:'';
-  }
-}
-
 function getStockInfo(p){
   const st=p&&p.stock!==undefined?Number(p.stock):4;
   if(st<=0)return {code:'order',label:'Под заказ (3–5 дн.)',dotClass:'bg-sky-500',textClass:'text-sky-700 bg-sky-50'};
@@ -2348,20 +2261,6 @@ function productImages(p){
     out.push(s);
     if(out.length>=5)break;
   }
-  return out;
-}
-function gallerySrc(base, view, w){
-  const s = String(base || '');
-  if (!/images\.unsplash\.com\//.test(s)) return imgUrl(s, w || 1200);
-  const widths = { front: (w || 1200), detail: 1000, strap: 1000 };
-  const crops = { front: '', detail: '&crop=entropy', strap: '&crop=top' };
-  const ww = widths[view] || (w || 1200);
-  let out = s.replace(/([?&])w=\d+/, '$1w=' + ww);
-  if (!/[?&]q=\d+/.test(out)) out += (out.includes('?') ? '&' : '?') + 'q=85';
-  out += (crops[view] || '');
-  if (!/[?&]fm=webp/.test(out)) out += '&fm=webp';
-  if (!/[?&]auto=format/.test(out)) out += '&auto=format';
-  if (!/[?&]fit=crop/.test(out)) out += '&fit=crop';
   return out;
 }
 function productGallery(p){
@@ -2507,25 +2406,6 @@ function copyProductLink(id){
   showToast('Ссылка на модель скопирована!');
 }
 
-function foldDia(s){try{return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u0451/g,'\u0435');}catch(e){return String(s||'').toLowerCase();}}
-function searchSuggestions(raw){
-  const parsed=parseSearch(raw);
-  const q=parsed.q;
-  const out=[];
-  const seen=new Set();
-  for(const p of state.products){
-    const sKey='s:'+p.series;
-    if(!seen.has(sKey)&&(!q||foldDia(p.series).includes(foldDia(q))||foldDia(p.brand).includes(foldDia(q)))){
-      seen.add(sKey);
-      const cnt=state.products.filter(x=>x.series===p.series).length;
-      out.push({label:`${p.brand} ${p.series}`,query:p.series,count:cnt,type:'series'});
-    }
-    if(out.length>=6)break;
-  }
-  return out;
-}
-
-
 
 function extractCaseMm(p){
   const nm=((p&&p.name)||'')+' '+((p&&p.specs)||'');
@@ -2596,8 +2476,6 @@ function updateWristFit(wristCm,caseMm){
 }
 
 
-
-
 function openProduct(id){
   const p=state.products.find(x=>x.id===id);
   if(!p)return;
@@ -2637,7 +2515,7 @@ function openProduct(id){
   const stockBannerHTML=`<div class="mb-4 p-3 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between text-xs font-bold text-slate-200"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${stk.dotClass}"></span><span>${esc(stk.label)}</span></div><span class="text-[11px] text-[#E2E8F0] font-mono">${esc(getDispatchCountdown())}</span></div>`;
   const relHTML=bundleHTML+(related.length?`<div class="mt-8 pt-6 border-t border-white/10"><h3 class="text-sm font-extrabold text-white uppercase tracking-wider mb-4">Модели из коллекции ${esc(p.series)}</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">${related.map(r=>productCardHTML(r)).join('')}</div></div>`:'');
   const pdpGal=productGallery(p);
-  document.getElementById('product-detail-box').innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-7 items-start"><div class="space-y-3"><div><div id="product-photo-pane" class="relative rounded-[28px] watch-stage h-72 sm:h-96 flex items-center justify-center p-4 overflow-hidden group"><img id="product-main-img" src="${esc(imgSrc(pdpGal[0]?pdpGal[0].src:p.image))}" alt="${esc(p.name)}" width="900" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')" onclick="openLightbox()" class="absolute inset-0 w-full h-full object-contain p-4 cursor-zoom-in transition-transform duration-500 group-hover/php:scale-[1.03] img-skeleton" onload="this.classList.remove('img-skeleton')" /><button onclick="openLightbox()" class="absolute bottom-3 right-3 z-20 text-[10px] font-mono text-slate-300 bg-black/55 px-3 py-1 rounded-full border border-white/10 hover:text-white">🔍 Фото · ${pdpGal.length} ${pdpGal.length===1?'вид':'вида'}</button></div>${pdpGal.length>1?`<div class="flex gap-2 mt-2 flex-wrap">${pdpGal.map((g,i)=>`<button id="pdp-th${i}" onclick="setPdpPhoto(${i})" aria-label="${esc(g.label)}" class="rounded-2xl overflow-hidden border border-white/10 ${i===0?'pdp-thumb-active':''}"><img src="${esc(g.src)}" alt="${esc(p.name)} — ${esc(g.label)}" width="128" height="128" loading="lazy" decoding="async" class="pdp-thumb${i===0?' pdp-thumb-active':''}" /></button>`).join('')}</div>`:''}</div><div class="grid grid-cols-3 gap-2 text-[11px] text-center"><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-[#E2E8F0]">Проверка</div><div class="text-slate-400 text-[10px]">Серийный номер</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">Предпродажа</div><div class="text-slate-400 text-[10px]">Обновление карт</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">СДЭК 0 ₽</div><div class="text-slate-400 text-[10px]">Со страховкой</div></div></div></div><div><div class="flex items-center justify-between"><div class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#38BDF8]">${esc(p.brand)} • ${esc(p.series)}</div><button onclick="copyProductLink(${p.id})" class="text-[11px] font-semibold text-slate-300 hover:text-white bg-white/[0.05] border border-white/10 px-3 py-1 rounded-full">🔗 Ссылка</button></div><h1 class="font-display text-xl sm:text-2xl font-extrabold text-white mt-1.5 leading-snug">${esc(p.name)}</h1><div class="my-4 p-4 rounded-2xl bg-white border border-gray-200 space-y-2.5 shadow-2xs"><div class="flex flex-wrap items-baseline justify-between gap-2"><div class="text-2xl sm:text-3xl font-extrabold tabular-nums ${((Math.trunc(Number(p.old_price||p.oldPrice))||0)>Number(p.price)?(String((state.settings||{}).promo_highlight)==='1'?'text-[#FF5A5A]':'text-gray-900'):'text-gray-900')}">${Number(p.price).toLocaleString('ru-RU')} ₽${oldPriceHTML(p,'ml-2 text-base font-bold text-soft line-through')}</div><button onclick="openDeliveryCalc()" class="text-[11px] font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-xl border border-gray-200">Долями 0%: 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽</button></div></div>${stockBannerHTML}${wristBoxHTML}<div id="battery-calc-widget" class="mb-4 p-4 rounded-2xl bg-gray-50 border border-gray-200">
+  document.getElementById('product-detail-box').innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-7 items-start"><div class="space-y-3"><div><div id="product-photo-pane" class="relative rounded-[28px] watch-stage h-72 sm:h-96 flex items-center justify-center p-4 overflow-hidden group"><img id="product-main-img" src="${esc(imgSrc(pdpGal[0]?pdpGal[0].src:p.image))}" alt="${esc(p.name)}" width="900" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')"  class="absolute inset-0 w-full h-full object-contain p-4 cursor-zoom-in transition-transform duration-500 group-hover/php:scale-[1.03] img-skeleton" onload="this.classList.remove('img-skeleton')" /><button  class="absolute bottom-3 right-3 z-20 text-[10px] font-mono text-slate-300 bg-black/55 px-3 py-1 rounded-full border border-white/10 hover:text-white">🔍 Фото · ${pdpGal.length} ${pdpGal.length===1?'вид':'вида'}</button></div>${pdpGal.length>1?`<div class="flex gap-2 mt-2 flex-wrap">${pdpGal.map((g,i)=>`<button id="pdp-th${i}" onclick="setPdpPhoto(${i})" aria-label="${esc(g.label)}" class="rounded-2xl overflow-hidden border border-white/10 ${i===0?'pdp-thumb-active':''}"><img src="${esc(g.src)}" alt="${esc(p.name)} — ${esc(g.label)}" width="128" height="128" loading="lazy" decoding="async" class="pdp-thumb${i===0?' pdp-thumb-active':''}" /></button>`).join('')}</div>`:''}</div><div class="grid grid-cols-3 gap-2 text-[11px] text-center"><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-[#E2E8F0]">Проверка</div><div class="text-slate-400 text-[10px]">Серийный номер</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">Предпродажа</div><div class="text-slate-400 text-[10px]">Обновление карт</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">СДЭК 0 ₽</div><div class="text-slate-400 text-[10px]">Со страховкой</div></div></div></div><div><div class="flex items-center justify-between"><div class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#38BDF8]">${esc(p.brand)} • ${esc(p.series)}</div><button onclick="copyProductLink(${p.id})" class="text-[11px] font-semibold text-slate-300 hover:text-white bg-white/[0.05] border border-white/10 px-3 py-1 rounded-full">🔗 Ссылка</button></div><h1 class="font-display text-xl sm:text-2xl font-extrabold text-white mt-1.5 leading-snug">${esc(p.name)}</h1><div class="my-4 p-4 rounded-2xl bg-white border border-gray-200 space-y-2.5 shadow-2xs"><div class="flex flex-wrap items-baseline justify-between gap-2"><div class="text-2xl sm:text-3xl font-extrabold tabular-nums ${((Math.trunc(Number(p.old_price||p.oldPrice))||0)>Number(p.price)?(String((state.settings||{}).promo_highlight)==='1'?'text-[#FF5A5A]':'text-gray-900'):'text-gray-900')}">${Number(p.price).toLocaleString('ru-RU')} ₽${oldPriceHTML(p,'ml-2 text-base font-bold text-soft line-through')}</div><span class="text-[11px] font-bold text-gray-800 bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200">Долями 0%: 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽</span></div></div>${stockBannerHTML}${wristBoxHTML}<div id="battery-calc-widget" class="mb-4 p-4 rounded-2xl bg-gray-50 border border-gray-200">
           <div class="flex items-center justify-between gap-2 mb-2">
             <span class="text-[11px] font-bold uppercase tracking-wider text-gray-700">Калькулятор автономности</span>
             <span id="bat-days-output" class="text-sm font-extrabold text-brand font-mono">${computeBatteryLife(p).days} дн.</span>
@@ -2652,7 +2530,7 @@ function openProduct(id){
             <a id="price-watch-link" href="${esc(watchPriceTgLink(p))}" target="_blank" rel="noopener" onclick="togglePriceWatch(${p.id})" class="text-[11px] font-semibold text-brand hover:underline">🔔 Уведомить о скидке в Telegram</a>
             <span class="text-[10px] text-gray-500 font-mono">Алерт в бот при уценке</span>
           </div>
-        </div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-xs text-slate-300 space-y-2 mb-4"><div class="flex justify-between"><span class="text-slate-400">Референс</span><span class="font-mono font-bold text-white">REF-${String(p.id).padStart(4,'0')}</span></div><div class="flex justify-between"><span class="text-slate-400">Мануфактура</span><span class="font-semibold text-white">${esc(p.brand)}</span></div><div class="flex justify-between"><span class="text-slate-400">Коллекция</span><span class="font-semibold text-white">${esc(p.series)}</span></div><div class="flex justify-between"><span class="text-slate-400">Корпус и калибр</span><span class="font-mono font-semibold text-[#E2E8F0]">${pal.sizeLabel}</span></div><div class="flex justify-between"><span class="text-slate-400">Гарантия (пример наполнения)</span><span class="font-semibold text-[#10B981]">12 месяцев</span></div></div><p class="text-xs text-slate-400 leading-relaxed mb-5">${esc(p.specs||'Оригинальные часы с гарантией 12 месяцев.')}<br><br>${esc(CAT_DESC[p.category]||'Оригинальный экземпляр с официальной гарантией 12 месяцев, заводской комплектацией и проверкой перед отправкой.')}</p><div class="space-y-2.5"><button onclick="addToCart(event,${p.id});switchTab('cart')" class="w-full btn-luxury-gold font-extrabold text-sm py-3.5 rounded-2xl inline-flex items-center justify-center gap-2">${CART_TROLLEY_SVG}<span>В корзину — ${Number(p.price).toLocaleString('ru-RU')} ₽</span></button><div class="grid grid-cols-2 gap-2.5"><button onclick="quickOrder(event,${p.id})" class="w-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs py-3 rounded-xl">Резерв в 1 клик</button><button onclick="toggleCompare(event,${p.id})" class="w-full bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 text-slate-200 font-semibold text-xs py-3 rounded-xl">⚖ В сравнение</button></div><div class="grid grid-cols-2 gap-2.5"><a href="${tgOrderLink('consult')}" target="_blank" class="block text-center w-full bg-white/[0.04] hover:bg-white/[0.09] border border-[#38BDF8]/35 text-[#E2E8F0] font-bold text-xs py-3 rounded-xl">Консьерж</a><button onclick="openTradeInModal(${p.id})" class="w-full bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 text-slate-300 font-bold text-xs py-3 rounded-xl">Обмен Trade-In</button></div></div></div></div>${relHTML}`;
+        </div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-xs text-slate-300 space-y-2 mb-4"><div class="flex justify-between"><span class="text-slate-400">Референс</span><span class="font-mono font-bold text-white">REF-${String(p.id).padStart(4,'0')}</span></div><div class="flex justify-between"><span class="text-slate-400">Мануфактура</span><span class="font-semibold text-white">${esc(p.brand)}</span></div><div class="flex justify-between"><span class="text-slate-400">Коллекция</span><span class="font-semibold text-white">${esc(p.series)}</span></div><div class="flex justify-between"><span class="text-slate-400">Корпус и калибр</span><span class="font-mono font-semibold text-[#E2E8F0]">${pal.sizeLabel}</span></div><div class="flex justify-between"><span class="text-slate-400">Гарантия (пример наполнения)</span><span class="font-semibold text-[#10B981]">12 месяцев</span></div></div><p class="text-xs text-slate-400 leading-relaxed mb-5">${esc(p.specs||'Оригинальные часы с гарантией 12 месяцев.')}<br><br>${esc(CAT_DESC[p.category]||'Оригинальный экземпляр с официальной гарантией 12 месяцев, заводской комплектацией и проверкой перед отправкой.')}</p><div class="space-y-2.5"><button onclick="addToCart(event,${p.id});switchTab('cart')" class="w-full btn-luxury-gold font-extrabold text-sm py-3.5 rounded-2xl inline-flex items-center justify-center gap-2">${CART_TROLLEY_SVG}<span>В корзину — ${Number(p.price).toLocaleString('ru-RU')} ₽</span></button><div class="grid grid-cols-2 gap-2.5"><button onclick="quickOrder(event,${p.id})" class="w-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs py-3 rounded-xl">Резерв в 1 клик</button><button onclick="toggleCompare(event,${p.id})" class="w-full bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 text-slate-200 font-semibold text-xs py-3 rounded-xl">⚖ В сравнение</button></div><div class="grid grid-cols-1 gap-2.5"><a href="${tgOrderLink('consult')}" target="_blank" class="block text-center w-full bg-white/[0.04] hover:bg-white/[0.09] border border-[#38BDF8]/35 text-[#E2E8F0] font-bold text-xs py-3 rounded-xl">Консьерж</a></div></div></div></div>${relHTML}`;
   showView('product');
   try{
     const h='#/p/'+id;
@@ -2761,29 +2639,6 @@ function calcPromoDiscount(subtotal){
   }
   return Math.min(subtotal,Math.round(Math.round(eligible*rule.pct/100)/10)*10);
 }
-async function applyPromoCode(){
-  const inp=document.getElementById('promo-input');
-  const st=document.getElementById('promo-status');
-  const code=((inp&&inp.value)||'').trim().toUpperCase();
-  const show=(t,ok)=>{if(!st)return;st.textContent=t;st.classList.remove('hidden');};
-  if(!code){clearPromo();return;}
-  const items=state.cart.map(l=>({id:l.id,qty:l.qty}));
-  if(!IS_STATIC&&typeof fetch==='function'&&items.length){
-    try{
-      const ctl=(typeof AbortController!=='undefined')?new AbortController():null;
-      const pto=ctl?setTimeout(function(){try{ctl.abort();}catch(e){}},8000):null;
-      let res;
-      try{res=await fetch(API_PREFIX+'/promo-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,items}),signal:ctl?ctl.signal:undefined});}
-      finally{if(pto)clearTimeout(pto);}
-      const d=await res.json().catch(()=>({}));
-      if(res.ok){state.promoCode=d.code||code;state.promoDiscount=Number(d.percent)||0;state.promoDiscountRub=Number(d.discount)||0;show(`✓ Промокод ${state.promoCode} активирован (−${Number(state.promoDiscountRub).toLocaleString('ru-RU')} ₽)!`,true);renderCart();return;}
-      clearPromo();show(d.error||'Промокод не найден',false);renderCart();return;
-    }catch(e){}
-  }
-  state.promoCode=code;state.promoDiscount=0;state.promoDiscountRub=0;
-  show('Принято: итог посчитает сервер при оформлении.',true);renderCart();
-}
-function clearPromo(){state.promoCode='';state.promoDiscount=0;state.promoDiscountRub=0;const inp=document.getElementById('promo-input');if(inp)inp.value='';const st=document.getElementById('promo-status');if(st)st.classList.add('hidden');try{renderCart();}catch(e){}}
 function deepLinkPromo(){const c=String(state.promoCode||'').toUpperCase();return /^[A-Z0-9_-]{1,24}$/.test(c)?c:'';}
 
 
@@ -3021,7 +2876,6 @@ function renderFavorites(){
 // Интерактивный симулятор Telegram / MAX бота
 
 
-
 function setupMiniApp(){
   if(!MiniApp)return;
   try{MiniApp.ready();MiniApp.expand();}catch(e){}
@@ -3069,21 +2923,12 @@ function saveCompare(){try{localStorage.setItem('watchop_compare',JSON.stringify
 state.quizGoal='run';
 state.quizBudget='all';
 state.sugIndex=-1;
-
-function invalidateSugCounts(){}
 function updateToTop(){
   const btn=document.getElementById('to-top-btn');
   if(!btn||typeof window==='undefined')return;
   if((window.scrollY||0)>400)btn.classList.remove('hidden');else btn.classList.add('hidden');
 }
 function searchQuery(){return String((document.getElementById('search-input')||{}).value||'').trim();}
-function setSearchQuery(q){
-  const inp=document.getElementById('search-input');
-  if(inp)inp.value=String(q||'');
-  const dinp=document.getElementById('search-input-desktop');
-  if(dinp)dinp.value=String(q||'');
-  renderCatalog();
-}
 function syncCatalogHash(){
   const q=((document.getElementById('search-input')||{}).value||'').trim();
   const base=state.activeCategory!=='Все товары'?'#/c/'+catSlug(state.activeCategory):state.activeSeries!=='Все модели'?'#/s/'+serSlug(state.activeSeries):'#/catalog';
@@ -3096,10 +2941,6 @@ function syncCatalogHash(){
   if(f.min)extra.push('min='+f.min);
   if(f.max)extra.push('max='+f.max);
   location.hash=extra.length?base+'?'+extra.join('&'):base;
-}
-function goAllProducts(){
-  resetAllFilters();
-  showView('catalog');
 }
 function goCatalogHome(){
   resetAllFilters();
@@ -3123,46 +2964,6 @@ function onSearchKeyDown(e){
 }
 
 // Модальное окно обратного звонка
-function openCallbackModal(){
-  const m=document.getElementById('callback-modal');
-  if(m){m.classList.remove('hidden');m.classList.add('flex');}
-}
-function closeCallbackModal(){
-  const m=document.getElementById('callback-modal');
-  if(m){m.classList.add('hidden');m.classList.remove('flex');}
-}
-async function submitCallbackRequest(){
-  const name=(document.getElementById('cb-name')||{}).value?.trim()||'';
-  const phone=(document.getElementById('cb-phone')||{}).value?.trim()||'';
-  const comment=(document.getElementById('cb-comment')||{}).value?.trim()||'Консультация по подбору часов';
-  const err=document.getElementById('cb-error');
-  if(!name||!phone){
-    if(err){err.textContent='Укажите имя и телефон или @username для связи.';err.classList.remove('hidden');}
-    return;
-  }
-  if(err)err.classList.add('hidden');
-  const summary=`Обратный звонок: ${name} (${phone})`;
-  const code=await sendLead('callback',name,phone,comment);
-  // Номера без ответа сервера не выдумываем: на статике покупатель уходит в чат
-  // и говорит менеджеру, что просил звонок, — заявка уже ушла админам.
-  document.getElementById('order-code-badge').textContent=code||'звонок';
-  document.getElementById('order-item-summary').textContent=summary;
-  document.getElementById('order-tg-btn').href=code?tgOrderLink(code,[]):tgOrderLink('consult');
-  closeCallbackModal();
-  switchTab('order-success');
-  if(code){recordMyOrder(code,[],0,'Заявка на звонок');saveSessionOrder({orderCode:code,summary,tgHref:document.getElementById('order-tg-btn').href,maxHref:state.settings.max_link});}
-}
-
-async function sendLead(type,name,contact,details){
-  try{
-    if(IS_STATIC||typeof fetch!=='function')return '';
-    const res=await fetch(['/api','lead'].join('/'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,name,contact,details})});
-    if(!res||!res.ok)return '';
-    const d=await res.json().catch(()=>({}));
-    const code=String((d&&d.code)||'');
-    return /^TG-\d+$/.test(code)?code:'';
-  }catch(e){return '';}
-}
 
 // Интерактивный подборщик часов (Quiz)
 function openQuizModal(){
@@ -3306,64 +3107,6 @@ function loadSessionOrder(){
   return false;
 }
 
-let lightboxGallery = [];
-let lightboxIndex = 0;
-function paintLightbox(){
-  const img=document.getElementById('lightbox-img');
-  const cap=document.getElementById('lightbox-caption');
-  const cnt=document.getElementById('lightbox-counter');
-  const th=document.getElementById('lightbox-thumbs');
-  const cur=lightboxGallery[lightboxIndex];
-  if(!cur)return;
-  if(img){img.src=cur.src;try{img.style.transform=cur.zoom||'';}catch(e){}img.alt=String(cur.title||'')+' — '+(cur.label||'фото');}
-  if(cap)cap.textContent=String(cur.title||'');
-  if(cnt)cnt.textContent=lightboxGallery.length>1?((lightboxIndex+1)+' / '+lightboxGallery.length+' · '+cur.label):'';
-  if(th){
-    th.innerHTML=lightboxGallery.map((g,i)=>`<img src="${esc(g.src)}" alt="${esc(g.label||('Фото '+(i+1)))}" loading="lazy" decoding="async" width="112" height="112" onclick="openLightboxAt(${i})" class="gal-thumb${i===lightboxIndex?' active':''}" style="aspect-ratio:1/1" />`).join('');
-  }
-}
-function openLightboxAt(i){
-  if(!lightboxGallery.length)return;
-  lightboxIndex=Math.max(0,Math.min(lightboxGallery.length-1,Number(i)||0));
-  paintLightbox();
-}
-function openLightboxPrev(){ if(!lightboxGallery.length)return; lightboxIndex=(lightboxIndex-1+lightboxGallery.length)%lightboxGallery.length; paintLightbox(); }
-function openLightboxNext(){ if(!lightboxGallery.length)return; lightboxIndex=(lightboxIndex+1)%lightboxGallery.length; paintLightbox(); }
-function openLightbox(url,caption){
-  let targetUrl = url;
-  let targetCap = caption;
-  if(!targetUrl){
-    const p=state.products.find((x)=>x.id===state.currentProductId);
-    if(!p)return;
-    try{
-      lightboxGallery=productGallery(p).map((g)=>({src:g.src,label:g.label,title:p.name,zoom:g.zoom||''}));
-    }catch(e){ lightboxGallery=[]; }
-    if(!lightboxGallery.length) lightboxGallery=[{src:imgUrl(p.image,1200),label:'Фото',title:p.name}];
-    lightboxIndex=0;
-    targetUrl=lightboxGallery[0].src;
-    targetCap=p.name;
-  } else {
-    lightboxGallery=[{src:targetUrl,label:'Фото',title:caption||''}];
-    lightboxIndex=0;
-  }
-  const src=safeImageSrc(targetUrl);
-  if(!src)return;
-  const img=document.getElementById('lightbox-img');
-  const cap=document.getElementById('lightbox-caption');
-  if(img){img.src=src;try{img.style.transform='';}catch(e){}img.alt=String(targetCap||'')+' — фотография';}
-  if(cap)cap.textContent=String(targetCap||'');
-  try{ paintLightbox(); }catch(e){}
-  for(const id of ['lightbox','lightbox-modal']){
-    const m=document.getElementById(id);
-    if(m){m.classList.remove('hidden');m.classList.add('flex');}
-  }
-}
-function closeLightbox(){
-  for(const id of ['lightbox','lightbox-modal']){
-    const m=document.getElementById(id);
-    if(m){m.classList.add('hidden');m.classList.remove('flex');}
-  }
-}
 function recordRecentProduct(id){
   recordRecent(id);
   renderRecentViewed();
@@ -3554,179 +3297,10 @@ function scheduleWindow(){
   try{if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else run();}catch(e){run();}
   setTimeout(run,120);
 }
-function localOrders(){
-  try{const a=JSON.parse(localStorage.getItem("watchop_orders")||"null");if(Array.isArray(a))return a;}catch(e){}
-  return Array.isArray(state.myOrders)?state.myOrders:[];
-}
-function pushLocalOrder(o){
-  try{
-    const a=localOrders().filter(x=>x.code!==o.code);
-    a.unshift(o);
-    localStorage.setItem("watchop_orders",JSON.stringify(a.slice(0,50)));
-    state.myOrders=a.slice(0,20);
-    localStorage.setItem("watchop_my_orders",JSON.stringify(state.myOrders));
-  }catch(e){}
-}
-function renderOrders(){
-  renderMyOrders();
-  const box=document.getElementById("orders-list");if(!box)return;
-  const a=localOrders();
-  if(!a.length){box.innerHTML="<div class=\"bg-white rounded-2xl p-4 border border-gray-100 text-sm text-gray-500\">Пока пусто: заявки, оформленные с этого устройства, появятся здесь.</div>";return;}
-  box.innerHTML=a.map((o,i)=>"<div class=\"bg-white rounded-2xl p-4 border border-gray-100 space-y-2\"><div class=\"flex items-center justify-between\"><span class=\"font-bold text-sm\">"+esc(o.code)+"</span><span class=\"text-[11px] text-soft\">"+esc(String(o.date||"").slice(0,10))+"</span></div><div class=\"text-xs text-gray-600\">"+esc((o.items||[]).map((it)=>it.name+" × "+it.qty).join("; "))+"</div><div class=\"flex items-center justify-between gap-2\"><span class=\"text-sm font-extrabold\">"+Number(o.total||0).toLocaleString("ru-RU")+" ₽</span><button onclick=\"checkOrderStatus("+i+",this)\" class=\"text-xs font-semibold text-brand border border-gray-200 rounded-lg px-3 py-1.5\">Проверить статус</button></div><div class=\"text-xs text-gray-600 hidden\"></div></div>").join("");
-}
-async function checkOrderStatus(i,btn){
-  if(i===undefined&&btn===undefined)return checkOrderStatusUI();
-  const o=localOrders()[i];if(!o)return;
-  const line=btn&&btn.parentElement&&btn.parentElement.nextElementSibling;
-  const set=(t)=>{if(line){line.textContent=t;line.classList.remove("hidden");}};
-  if(IS_STATIC){set("Здесь витрина без сервера: статус подскажет менеджер — напишите код "+o.code+" в бот.");return;}
-  set("Проверяю…");
-  try{
-    const pt=String(o.phone||"").replace(/\D/g,"").slice(-4);
-    const r=await fetch(API_PREFIX+"/order-status?code="+encodeURIComponent(o.code)+"&pt="+encodeURIComponent(pt));
-    const d=await r.json().catch(()=>({}));
-    if(r&&r.ok&&d&&d.status)set(o.code+": "+d.status);
-    else set("По коду и телефону с этого устройства заявку не нашли — уточните у менеджера в боте.");
-  }catch(e){set("Не удалось проверить статус — напишите менеджеру в боте.");}
-}
 const TI_CONDS={1:"новые, не носились",2:"отличное состояние",3:"рабочие, есть следы использования",4:"неисправны, на запчасти"};
-function openTradeIn(id){
-  state.tradeInProduct=id||state.currentProductId||1;
-  state.tradeInTargetId=state.tradeInProduct;
-  const m=document.getElementById("ti-modal")||document.getElementById("tradein-modal");
-  if(m){m.classList.remove("hidden");m.classList.add("flex");}
-}
-function closeTradeIn(){
-  const m1=document.getElementById("ti-modal");if(m1){m1.classList.add("hidden");m1.classList.remove("flex");}
-  const m2=document.getElementById("tradein-modal");if(m2){m2.classList.add("hidden");m2.classList.remove("flex");}
-}
-async function submitTradeIn(){
-  const err=document.getElementById("ti-error");
-  const show=(t)=>{if(err){err.textContent=t;err.classList.remove("hidden");}};
-  const hide=()=>{if(err){err.textContent="";err.classList.add("hidden");}};
-  hide();
-  const model=((document.getElementById("ti-model")||{}).value||(document.getElementById("ti-old-model")||{}).value||"").trim().slice(0,100);
-  const year=((document.getElementById("ti-year")||{}).value||"").trim().slice(0,40);
-  const cond=String(((document.getElementById("ti-cond")||{}).value)||"3");
-  const fio=((document.getElementById("ti-fio")||{}).value||"").trim().slice(0,100);
-  const phone=((document.getElementById("ti-phone")||{}).value||(document.getElementById("ti-contact")||{}).value||"").trim().slice(0,30);
-  if(!model)return show("Укажите модель старых часов.");
-  if(!fio||!phone)return show("Укажите ФИО и телефон.");
-  if(phone.replace(/\D/g,"").length<10)return show("Телефон нужно указать полностью — минимум 10 цифр.");
-  const p=state.products.find((x)=>x.id===(state.tradeInProduct||state.tradeInTargetId));
-  const condText=TI_CONDS[cond]||TI_CONDS["3"];
-  const itemName="Trade-In: "+model+(year?", "+year:"")+" — "+condText+(p?"; обмен на "+p.name:"");
-  let orderCode="TG-"+(20000+Math.floor(Math.random()*9999));
-  let link="";
-  try{
-    if(!IS_STATIC&&typeof fetch==="function"){
-      const res=await fetch(API_PREFIX+"/order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:[],tradein:{model,year,cond,productId:p?p.id:null},customer:{fio,phone}})});
-      if(res&&res.ok){
-        const d=await res.json().catch(()=>({}));
-        if(d&&d.orderCode)orderCode=d.orderCode;
-        link=tgOrderLink(orderCode,[]);
-      }else{
-        const d=await Promise.resolve(res&&res.json?res.json():{}).catch(()=>({}));
-        show(d&&d.error?d.error:"Не удалось отправить заявку — попробуйте ещё раз.");
-        return;
-      }
-    }else{
-      const tiPart="TI"+cond+"x"+(p?p.id:0)+"x"+encodeURIComponent(model+(year?", "+year:""));
-      const base=String(state.settings.tg_link||"#contacts").split("?")[0].replace(/\/$/,"");
-      link=base+"?start="+orderCode+"_"+tiPart;
-    }
-  }catch(e){show("Не удалось отправить заявку — попробуйте ещё раз.");return;}
-  pushLocalOrder({code:orderCode,date:new Date().toISOString(),items:[{name:itemName,qty:1,price:0}],total:0,phone,kind:"tradein",status:"Trade-In"});
-  saveSessionOrder({orderCode,summary:itemName+" — оценку предложит менеджер",tgHref:link,maxHref:state.settings.max_link||""});
-  const badge=document.getElementById("order-code-badge");if(badge)badge.textContent=orderCode;
-  const sumEl=document.getElementById("order-item-summary");if(sumEl)sumEl.textContent=itemName+" — оценку предложит менеджер";
-  const tgBtn=document.getElementById("order-tg-btn");if(tgBtn)tgBtn.href=link;
-  closeTradeIn();
-  switchTab("order-success");
-}
-
-function openTradeInModal(prodId){
-  state.tradeInTargetId=prodId||state.currentProductId||1;
-  const m=document.getElementById('tradein-modal');
-  if(m){m.classList.remove('hidden');m.classList.add('flex');}
-}
-function closeTradeInModal(){
-  const m=document.getElementById('tradein-modal');
-  if(m){m.classList.add('hidden');m.classList.remove('flex');}
-}
-async function submitTradeInRequest(){
-  const oldM=(document.getElementById('ti-old-model')||{}).value?.trim()||'';
-  const cond=(document.getElementById('ti-condition')||{}).value||'Отличное';
-  const contact=(document.getElementById('ti-contact')||{}).value?.trim()||'';
-  const err=document.getElementById('ti-error');
-  if(!oldM||!contact){
-    if(err){err.textContent='Укажите вашу текущую модель часов и контакт для связи.';err.classList.remove('hidden');}
-    return;
-  }
-  if(err)err.classList.add('hidden');
-  const target=state.products.find(p=>p.id===state.tradeInTargetId)||{};
-  const summary=`Trade-In: ${oldM} (${cond})${target.name?' → '+target.name:''}`;
-  const code=await sendLead('tradein',oldM,contact,cond);
-  document.getElementById('order-code-badge').textContent=code||'оценка';
-  document.getElementById('order-item-summary').textContent=summary;
-  document.getElementById('order-tg-btn').href=code?tgOrderLink(code,[]):tgOrderLink('consult');
-  closeTradeInModal();
-  switchTab('order-success');
-  if(code){recordMyOrder(code,[],0,'Оценка Trade-In');saveSessionOrder({orderCode:code,summary,tgHref:document.getElementById('order-tg-btn').href,maxHref:state.settings.max_link});}
-}
 
 
 
-
-// Обёртка смены темы без фризов: глушит transitions/animations на 2 кадра,
-// пока Tailwind CDN пересчитывает классы, затем снимает глушение.
-function freezeTransitionsTemporarily(){
-  if(typeof document==='undefined'||!document.documentElement)return;
-  const root=document.documentElement;
-  try{root.setAttribute('data-switching','1');}catch(e){}
-  try{if(root.classList)root.classList.add('no-transitions');}catch(e){}
-  const done=()=>{try{root.removeAttribute('data-switching');}catch(e){}try{if(root.classList)root.classList.remove('no-transitions');}catch(e){}};
-  if(typeof requestAnimationFrame==='function'){requestAnimationFrame(()=>requestAnimationFrame(done));}
-  setTimeout(done,120);
-}
-
-const CITY_RATES={
-  moscow:{name:'Москва и МО',cdek:'1–2 дня',post:'2–3 дня',boxberry:'1–2 дня',baseCost:350},
-  spb:{name:'Санкт-Петербург',cdek:'1–2 дня',post:'2–4 дня',boxberry:'2–3 дня',baseCost:390},
-  voronezh:{name:'Воронеж',cdek:'1–2 дня',post:'2–3 дня',boxberry:'1–2 дня',baseCost:300},
-  south:{name:'Краснодар / Ростов / Юг',cdek:'2–3 дня',post:'3–5 дней',boxberry:'2–4 дня',baseCost:420},
-  volga:{name:'Казань / Поволжье',cdek:'2–3 дня',post:'3–5 дней',boxberry:'2–4 дня',baseCost:400},
-  ural:{name:'Екатеринбург / Урал',cdek:'2–4 дня',post:'4–6 дней',boxberry:'3–4 дня',baseCost:490},
-  siberia:{name:'Новосибирск / Сибирь',cdek:'3–5 дней',post:'5–7 дней',boxberry:'4–6 дней',baseCost:590},
-  east:{name:'Владивосток / ДФО',cdek:'4–7 дней',post:'6–9 дней',boxberry:'5–8 дней',baseCost:750}
-};
-
-function openDeliveryCalc(){
-  const m=document.getElementById('delivery-calc-modal');
-  if(!m)return;
-  updateDeliveryCalc();
-  m.classList.remove('hidden');
-  m.classList.add('flex');
-}
-function closeDeliveryCalc(){
-  const m=document.getElementById('delivery-calc-modal');
-  if(m){m.classList.add('hidden');m.classList.remove('flex');}
-}
-function updateDeliveryCalc(){
-  const sel=document.getElementById('calc-city-select');
-  const box=document.getElementById('calc-results-box');
-  if(!box)return;
-  const key=(sel&&sel.value)||'moscow';
-  const r=CITY_RATES[key]||CITY_RATES.moscow;
-  const p=state.products.find(x=>x.id===state.currentProductId)||state.products[0]||{price:45000};
-  const isFree=Number(p.price)>=15000;
-  const priceTag=isFree?'<span class="text-[#10B981] font-extrabold">Бесплатно (от 15 000 ₽)</span>':`<b class="text-[#E2E8F0]">${r.baseCost} ₽</b>`;
-  box.innerHTML=`
-    <div class="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between"><div><div class="font-bold text-white">СДЭК (Экспресс ПВЗ или курьер)</div><div class="text-slate-400 mt-0.5">Срок в ${esc(r.name)}: <b class="text-slate-200">${r.cdek}</b></div></div><div>${priceTag}</div></div>
-    <div class="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between"><div><div class="font-bold text-white">Boxberry (Пункт выдачи)</div><div class="text-slate-400 mt-0.5">Срок: <b class="text-slate-200">${r.boxberry}</b></div></div><div>${priceTag}</div></div>
-    <div class="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between"><div><div class="font-bold text-white">Почта России (1 класс со страховкой)</div><div class="text-slate-400 mt-0.5">Срок: <b class="text-slate-200">${r.post}</b></div></div><div>${priceTag}</div></div>
-  `;
-}
 
 function updateProductJsonLd(p){setProductJsonLd(p);}
 
@@ -3809,9 +3383,6 @@ try{
 }catch(e){}
 setupMiniApp();
 initApp();
-
-
-
 
 
 </script>
