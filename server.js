@@ -328,7 +328,7 @@ db.exec(`
 `);
 
 const defaultSettings = {
-  hero_title: 'Магазин оригинальной продукции Garmin и смарт-часов — поможем выбрать под ваши задачи',
+  hero_title: 'Демо-витрина часового магазина — учебный проект, заказы не обрабатываются',
   phone: '+7 (000) 000-00-00',
   email: 'demo@example.invalid',
   address: 'Доставка по всей России — СДЭК, Почта России, Boxberry',
@@ -363,7 +363,7 @@ const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, v
 
 // Миграция старой ссылки менеджера на рабочего бота + колонка хитов для существующих БД
 if (getSetting('tg_link') === 'https://t.me/watchop_manager') setSetting('tg_link', '');
-if (getSetting('hero_title').includes('Воронеже')) setSetting('hero_title', 'Магазин оригинальной продукции Garmin и смарт-часов с доставкой по всей России — поможем выбрать под ваши задачи');
+if (getSetting('hero_title').includes('Воронеже')) setSetting('hero_title', 'Демо-витрина часового магазина — учебный проект, заказы не обрабатываются');
 if (getSetting('address').includes('Воронеж') || getSetting('address').includes('Пушкинская')) setSetting('address', 'Доставка по всей России — СДЭК, Почта России, Boxberry');
 try { db.exec('ALTER TABLE products ADD COLUMN is_hit INTEGER DEFAULT 0'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN old_price INTEGER DEFAULT 0'); } catch (e) {}
