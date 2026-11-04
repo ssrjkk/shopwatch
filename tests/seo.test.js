@@ -318,6 +318,8 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
       24, 142, 143, 30, 171, 172, 173, 174, 180, 137, 187, 395,
       28, 29, 162, 164, 165, 166, 167, 176, 188, 25, 144, 145, 150,
       // 146/147 Charcoal и 163 Earth удалены: честных фото нет вообще
+      // wch-аудит: 14/89 (MARQ Athlete без белых углов), 348 (Bounce 2 без чёрных углов)
+      14, 89, 348,
     ]);
     const counts = [0, 0, 0, 0, 0, 0];
     for (const p of products) counts[Math.min(1 + (p.images || []).length, 5)]++;
