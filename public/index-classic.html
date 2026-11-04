@@ -3005,13 +3005,22 @@ function removeFromCart(id){
 
 const PROMO_RULES={
   'WATCH10':{pct:10,minTotal:0,desc:'Скидка 10% на заказ'},
-  'GARMIN5':{pct:5,minTotal:0,desc:'Скидка 5% на технику Garmin'},
-  'VIP15':{pct:15,minTotal:100000,desc:'VIP-скидка 15% (от 100 000 ₽)'}
+  'GARMIN5':{pct:5,minTotal:0,brand:'GARMIN',desc:'Скидка 5% на технику Garmin'},
+  'VIP15':{pct:15,minTotal:50000,desc:'VIP-скидка 15% (от 50 000 ₽)'}
 };
 function calcPromoDiscount(subtotal){
   const rule=PROMO_RULES[state.promoCode];
   if(!rule||subtotal<rule.minTotal)return 0;
-  return Math.round(subtotal*(rule.pct/100));
+  let eligible=subtotal;
+  if(rule.brand){
+    eligible=0;
+    for(const l of state.cart){
+      const p=state.products.find(x=>x.id===l.id);
+      if(p&&String(p.brand||'').toUpperCase()===String(rule.brand||'').toUpperCase())eligible+=Math.trunc(Number(p.price))*Math.min(Math.max(Number(l.qty)||1,1),99);
+    }
+    if(eligible===0)return 0;
+  }
+  return Math.min(subtotal,Math.round(Math.round(eligible*rule.pct/100)/10)*10);
 }
 async function applyPromoCode(){
   const inp=document.getElementById('promo-input');

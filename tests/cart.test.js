@@ -70,6 +70,24 @@ describe('корзина демо: суммы целыми, очистка, во
     const disc = g.calcPromoDiscount ? g.calcPromoDiscount(subtotal) : Math.round(subtotal * 0.15);
     assert.ok(Number.isInteger(disc), 'скидка целая');
     assert.ok(disc > 0 && disc < subtotal, 'скидка в разумных пределах');
+    assert.equal(disc % 10, 0, 'округление до 10 ₽ как на сервере');
+    g.state.promoCode = '';
+    g.state.cart = [];
+  });
+
+  it('GARMIN5 считается только с позиций Garmin, как на сервере', () => {
+    const gm = g.state.products.find((p) => String(p.brand).toUpperCase() === 'GARMIN' && Number(p.price) > 0);
+    const other = g.state.products.find((p) => String(p.brand).toUpperCase() !== 'GARMIN' && Number(p.price) > 0);
+    assert.ok(gm && other, 'есть Garmin и не-Garmin');
+    g.state.cart = [];
+    g.addToCart(null, gm.id);
+    g.addToCart(null, other.id);
+    g.state.promoCode = 'GARMIN5';
+    const sub = g.cartTotal();
+    const disc = g.calcPromoDiscount(sub);
+    const expect = Math.min(sub, Math.round(Math.round(Math.trunc(gm.price) * 5 / 100) / 10) * 10);
+    assert.equal(disc, expect, 'только Garmin-часть');
+    assert.ok(disc < Math.round(sub * 0.05), 'меньше 5% от всей корзины');
     g.state.promoCode = '';
     g.state.cart = [];
   });
