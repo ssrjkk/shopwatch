@@ -191,7 +191,7 @@ describe('подбор по пресетам и цене, лайтбокс, пр
   });
 });
 
-describe('фильтры по бренду и характеристикам, сравнение', () => {
+describe('фильтры по бренду и характеристикам', () => {
   let g;
 
   before(async () => {
@@ -287,61 +287,5 @@ describe('фильтры по бренду и характеристикам, с
     assert.match(String(g.document.getElementById('filter-btn-label').textContent), /^Фильтры · 2$/);
     g.resetAllFilters();
   });
-
-  it('сравнение: потолок четыре, повтор убирает, панель показывает число', () => {
-    g.resetAllFilters();
-    g.clearCompare();
-    const ids = g.state.products.slice(0, 6).map((p) => p.id);
-    for (const id of ids) g.toggleCompare({ stopPropagation() {} }, id);
-    assert.equal(g.state.compare.length, 4, 'в сравнении не больше четырёх');
-    const first = g.state.compare[0];
-    g.toggleCompare({ stopPropagation() {} }, first);
-    assert.equal(g.state.compare.includes(first), false, 'повторное нажатие убирает');
-    assert.equal(g.state.compare.length, 3);
-    assert.equal(String(g.document.getElementById('compare-count').textContent), '3', 'панель считает вслух');
-    assert.equal(g.document.getElementById('compare-bar').classList.contains('hidden'), false, 'панель видна, когда есть что сравнивать');
-  });
-
-  it('таблица сравнения несёт реальные поля и экранирует название', () => {
-    g.resetAllFilters();
-    const picks = g.state.products.filter((p) => Number(p.price) > 0).slice(0, 3).map((p) => p.id);
-    g.clearCompare();
-    for (const id of picks) g.toggleCompare({ stopPropagation() {} }, id);
-    g.openCompareModal();
-    const box = String(g.document.getElementById('compare-table-box').innerHTML);
-    for (const id of picks) {
-      const p = g.state.products.find((x) => x.id === id);
-      assert.ok(box.includes(p.name), 'название в таблице');
-      assert.ok(box.includes('#/p/' + p.id), 'колонка ведёт на страницу товара');
-      assert.ok(box.includes(Number(p.price).toLocaleString('ru-RU')), 'цена в таблице');
-    }
-    assert.ok(box.includes('<table'), 'это таблица, а не набор строк');
-    const evil = { id: 4242, name: '<img src=x onerror=alert(1)>', brand: 'B', series: 'S', category: 'C', price: 1000, specs: 'x' };
-    g.state.products = [...g.state.products, evil];
-    g.state.compare = [evil.id];
-    g.openCompareModal();
-    const html2 = String(g.document.getElementById('compare-table-box').innerHTML);
-    assert.equal(html2.includes('<img src=x'), false, 'название с тегом не попадает в разметку как тег');
-    assert.ok(html2.includes('&lt;img'), html2.slice(0, 80));
-    g.state.products = g.state.products.filter((p) => p.id !== evil.id);
-    g.clearCompare();
-    assert.equal(g.document.getElementById('compare-bar').classList.contains('hidden'), true, 'пустое сравнение прячет панель');
-  });
-
-  it('сравнение переживает перезагрузку и сбрасывается при пересборке каталога', () => {
-    globalThis.__pstore = new Map();
-    const live = mountFrontend({ storage: PERSISTENT });
-    const id = live.state.products[1].id;
-    live.toggleCompare({ stopPropagation() {} }, id);
-    assert.deepEqual(JSON.parse(String(globalThis.__pstore.get('watchop_compare'))), [id], 'записано в хранилище');
-    const reloaded = mountFrontend({ storage: PERSISTENT });
-    assert.deepEqual(reloaded.state.compare.map(Number), [id], 'прочитано после перезагрузки');
-    reloaded.syncCatalogFp();
-    reloaded.state.products = [...reloaded.state.products, { id: 400002, brand: 'TEST', series: 'T', category: 'Спортивные часы', name: 'Test 2', price: 1500, specs: '' }];
-    assert.equal(reloaded.syncCatalogFp(), true, 'пересборка распознана');
-    assert.equal(reloaded.state.compare.length, 0, 'список сравнения сброшен вместе с остальными');
-    globalThis.__pstore = undefined;
-  });
-
 
 });

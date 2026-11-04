@@ -49,6 +49,9 @@ describe('PWA manifest: один сайт, витрина ссылается н�
     assert.ok(html.includes('<link rel="icon" href="data:image/svg+xml,'), 'нет фавикона');
     assert.ok(!html.includes('images.unsplash.com'), 'в витрине остался хотлинк Unsplash');
     assert.ok(!html.includes('pitergsm.ru'), 'в витрине остался хотлинк PiterGSM');
-    assert.ok(html.includes('uploads/catalog/f88df70ab8a2.jpg'), 'og:image не на локальном фото каталога');
+    const og = (html.match(/property="og:image" content="([^"]+)"/) || [])[1] || '';
+    assert.ok(/^https:\/\/ssrjkk\.github\.io\/shopwatch\/uploads\/catalog\/[\w.-]+\.(jpg|jpeg|png|webp)$/.test(og), 'og:image не на локальное фото каталога: ' + og);
+    const file = path.join(__dirname, '..', 'public', 'uploads', 'catalog', og.split('/').pop());
+    assert.ok(fs.existsSync(file) && fs.statSync(file).size > 4096, 'og:image указывает на отсутствующий файл: ' + og);
   });
 });

@@ -99,7 +99,7 @@ describe('E2E витрина: каталог → корзина → промо �
     await page.waitForSelector('#view-order-success:not(.hidden)', { timeout: 20000 });
     const code = await page.textContent('#order-code-badge');
     assert.match(code.trim(), /^TG-\d+$/, label + ': order code');
-    assert.match(await page.textContent('#view-order-success'), /Заявка сохранена/, label + ': success note');
+    assert.match(await page.textContent('#view-order-success'), /Модель зарезервирована/, label + ': success note');
     assert.deepEqual(errors, [], label + ': no page errors: ' + errors.join(' | '));
     await page.close();
   }
