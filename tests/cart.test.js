@@ -100,6 +100,20 @@ describe('демо-тема: переключатель светлой/тёмн�
     assert.ok(!m2.document.body.classList.contains('stealth-edition'));
     assert.equal(globalThis.__themestore.demo_theme, 'light');
   });
+
+  it('квиз-модалка есть во всех витринах и открывается/закрывается', () => {
+    for (const f of ['index.html', 'public/index.html', 'public/index-classic.html', 'public/index-stealth.html']) {
+      const html = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+      assert.ok(html.includes('id="quiz-modal"'), f + ': quiz modal markup');
+      for (const id of ['qz-goal-run', 'qz-goal-outdoor', 'qz-goal-classic', 'qz-goal-dive', 'qz-bud-low', 'qz-bud-mid', 'qz-bud-all']) {
+        assert.ok(html.includes('id="' + id + '"'), f + ': ' + id);
+      }
+    }
+    g.openQuizModal();
+    assert.ok(!g.document.getElementById('quiz-modal').classList.contains('hidden'), 'открылась');
+    g.closeQuizModal();
+    assert.ok(g.document.getElementById('quiz-modal').classList.contains('hidden'), 'закрылась');
+  });
 });
 
 describe('сервер демо: код TG-XXXX уникален, суммы целые', () => {

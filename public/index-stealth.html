@@ -51,8 +51,8 @@ body.stealth-edition{--brand-green:#34d399;--ink:#F8FAFC;--wrist-ok:#34d399;--wr
 body.stealth-edition .wrist-fit-box{background-color:#0F172A !important;border-color:#1E293B !important;}
 .collection-chip{color:var(--ink);}
 body.stealth-edition .collection-chip{background-color:#141926;border-color:#26314a;}
-.collection-chip .chip-arrow{background-color:#f3f4f6;border-color:#e5e7eb;color:#374151;}
-body.stealth-edition .collection-chip .chip-arrow{background-color:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:#E2E8F0;}
+.collection-chip .chip-arrow{background-color:#f3f4f6 !important;border-color:#e5e7eb !important;color:#374151 !important;}
+body.stealth-edition .collection-chip .chip-arrow{background-color:rgba(255,255,255,.08) !important;border-color:rgba(255,255,255,.15) !important;color:#F8FAFC !important;}
 .hero-badge{background-color:#ecfdf5 !important;border-color:#a7f3d0 !important;}
 body.stealth-edition .hero-badge{background-color:#064e3b !important;border-color:#065f46 !important;}
 }
@@ -400,6 +400,9 @@ body.stealth-edition #product-3d-stage {
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .whitespace-nowrap { white-space: nowrap; }
 .aspect-square { aspect-ratio: 1 / 1; }
+.-translate-x-full { transform: translateX(-100%); }
+.translate-x-full { transform: translateX(100%); }
+.translate-x-0 { transform: translateX(0); }
 .object-contain { object-fit: contain; }
 .rounded-xl { border-radius: 0.75rem; }
 .rounded-2xl { border-radius: 1rem; }
@@ -770,7 +773,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
         <div class="text-[9.5px] font-extrabold uppercase tracking-[0.18em] text-demo-brand">Клубный код WATCH10</div>
         <div class="text-sm font-extrabold text-demo-ink mt-1">Привилегия −10%</div>
       </div>
-      <span class="chip-arrow w-8 h-8 rounded-full btn-luxury-gold flex items-center justify-center font-bold">→</span>
+      <span class="chip-arrow w-8 h-8 rounded-full flex items-center justify-center font-bold">→</span>
     </button>
   </div>
 
@@ -1138,6 +1141,50 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
   </a>
   <a id="ui-float-max" href="#demo" target="_blank" title="MAX (демо)" class="w-11 h-11 rounded-full bg-[#0E121B] border border-white/15 shadow-lg flex items-center justify-center text-white text-xs font-extrabold hover:border-[#38BDF8] transition-all">M</a>
+</div>
+
+<!-- КВИЗ-ПОДБОР (демо) -->
+<div id="quiz-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/60" onclick="closeQuizModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4">
+    <div class="flex items-center justify-between">
+      <div class="text-sm font-extrabold text-gray-900">Подбор за 30 секунд <span class="text-[11px] font-bold text-demo-muted">демо</span></div>
+      <button onclick="closeQuizModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 font-bold">✕</button>
+    </div>
+    <div>
+      <div class="text-xs font-bold text-gray-700 mb-2">Для чего часы?</div>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <button id="qz-goal-run" onclick="setQuizGoal('run')">Бег и спорт</button>
+        <button id="qz-goal-outdoor" onclick="setQuizGoal('outdoor')">Туризм</button>
+        <button id="qz-goal-classic" onclick="setQuizGoal('classic')">Классика</button>
+        <button id="qz-goal-dive" onclick="setQuizGoal('dive')">Дайвинг</button>
+      </div>
+    </div>
+    <div>
+      <div class="text-xs font-bold text-gray-700 mb-2">Бюджет?</div>
+      <div class="grid grid-cols-3 gap-2 text-xs">
+        <button id="qz-bud-low" onclick="setQuizBudget('low')">до 35 000 ₽</button>
+        <button id="qz-bud-mid" onclick="setQuizBudget('mid')">35–70 000 ₽</button>
+        <button id="qz-bud-all" onclick="setQuizBudget('all')">Любой</button>
+      </div>
+    </div>
+    <button onclick="applyQuizSelection()" class="w-full btn-luxury-gold font-extrabold text-sm py-3 rounded-2xl">Подобрать</button>
+  </div>
+</div>
+
+<!-- МОДАЛКА СРАВНЕНИЯ -->
+<div id="compare-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/60" onclick="closeCompareModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[86vh] flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div class="text-sm font-extrabold text-gray-900">Сравнение моделей <span class="text-[11px] font-bold text-demo-muted">до 4 штук</span></div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleCompareDiffOnly()" class="text-[11px] font-bold text-demo-brand hover:underline">Только различия</button>
+        <button onclick="closeCompareModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold">✕</button>
+      </div>
+    </div>
+    <div id="compare-table-box" class="overflow-auto p-2"></div>
+  </div>
 </div>
 
 <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0E121B] text-[#E2E8F0] text-xs font-bold px-5 py-3 rounded-full shadow-2xl border border-[#38BDF8]/40"></div>

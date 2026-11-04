@@ -320,6 +320,13 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.equal(after.some((l) => /descent/i.test(l)), false, 'старые позиции больше не предлагаются');
   });
 
+  it('автономный слой покрывает скрывающие состояния (CDN может лежать)', () => {
+    for (const cls of ['.-translate-x-full', '.translate-x-full', '.translate-x-0', '.hidden']) {
+      assert.ok(HTML.includes(cls + ' {') || HTML.includes(cls + '{'), 'fallback: ' + cls);
+    }
+    assert.ok(HTML.includes('id="drawer"'), 'drawer markup');
+  });
+
   it('счётчик моделей в og:description не расходится с каталогом', () => {
     const m = HTML.match(/<meta property="og:description" content="(\d+) модел/);
     assert.ok(m, 'в og:description заявлено число моделей');

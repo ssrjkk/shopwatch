@@ -67,7 +67,7 @@ global.fetch = ${fetchImpl};
 
 const EXPOSE = [
   'state', 'renderCatalog', 'renderHits', 'toggleFav', 'openProduct', 'tgOrderLink', 'addToCart',
-  'changeQty', 'removeFromCart', 'clearCart', 'sanitizeCart', 'cartCount', 'cartTotal', 'renderCart', 'renderCheckout', 'goCheckout', 'showMore', 'setPageSize', 'toggleTheme', 'applyTheme', 'currentTheme',
+  'changeQty', 'removeFromCart', 'clearCart', 'sanitizeCart', 'cartCount', 'cartTotal', 'renderCart', 'renderCheckout', 'goCheckout', 'showMore', 'setPageSize', 'toggleTheme', 'applyTheme', 'currentTheme', 'openQuizModal', 'closeQuizModal', 'applyQuizSelection',
   'switchTab', 'showView', 'route', 'toggleDrawer', 'submitOrder', 'renderFilters', 'setCategory', 'setSeries',
   'getFiltered', 'parseSearch', 'hayOf', 'isHit', 'tokenHit', 'onSearchInput', 'resetSearch', 'searchQuery',
   'setSearchQuery', 'syncCatalogHash', 'goAllProducts', 'goCatalogHome', 'quickOrder', 'fallbackCopy',

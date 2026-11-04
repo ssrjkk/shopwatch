@@ -4,9 +4,9 @@
 
 [Demo storefront](https://example.invalid/demo/) · [Bot: disabled in demo] · [Demo author: fictional] · [Русская версия](README.ru.md)
 
-![Watchop storefront: catalog, product cards and prices](docs/screenshots/storefront.jpg)
-![Catalog: sharp model photos filling each card](docs/screenshots/catalog.jpg)
-![Product page: large photo plus studio render](docs/screenshots/product.jpg)
+![Vektor demo storefront: catalog, placeholders and prices](docs/screenshots/catalog-1280-light.png)
+![Catalog: dark theme via toggle](docs/screenshots/catalog-1280-dark.png)
+![Product page: demo photo and sample content](docs/screenshots/product-1280-light.png)
 
 Storefront: a catalog of 391 products read from `products-data.js` (exported from the live
 database together with their ids), which the server also uses to seed and upgrade the database;
@@ -222,7 +222,7 @@ neither corrupt the working file nor overwrite the backup.
 
 Measured against the working catalog of 391 products, not eyeballed:
 
-- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 250 017 B → 50 700 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 118 402 B → 13 041 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
+- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 251 978 B → 51 108 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 118 402 B → 13 041 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
 - **Windowed catalog grid.** Never more than 60 cards in the DOM, however far you scroll: spacers above and below hold the height of what is hidden, so the scrollbar does not jump. Before this the grid only ever grew — after scrolling to the end it held 347 cards and 3470 nodes instead of 60 and 600. The numeric check is in `tests/virtual.test.js`.
 - **Images sized to their slot.** The database baked in `w=600` although a card in the `max-w-md` layout is 181 px and a cart thumbnail is 64 px. The storefront now asks for `w=400` on a card, `w=700` on the product page and `w=160`/`w=140` for thumbnails. Unsplash URLs also get `fm=webp`, verified by fact — `Content-Type: image/webp`, a `RIFF…WEBP` signature, 7 786 B instead of 10 882 B per card (−28%). Other hosts (Wikimedia) are left as they are: they do not understand the width parameter.
 - **Photo cache.** `/uploads/...` is served with `Cache-Control: public, max-age=31536000, immutable` — the file name is unique per upload, so it cannot go stale. The storefront HTML itself cannot be cached forever (`max-age=0`), otherwise a price change would not appear until the visitor cleared the cache.
