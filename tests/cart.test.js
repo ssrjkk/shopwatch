@@ -140,7 +140,7 @@ describe('сервер: код TG-XXXX уникален, суммы целые',
   let child;
   let tmp;
   before(async () => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'vector-cart-'));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watchop-cart-'));
     child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
       cwd: tmp,
       env: { ...process.env, PORT: String(PORT), TG_BOT_TOKEN: '', TG_ADMIN_ID: '', MAX_BOT_TOKEN: '', MAX_ADMIN_ID: '', ORDER_COOLDOWN_MS: '300' },
@@ -149,7 +149,7 @@ describe('сервер: код TG-XXXX уникален, суммы целые',
     await new Promise((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('server boot timeout')), 15000);
       child.stdout.on('data', (d) => {
-        if (String(d).includes('Vektor running')) { clearTimeout(t); resolve(); }
+        if (String(d).includes('Watchop running')) { clearTimeout(t); resolve(); }
       });
       child.on('error', reject);
     });

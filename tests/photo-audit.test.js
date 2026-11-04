@@ -34,7 +34,7 @@ describe('аудит фото: 200 + картинка + валидный JPEG у
   const realFetch = globalThis.fetch.bind(globalThis);
 
   before(async () => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'vector-photoaudit-'));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watchop-photoaudit-'));
     child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
       cwd: tmp,
       env: { ...process.env, PORT: String(PORT), TG_BOT_TOKEN: '', TG_ADMIN_ID: '', MAX_BOT_TOKEN: '', MAX_ADMIN_ID: '' },
@@ -43,7 +43,7 @@ describe('аудит фото: 200 + картинка + валидный JPEG у
     await new Promise((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('server boot timeout')), 20000);
       child.stdout.on('data', (d) => {
-        if (String(d).includes('Vektor running')) { clearTimeout(t); resolve(); }
+        if (String(d).includes('Watchop running')) { clearTimeout(t); resolve(); }
       });
       child.on('error', reject);
     });

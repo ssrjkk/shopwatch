@@ -328,7 +328,7 @@ db.exec(`
 `);
 
 const defaultSettings = {
-  hero_title: 'Часовой магазин «Вектор» — часы, эхолоты и навигаторы с гарантией и доставкой по России',
+  hero_title: 'Магазин оригинальной продукции Garmin и смарт-часов — поможем выбрать под ваши задачи',
   phone: '+7 (000) 000-00-00',
   email: 'info@example.invalid',
   address: 'Доставка по всей России — СДЭК, Почта России, Boxberry',
@@ -367,7 +367,7 @@ const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, v
 
 // Миграция старой ссылки менеджера на рабочего бота + колонка хитов для существующих БД
 if (getSetting('tg_link') === 'https://t.me/watchop_manager') setSetting('tg_link', '');
-if (getSetting('hero_title').includes('Воронеже')) setSetting('hero_title', 'Часовой магазин «Вектор» — часы, эхолоты и навигаторы с гарантией и доставкой по России');
+if (getSetting('hero_title').includes('Воронеже')) setSetting('hero_title', 'Магазин оригинальной продукции Garmin и смарт-часов — поможем выбрать под ваши задачи');
 if (getSetting('address').includes('Воронеж') || getSetting('address').includes('Пушкинская')) setSetting('address', 'Доставка по всей России — СДЭК, Почта России, Boxberry');
 try { db.exec('ALTER TABLE products ADD COLUMN is_hit INTEGER DEFAULT 0'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN old_price INTEGER DEFAULT 0'); } catch (e) {}
@@ -1980,7 +1980,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       const payload = ctx.startPayload;
       const codeMatch = String(payload || '').match(/TG-\d+/i);
       if (codeMatch) return handleSiteOrderPayload(ctx, codeMatch[0].toUpperCase(), payload);
-      await ctx.reply('Здравствуйте! Магазин «Вектор». Отправьте номер заявки (например, TG-1176), и я покажу её статус.');
+      await ctx.reply('Здравствуйте! Магазин Watchop. Отправьте номер заявки (например, TG-1176), и я покажу её статус.');
       if (shopKb.length) return ctx.reply('Каталог и заказ в 1 клик — прямо в Telegram:', Markup.inlineKeyboard([shopKb]));
       return;
     }
@@ -3374,7 +3374,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
 
   if (!isMaxAdmin) {
     await maxNotifyAdmin(`Сообщение в MAX от ${senderName} (${senderId}):\n${text || '(без текста)'}`);
-    return sendMaxMessage(senderId, 'Здравствуйте! Магазин «Вектор». Напишите номер заказа (например, TG-1176).');
+    return sendMaxMessage(senderId, 'Здравствуйте! Магазин Watchop. Напишите номер заказа (например, TG-1176).');
   }
 
   if (text === 'Статистика' || text === '/stats') {
@@ -3797,7 +3797,7 @@ try {
   if (!last || Date.now() - Date.parse(last) > 24 * 3600 * 1000) runBackup('startup: старше суток');
 } catch (e) { console.error('Backup check failed:', e.message); }
 setInterval(() => runBackup('scheduled: раз в сутки'), 24 * 3600 * 1000).unref?.();
-const server = process.env.HOST ? app.listen(PORT, HOST, () => console.log(`Vektor running on http://${HOST}:${server.address().port}`)) : app.listen(PORT, () => console.log(`Vektor running on http://${HOST}:${server.address().port}`));
+const server = process.env.HOST ? app.listen(PORT, HOST, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`)) : app.listen(PORT, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`));
 
 function gracefulShutdown() {
   try { if (server && server.close) server.close(); } catch (e) {}

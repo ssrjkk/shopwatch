@@ -1,7 +1,7 @@
 {
-  "name": "shop-vector",
+  "name": "watchop-store-tg-max",
   "version": "1.0.0",
-  "description": "Working storefront (Vektor): watches, fishfinders, checkout via Telegram/MAX bots.",
+  "description": "Watchop Smartwatch Store with Telegram & MAX Admin Bots",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -17,5 +17,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1"
   }
 }

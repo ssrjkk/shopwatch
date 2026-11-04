@@ -5,14 +5,25 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-let chromium;
+// Playwright — объявленная dev-зависимость. Сюит честно пропускается, если пакета
+// или браузера нет (например, в чистом CI без шага установки), а не падает на require:
+// падение на загрузке файла валило весь npm test и красило CI.
+let chromium = null;
+let skipReason = '';
 try {
   chromium = require('playwright').chromium;
 } catch (e) {
-  chromium = require('D:/Dev/Temp/opencode/shot/node_modules/playwright').chromium;
+  skipReason = 'playwright не установлен: npm i -D playwright && npx playwright install chromium';
+}
+if (chromium) {
+  try {
+    if (!fs.existsSync(chromium.executablePath())) skipReason = 'браузер chromium не скачан: npx playwright install chromium';
+  } catch (e) {
+    skipReason = 'браузер chromium не скачан: npx playwright install chromium';
+  }
 }
 
-describe('E2E витрина: каталог → корзина → промо → оформление', () => {
+describe('E2E витрина: каталог → корзина → промо → оформление', { skip: skipReason || false }, () => {
   const PORT = 3221;
   const BASE = `http://localhost:${PORT}`;
   let child;
@@ -20,7 +31,7 @@ describe('E2E витрина: каталог → корзина → промо �
   let browser;
 
   before(async () => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'vector-e2e-'));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watchop-e2e-'));
     child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
       cwd: tmp,
       env: { ...process.env, PORT: String(PORT), TG_BOT_TOKEN: '', TG_ADMIN_ID: '', MAX_BOT_TOKEN: '', MAX_ADMIN_ID: '', ORDER_COOLDOWN_MS: '300' },
@@ -29,7 +40,7 @@ describe('E2E витрина: каталог → корзина → промо �
     await new Promise((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('server boot timeout')), 20000);
       child.stdout.on('data', (d) => {
-        if (String(d).includes('Vektor running')) { clearTimeout(t); resolve(); }
+        if (String(d).includes('Watchop running')) { clearTimeout(t); resolve(); }
       });
       child.on('error', reject);
     });
@@ -54,8 +65,10 @@ describe('E2E витрина: каталог → корзина → промо �
     page.on('pageerror', (e) => errors.push(String(e.message || e).slice(0, 120)));
     await page.goto(`${BASE}/#/catalog`, { waitUntil: 'load', timeout: 45000 });
     await page.waitForSelector('#products-grid > *', { timeout: 20000 });
-    // hero на месте
-    assert.match(await page.textContent('#ui-hero-title'), /Часовой магазин/, label + ': hero');
+    // hero витрины берётся из настроек сервера, а не из строки теста
+    const srv = await (await fetch(`${BASE}/api/state`)).json();
+    assert.ok(srv.settings.hero_title, label + ': на сервере пустой hero_title');
+    assert.equal((await page.textContent('#ui-hero-title')).trim(), srv.settings.hero_title.trim(), label + ': hero = настройка сервера');
     // пагинация: 10 по умолчанию
     assert.equal(await page.locator('#products-grid > *').count(), 10, label + ': 10 cards');
     // добавить в корзину (клик через JS: устойчиво к липкой шапке)

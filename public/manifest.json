@@ -1,7 +1,7 @@
 {
-  "name": "Вектор — магазин часов",
-  "short_name": "Вектор",
-  "description": "Часы, эхолоты и навигаторы с гарантией и доставкой по России.",
+  "name": "Watchop — Магазин Garmin и наручных смарт-часов",
+  "short_name": "Watchop",
+  "description": "Официальный каталог Garmin, Apple Watch, Samsung, Suunto и эхолотов с доставкой по всей России",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F4F5F7",

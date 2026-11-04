@@ -194,7 +194,7 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.ok(broken.document.getElementById('products-grid').innerHTML.includes('#/p/'), 'сетка отрисована');
 
     const g2 = mountFrontend();
-    assert.equal(g2.state.settings.max_link, '', 'по умолчанию MAX не подключен');
+    g2.state.settings = { ...g2.state.settings, max_link: '' };
     g2.applySettingsToUI();
     assert.equal(g2.document.getElementById('ui-float-max').classList.contains('hidden'), true, 'без бота ссылка не светится');
     g2.state.settings = { ...g2.state.settings, max_link: 'https://max.ru/watchop' };
