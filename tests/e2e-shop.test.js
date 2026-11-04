@@ -111,4 +111,59 @@ describe('E2E витрина: каталог → корзина → промо �
   it('десктоп 1280px: полный фуннел без ошибок', async () => {
     await funnel({ width: 1280, height: 800 }, 'desktop');
   });
+
+  // Контраст — не «на глаз»: в обеих темах считаем реальные computed-цвета,
+  // прозрачные слои композим на родителя, и ни один текст не имеет права
+  // падать ниже WCAG 4.5. Так темы не разъезжаются после правки стилей.
+  it('контраст текста в светлой и тёмной темах не ниже 4.5', async () => {
+    const audit = () => {
+      const parse = (s) => { const m = (String(s).match(/[\d.]+/g) || ['0', '0', '0']).map(Number); return [m[0], m[1], m[2], m.length > 3 ? m[3] : 1]; };
+      const lum = (a) => { const t = a.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * t[0] + 0.7152 * t[1] + 0.0722 * t[2]; };
+      const over = (layers, base) => layers.reduce((acc, c) => [0, 1, 2].map((k) => Math.round(c[k] * c[3] + acc[k] * (1 - c[3]))), base);
+      const bgOf = (el) => {
+        const layers = [];
+        let n = el;
+        while (n && n !== document.documentElement) {
+          const c = parse(getComputedStyle(n).backgroundColor);
+          if (c[3] >= 0.999) return over(layers, c.slice(0, 3));
+          if (c[3] > 0) layers.push(c);
+          n = n.parentElement;
+        }
+        return over(layers, parse(getComputedStyle(document.body).backgroundColor).slice(0, 3));
+      };
+      const bad = [];
+      for (const el of document.querySelectorAll('body *')) {
+        if (el.children.length) continue;
+        const text = (el.textContent || '').trim();
+        if (!text || text.length > 80) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2) continue;
+        const st = getComputedStyle(el);
+        if (st.visibility === 'hidden' || st.display === 'none' || Number(st.opacity) < 0.2) continue;
+        const fg = parse(st.color);
+        if (fg[3] < 0.5) continue;
+        const bg = bgOf(el);
+        const l1 = lum(fg.slice(0, 3)), l2 = lum(bg);
+        const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+        if (ratio < 4.5) bad.push(`${Math.round(ratio * 10) / 10}: ${text.slice(0, 40)} (${st.color} на rgb(${bg.join(',')}))`);
+      }
+      return bad;
+    };
+    for (const theme of ['light', 'dark']) {
+      const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+      await page.goto(`${BASE}/`, { waitUntil: 'load', timeout: 45000 });
+      await page.evaluate((t) => { try { localStorage.setItem('app_theme', t); } catch (e) {} }, theme);
+      await page.reload({ waitUntil: 'load' });
+      await page.waitForSelector('#products-grid > *', { timeout: 20000 });
+      const views = ['#/catalog', '#/p/1', '#/cart', '#/about'];
+      const found = [];
+      for (const v of views) {
+        await page.evaluate((h) => { location.hash = h; }, v);
+        await page.waitForTimeout(600);
+        for (const b of await page.evaluate(audit)) found.push(theme + ' ' + v + ' → ' + b);
+      }
+      await page.close();
+      assert.deepEqual(found, [], 'текст, который не читается: \n' + found.join('\n'));
+    }
+  });
 });
