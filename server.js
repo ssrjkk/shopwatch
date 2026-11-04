@@ -1999,13 +1999,13 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       const payload = ctx.startPayload;
       const codeMatch = String(payload || '').match(/TG-\d+/i);
       if (codeMatch) return handleSiteOrderPayload(ctx, codeMatch[0].toUpperCase(), payload);
-      await ctx.reply('Здравствуйте! Магазин Watchop. Отправьте номер заявки (например, TG-1176), и я покажу её статус.');
+      await ctx.reply('Здравствуйте! Магазин OneWatch. Отправьте номер заявки (например, TG-1176), и я покажу её статус.');
       if (shopKb.length) return ctx.reply('Каталог и заказ в 1 клик — прямо в Telegram:', Markup.inlineKeyboard([shopKb]));
       return;
     }
     ctx.session = {};
     await ctx.reply(
-      `Админ-панель Watchop (Telegram)\nВаш ID: ${ctx.from.id}\nВыберите действие:`,
+      `Админ-панель OneWatch (Telegram)\nВаш ID: ${ctx.from.id}\nВыберите действие:`,
       tgAdminMenuKb()
     );
     if (shopKb.length) return ctx.reply('Магазин:', Markup.inlineKeyboard([shopKb]));
@@ -3188,7 +3188,7 @@ async function maxNotifyAdmin(text, orderCode) {
 }
 
 async function maxAdminMenu(userId, title) {
-  await sendMaxMessage(userId, title || 'Админ-панель Watchop (MAX). Выберите действие:', [...MAX_MENU, ...MAX_CANCEL], maxShopLinkButtons());
+  await sendMaxMessage(userId, title || 'Админ-панель OneWatch (MAX). Выберите действие:', [...MAX_MENU, ...MAX_CANCEL], maxShopLinkButtons());
 }
 
 // Номера заявок идут по порядку — без проверки любой может перебирать TG-XXXX
@@ -3393,7 +3393,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
 
   if (!isMaxAdmin) {
     await maxNotifyAdmin(`Сообщение в MAX от ${senderName} (${senderId}):\n${text || '(без текста)'}`);
-    return sendMaxMessage(senderId, 'Здравствуйте! Магазин Watchop. Напишите номер заказа (например, TG-1176).');
+    return sendMaxMessage(senderId, 'Здравствуйте! Магазин OneWatch. Напишите номер заказа (например, TG-1176).');
   }
 
   if (text === 'Статистика' || text === '/stats') {
@@ -3816,7 +3816,7 @@ try {
   if (!last || Date.now() - Date.parse(last) > 24 * 3600 * 1000) runBackup('startup: старше суток');
 } catch (e) { console.error('Backup check failed:', e.message); }
 setInterval(() => runBackup('scheduled: раз в сутки'), 24 * 3600 * 1000).unref?.();
-const server = process.env.HOST ? app.listen(PORT, HOST, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`)) : app.listen(PORT, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`));
+const server = process.env.HOST ? app.listen(PORT, HOST, () => console.log(`OneWatch running on http://${HOST}:${server.address().port}`)) : app.listen(PORT, () => console.log(`OneWatch running on http://${HOST}:${server.address().port}`));
 
 function gracefulShutdown() {
   try { if (server && server.close) server.close(); } catch (e) {}

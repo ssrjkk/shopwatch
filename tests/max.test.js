@@ -334,7 +334,7 @@ ${extractBackupBlock()}
     assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='max_extra_admin_ids'").get().value, '777');
 
     await api.handleMaxUpdate(api.upd(777, 'Second', '/start'));
-    assert.match(api.lastTo(777).body.text, /Админ-панель Watchop \(MAX\)/, 'новый админ получает меню');
+    assert.match(api.lastTo(777).body.text, /Админ-панель OneWatch \(MAX\)/, 'новый админ получает меню');
 
     const before999 = api.allTo(999).length;
     const before777 = api.allTo(777).length;

@@ -40,7 +40,7 @@ describe('E2E витрина: каталог → корзина → промо �
     await new Promise((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('server boot timeout')), 20000);
       child.stdout.on('data', (d) => {
-        if (String(d).includes('Watchop running')) { clearTimeout(t); resolve(); }
+        if (String(d).includes('OneWatch running')) { clearTimeout(t); resolve(); }
       });
       child.on('error', reject);
     });
