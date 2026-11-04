@@ -1648,10 +1648,29 @@ app.post('/api/lead', (req, res) => {
     const details = cleanText(b.details || '').slice(0, 300);
     if (!name || !contact) return res.status(400).json({ error: 'Укажите имя и контакт для связи' });
     const label = type === 'tradein' ? `Trade-In оценка: ${name} (${details || 'без деталей'})` : `Обратный звонок: ${details || 'Консультация'}`;
-    const msg = `🔔 НОВАЯ ЗАЯВКА НА СВЯЗЬ (${type === 'tradein' ? 'Trade-In' : 'Звонок'})\n👤 ${name}\n📞 ${contact}\n💬 ${details || '—'}`;
+    const statusText = type === 'tradein' ? 'Оценка Trade-In' : 'Заявка на звонок';
+    // Заявке на связь даётся настоящий номер из счётчика: покупатель называет
+    // менеджеру то, что лежит в базе, а не случайное число из своего браузера.
+    let code = '';
+    try {
+      const customer = { fio: name, phone: contact, email: '', address: '', delivery: type === 'tradein' ? 'Trade-In обмен' : 'Звонок консультанта' };
+      db.exec('BEGIN IMMEDIATE');
+      try {
+        code = allocateOrderCode();
+        db.prepare('INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES (?, ?, 0, ?, ?)')
+          .run(code, JSON.stringify([{ id: 0, name: label, price: 0, qty: 1 }]), statusText, JSON.stringify(customer));
+        db.exec('COMMIT');
+      } catch (e) {
+        try { db.exec('ROLLBACK'); } catch (e2) {}
+        throw e;
+      }
+    } catch (e) {
+      code = '';
+    }
+    const msg = `🔔 НОВАЯ ЗАЯВКА НА СВЯЗЬ${code ? ' ' + code : ''} (${type === 'tradein' ? 'Trade-In' : 'Звонок'})\n👤 ${name}\n📞 ${contact}\n💬 ${details || '—'}`;
     notifyTgAdmins(msg);
     maxNotifyAdmin(msg).catch(() => {});
-    res.json({ ok: true, label });
+    res.json({ ok: true, code, label });
   } catch (e) {
     res.status(500).json({ error: 'Не удалось отправить заявку' });
   }

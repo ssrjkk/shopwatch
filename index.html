@@ -3208,7 +3208,7 @@ function closeCallbackModal(){
   const m=document.getElementById('callback-modal');
   if(m){m.classList.add('hidden');m.classList.remove('flex');}
 }
-function submitCallbackRequest(){
+async function submitCallbackRequest(){
   const name=(document.getElementById('cb-name')||{}).value?.trim()||'';
   const phone=(document.getElementById('cb-phone')||{}).value?.trim()||'';
   const comment=(document.getElementById('cb-comment')||{}).value?.trim()||'Консультация по подбору часов';
@@ -3218,17 +3218,27 @@ function submitCallbackRequest(){
     return;
   }
   if(err)err.classList.add('hidden');
-  try{if(!IS_STATIC&&typeof fetch==='function')fetch(['/api','lead'].join('/'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'callback',name,contact:phone,details:comment})}).catch(()=>{});}catch(_){}
-  const code='TG-'+(20000+Math.floor(Math.random()*9999));
-  const items=[{id:1,name:`Обратный звонок: ${comment}`,price:0,qty:1}];
-  state.simOrders.unshift({code,items,total:0,customer:{fio:name,phone,delivery:'Звонок консультанта'},status:'Заявка на звонок'});
-  recordMyOrder(code,items,0,'Заявка на звонок');
-  saveSessionOrder({orderCode:code,summary:`Обратный звонок (${name}, ${phone})`,tgHref:tgOrderLink(code,items),maxHref:state.settings.max_link});
-  document.getElementById('order-code-badge').textContent=code;
-  document.getElementById('order-item-summary').textContent=`Обратный звонок: ${name} (${phone})`;
-  document.getElementById('order-tg-btn').href=tgOrderLink(code,items);
+  const summary=`Обратный звонок: ${name} (${phone})`;
+  const code=await sendLead('callback',name,phone,comment);
+  // Номера без ответа сервера не выдумываем: на статике покупатель уходит в чат
+  // и говорит менеджеру, что просил звонок, — заявка уже ушла админам.
+  document.getElementById('order-code-badge').textContent=code||'звонок';
+  document.getElementById('order-item-summary').textContent=summary;
+  document.getElementById('order-tg-btn').href=code?tgOrderLink(code,[]):tgOrderLink('consult');
   closeCallbackModal();
   switchTab('order-success');
+  if(code){recordMyOrder(code,[],0,'Заявка на звонок');saveSessionOrder({orderCode:code,summary,tgHref:document.getElementById('order-tg-btn').href,maxHref:state.settings.max_link});}
+}
+
+async function sendLead(type,name,contact,details){
+  try{
+    if(IS_STATIC||typeof fetch!=='function')return '';
+    const res=await fetch(['/api','lead'].join('/'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,name,contact,details})});
+    if(!res||!res.ok)return '';
+    const d=await res.json().catch(()=>({}));
+    const code=String((d&&d.code)||'');
+    return /^TG-\d+$/.test(code)?code:'';
+  }catch(e){return '';}
 }
 
 // Интерактивный подборщик часов (Quiz)
@@ -3721,7 +3731,7 @@ function closeTradeInModal(){
   const m=document.getElementById('tradein-modal');
   if(m){m.classList.add('hidden');m.classList.remove('flex');}
 }
-function submitTradeInRequest(){
+async function submitTradeInRequest(){
   const oldM=(document.getElementById('ti-old-model')||{}).value?.trim()||'';
   const cond=(document.getElementById('ti-condition')||{}).value||'Отличное';
   const contact=(document.getElementById('ti-contact')||{}).value?.trim()||'';
@@ -3731,18 +3741,15 @@ function submitTradeInRequest(){
     return;
   }
   if(err)err.classList.add('hidden');
-  try{if(!IS_STATIC&&typeof fetch==='function')fetch(['/api','lead'].join('/'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'tradein',name:oldM,contact,details:cond})}).catch(()=>{});}catch(_){}
-  const target=state.products.find(p=>p.id===state.tradeInTargetId)||state.products[0];
-  const code='TG-'+(20000+Math.floor(Math.random()*9999));
-  const items=[{id:target.id,name:`Trade-In (${oldM}, ${cond}) → ${target.name}`,price:target.price,qty:1}];
-  state.simOrders.unshift({code,items,total:target.price,customer:{fio:contact,phone:contact,delivery:'Trade-In обмен'},status:'Оценка Trade-In'});
-  recordMyOrder(code,items,target.price,'Оценка Trade-In');
-  saveSessionOrder({orderCode:code,summary:`Trade-In (${oldM}) → ${target.name}`,tgHref:tgOrderLink(code,items),maxHref:state.settings.max_link});
-  document.getElementById('order-code-badge').textContent=code;
-  document.getElementById('order-item-summary').textContent=`Trade-In обмен: ${oldM} → ${target.name}`;
-  document.getElementById('order-tg-btn').href=tgOrderLink(code,items);
+  const target=state.products.find(p=>p.id===state.tradeInTargetId)||{};
+  const summary=`Trade-In: ${oldM} (${cond})${target.name?' → '+target.name:''}`;
+  const code=await sendLead('tradein',oldM,contact,cond);
+  document.getElementById('order-code-badge').textContent=code||'оценка';
+  document.getElementById('order-item-summary').textContent=summary;
+  document.getElementById('order-tg-btn').href=code?tgOrderLink(code,[]):tgOrderLink('consult');
   closeTradeInModal();
   switchTab('order-success');
+  if(code){recordMyOrder(code,[],0,'Оценка Trade-In');saveSessionOrder({orderCode:code,summary,tgHref:document.getElementById('order-tg-btn').href,maxHref:state.settings.max_link});}
 }
 
 

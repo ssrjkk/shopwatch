@@ -222,7 +222,7 @@ neither corrupt the working file nor overwrite the backup.
 
 Measured against the working catalog of 391 products, not eyeballed:
 
-- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 243 643 B → 50 320 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 167 713 B → 16 351 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
+- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 243 474 B → 50 362 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 167 713 B → 16 351 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
 - **Windowed catalog grid.** Never more than 60 cards in the DOM, however far you scroll: spacers above and below hold the height of what is hidden, so the scrollbar does not jump. Before this the grid only ever grew — after scrolling to the end it held 391 cards and 3910 nodes instead of 60 and 600. The numeric check is in `tests/virtual.test.js`.
 - **Images sized to their slot.** The database baked in `w=600` although a card in the `max-w-md` layout is 181 px and a cart thumbnail is 64 px. The storefront now asks for `w=400` on a card, `w=700` on the product page and `w=160`/`w=140` for thumbnails. Unsplash URLs also get `fm=webp`, verified by fact — `Content-Type: image/webp`, a `RIFF…WEBP` signature, 7 786 B instead of 10 882 B per card (−28%). Other hosts (Wikimedia) are left as they are: they do not understand the width parameter.
 - **Photo cache.** `/uploads/...` is served with `Cache-Control: public, max-age=31536000, immutable` — the file name is unique per upload, so it cannot go stale. The storefront HTML itself cannot be cached forever (`max-age=0`), otherwise a price change would not appear until the visitor cleared the cache.
@@ -250,6 +250,7 @@ younger than 24 hours, otherwise `403`).
 - `GET /api/state` → `{ settings, products }` (payment requisites `payment_details` are not in the response — they stay in the bot)
 - `POST /api/promo-check {code, items}` → `{ code, percent, subtotal, discount, total }` or `400` with the reason; prices come from the database, an unknown code is rejected
 - `POST /api/order {items, total, customer}` → `{ orderCode: TG-XXXX, total }`. Names and prices are recalculated from the server's own database, the phone needs at least 10 digits, anti-spam 5 s (`429`)
+- `POST /api/lead {type, name, contact, details}` (a callback request or a Trade-In appraisal, no cart) → `{ ok, code, label }`: the request is written to `orders` with a real number from the same counter and total 0, every admin is notified, and `GET /api/order-status` later answers by that number. Without a name or contact it is `400` and no row appears
 - `GET /healthz` → `{ ok, products, orders, uptime }` (for the Docker HEALTHCHECK and monitoring)
 
 ## Protection
@@ -273,9 +274,9 @@ younger than 24 hours, otherwise `403`).
 
 ## Tests
 
-`npm test` — 283 tests in 34 suites, the built-in Node runner (nothing to install):
+`npm test` — 288 tests in 34 suites, the built-in Node runner (nothing to install):
 
-- `tests/api.test.js` — a live server on a temporary port with an empty database: state (300+ products), order `TG-XXXX`, anti-spam `429`, `400`/`403`, price recalculation, customer data, `healthz`, static files, compression and `immutable` caching of uploads, promo codes: `/api/promo-check` answers with the server's own arithmetic, an order carries the discounted total, an unknown code is refused
+- `tests/api.test.js` — a live server on a temporary port with an empty database: state (300+ products), order `TG-XXXX`, anti-spam `429`, `400`/`403`, price recalculation, customer data, `healthz`, static files, compression and `immutable` caching of uploads, promo codes: `/api/promo-check` answers with the server's own arithmetic, an order carries the discounted total, an unknown code is refused, a callback request gets a real order number and is findable in the cabinet
 - `tests/promo.test.js` — the promo engine as pure functions: rules parse and serialize back without loss, garbage and out-of-range percents never become a discount, a brand code counts only that brand's lines in a mixed cart, the minimum cart is inclusive, a code that does not apply leaves the full sum and a readable reason, prices come from the lookup and not from the request, the discount is capped at the cart total, and the admin list prints code, percent and conditions
 - `tests/initdata.test.js` — Mini App signature: valid / broken / empty / without a token
 - `tests/max.test.js` — MAX parity: menu, add-product wizard, prices, requisites, settings (including that the `Тексты и контакты` screen offers every editable field), statuses, customer search, cancel, shop link button, catalog import and export, admins: the screen, `Добавить по ID`, `Убрать ID N`, refusing to remove an `.env` admin, notification delivered to every admin, the roster surviving a restart, and the `Админы` button interrupting requisite input, promo codes: the screen, `Добавить промокод`, `Убрать промокод`, refusal on an out-of-range percent and on a code that is not there, and the `Промокоды` button aborting pending input

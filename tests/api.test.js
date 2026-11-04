@@ -334,4 +334,47 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.equal(badOrder.status, 400, 'несуществующий код не оформляет заказ молча');
     assert.match((await badOrder.json()).error, /не найден/);
   });
+  it('заявка на связь получает настоящий номер и находится в кабинете', async () => {
+    const r = await fetch(`${BASE}/api/lead`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'callback', name: 'Иван Петров', contact: '+7 900 111-22-33', details: 'Подобрать Fenix' }),
+    });
+    assert.equal(r.status, 200);
+    const d = await r.json();
+    assert.match(String(d.code), /^TG-\d+$/, 'сервер не выдал номер заявки');
+    const { DatabaseSync } = require('node:sqlite');
+    const raw = new DatabaseSync(path.join(tmp, 'watchop.db'));
+    let row;
+    try {
+      row = raw.prepare('SELECT * FROM orders WHERE order_code = ?').get(d.code);
+    } finally {
+      raw.close();
+    }
+    assert.ok(row, 'заявка не записана в orders');
+    assert.equal(row.status, 'Заявка на звонок');
+    assert.equal(Number(row.total), 0, 'звонок — не чек');
+    assert.deepEqual(JSON.parse(row.items_json).map((i) => i.id), [0], 'в заявке нет товарной позиции: с ней бот читает её как заказ');
+    const cust = JSON.parse(row.customer_json || '{}');
+    assert.equal(cust.fio, 'Иван Петров');
+    assert.equal(String(cust.phone).replace(/\D/g, ''), '79001112233');
+    const st = await fetch(`${BASE}/api/order-status?code=${d.code}&pt=2233`);
+    assert.equal(st.status, 200, 'номер заявки не находится по последним цифрам телефона');
+    assert.equal((await st.json()).status, 'Заявка на звонок');
+  });
+
+  it('заявка без имени и телефона отбита и не плодит строк в базе', async () => {
+    const { DatabaseSync } = require('node:sqlite');
+    const count = () => {
+      const d = new DatabaseSync(path.join(tmp, 'watchop.db'));
+      try { return d.prepare('SELECT COUNT(*) AS n FROM orders').get().n; } finally { d.close(); }
+    };
+    const before = count();
+    const r = await fetch(`${BASE}/api/lead`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'callback', name: '', contact: '' }),
+    });
+    assert.equal(r.status, 400);
+    assert.match((await r.json()).error, /имя/);
+    assert.equal(count(), before, 'на отказе в базе не появилось строк');
+  });
 });

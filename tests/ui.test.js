@@ -413,4 +413,38 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     const full = g.productCardHTML({ id: 90004, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Тест без скидки', price: 50000, image: 'x', specs: '' });
     assert.doesNotMatch(full, /text-\[#FF5A5A\]/, 'без скидки красного нет');
   });
+  it('звонок из шапки берёт номер у сервера, а в бот летит ссылка без состава', async () => {
+    const g = mountFrontend({ fetch: "async (url, init) => { globalThis.__lead = { url: String(url), body: JSON.parse(init.body) }; return { ok: true, json: async () => ({ ok: true, code: 'TG-777' }) }; }" });
+    g.document.getElementById('cb-name').value = 'Мария';
+    g.document.getElementById('cb-phone').value = '+7 900 000-11-22';
+    g.document.getElementById('cb-comment').value = 'Подобрать Fenix';
+    await g.submitCallbackRequest();
+    assert.equal(globalThis.__lead.url, '/api/lead', 'заявка уходит на /api/lead');
+    assert.equal(globalThis.__lead.body.type, 'callback');
+    assert.equal(globalThis.__lead.body.contact, '+7 900 000-11-22');
+    assert.equal(g.document.getElementById('order-code-badge').textContent, 'TG-777', 'покупатель видит номер сервера');
+    assert.equal(g.document.getElementById('order-tg-btn').href, 'https://t.me/wwwatchshop_bot?start=TG-777', 'в deep link нет позиции, которой заявка не является');
+    assert.equal(g.state.myOrders[0].code, 'TG-777');
+    assert.equal(g.state.myOrders[0].items.length, 0, 'в кабинете у звонка пустой состав');
+  });
+
+  it('заявка Trade-In из старой формы тоже не выдумывает номер', async () => {
+    const g = mountFrontend({ fetch: "async () => ({ ok: false })" });
+    g.document.getElementById('ti-old-model').value = 'Garmin Fenix 6';
+    g.document.getElementById('ti-contact').value = '+7 900 000-33-44';
+    await g.submitTradeInRequest();
+    assert.equal(g.document.getElementById('order-code-badge').textContent, 'оценка', 'без ответа сервера номера не показываем');
+    assert.equal(g.document.getElementById('order-tg-btn').href, 'https://t.me/wwwatchshop_bot', 'ссылка ведёт в чат без выдуманного заказа');
+    assert.equal((g.state.myOrders || []).length, 0, 'такая заявка не попадает в «Мои заказы»');
+  });
+
+  it('звонок на статике без сервера не рисует случайный TG-номер', async () => {
+    const g = mountFrontend({ fetch: "async () => ({ ok: false })" });
+    g.document.getElementById('cb-name').value = 'Мария';
+    g.document.getElementById('cb-phone').value = '+7 900 000-11-22';
+    await g.submitCallbackRequest();
+    assert.equal(g.document.getElementById('order-code-badge').textContent, 'звонок');
+    assert.equal(g.document.getElementById('order-tg-btn').href, 'https://t.me/wwwatchshop_bot');
+    assert.equal((g.state.myOrders || []).length, 0);
+  });
 });

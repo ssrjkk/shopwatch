@@ -73,7 +73,7 @@ const EXPOSE = [
   'setSearchQuery', 'syncCatalogHash', 'goAllProducts', 'goCatalogHome', 'quickOrder', 'fallbackCopy',
   'updateGridStatus', 'parseHash', 'searchSuggestions', 'renderSearchSuggestions', 'openSearchDropdown', 'selectSearchTag', 'onSearchKeyDown', 'clearSearchInput', 'scrollToCatalog', 'renderSuggestions', 'hideSuggestions', 'pickSuggest',
   'moveSuggest', 'onSearchFocus', 'onSearchKey', 'narrowSuggestions', 'paintSuggestions', 'toggleFilterSheet', 'closeFilterSheet', 'resetFilters',
-  'updateFilterChrome', 'activeFilterCount', 'filterSheetOpen', 'toggleSupportMenu', 'updateToTop', 'resetAllFilters', 'setBrandFilter', 'toggleSpecFilter', 'copyPromoCode', 'openPromoModal', 'closePromoModal', 'openCallbackModal', 'closeCallbackModal', 'submitCallback',
+  'updateFilterChrome', 'activeFilterCount', 'filterSheetOpen', 'toggleSupportMenu', 'updateToTop', 'resetAllFilters', 'setBrandFilter', 'toggleSpecFilter', 'copyPromoCode', 'openPromoModal', 'closePromoModal', 'openCallbackModal', 'closeCallbackModal', 'submitCallback', 'submitCallbackRequest', 'submitTradeInRequest', 'sendLead', 'recordMyOrder', 'saveSessionOrder',
   'readStore', 'rememberOrder', 'lastOrder', 'showOrderSuccess', 'applyOrderToDom', 'suggestionCount', 'invalidateSugCounts', 'applySettingsToUI',
   'scrollToGrid', 'buildSugMap', 'sugMap', 'renderSuggestionsNow', 'scheduleSuggestions', 'sortedSug', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC', 'esc',
   'catalogFp', 'syncCatalogFp',
