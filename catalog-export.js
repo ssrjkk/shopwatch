@@ -8,7 +8,8 @@ const fs = require('fs');
 const FIELDS = ['id', 'brand', 'series', 'category', 'name', 'price', 'old_price', 'image', 'specs', 'hit', 'images'];
 
 // Дополнительные ракурсы: в файле — массив images, в базе — JSON-колонка gallery.
-// Только локальные uploads/*, не больше 4, без дубля первичного фото.
+// Только локальные uploads/*, не больше 4 доп. кадров (всего до 5 с первичным),
+// без дубля первичного фото.
 function normalizeImages(p) {
   let raw = [];
   if (Array.isArray(p.images)) raw = p.images;

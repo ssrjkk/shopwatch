@@ -32,7 +32,7 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     const descMatch = HTML.match(/<meta name="description" content="([^"]+)"/);
     assert.ok(descMatch, 'meta description присутствует');
     assert.ok(descMatch[1].length >= 80 && descMatch[1].length <= 220, `длина description оптимальна: ${descMatch[1].length}`);
-    assert.match(descMatch[1], /407/);
+    assert.match(descMatch[1], /395/);
   });
 
   it('2. Social SEO: полная разметка Open Graph (включая og:locale и og:site_name) и Twitter Cards', () => {
@@ -114,15 +114,15 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.equal(g.safeImageSrc('vbscript:msgbox(1)'), '');
   });
 
-  it('8. CMS-интеграция: экспорт 407 товаров в WooCommerce CSV, OpenCart CSV/SQL, PrestaShop CSV и нормализация вебхуков', () => {
+  it('8. CMS-интеграция: экспорт 395 товаров в WooCommerce CSV, OpenCart CSV/SQL, PrestaShop CSV и нормализация вебхуков', () => {
     const items = g.state.products;
-    assert.equal(items.length, 407);
+    assert.equal(items.length, 395);
     const wcCsv = cmsBridge.toWooCommerceCsv(items);
     const ocCsv = cmsBridge.toOpenCartCsv(items);
     const ocSql = cmsBridge.toOpenCartSql(items);
     const psCsv = cmsBridge.toPrestaShopCsv(items);
-    assert.ok(wcCsv.includes('Regular price') && wcCsv.split('\n').length >= 408);
-    assert.ok(ocCsv.includes('product_id;model;sku') && ocCsv.split('\n').length >= 408);
+    assert.ok(wcCsv.includes('Regular price') && wcCsv.split('\n').length >= 396);
+    assert.ok(ocCsv.includes('product_id;model;sku') && ocCsv.split('\n').length >= 396);
     assert.ok(ocSql.includes('INSERT INTO oc_product') && ocSql.includes('COMMIT;'));
     assert.ok(psCsv.includes('Product ID;Active (0/1)') && psCsv.split('\n').length >= 356);
     // Фото в выгрузках — абсолютные URL: WooCommerce/OpenCart/PrestaShop качают картинки по ссылкам
@@ -132,6 +132,14 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.ok(wcCsv.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'Woo CSV carries absolute image URLs');
     assert.ok(psCsv.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'Presta CSV carries absolute image URLs');
     assert.ok(ocSql.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'OpenCart SQL carries absolute image URLs');
+    // Галерея едет в движки: WooCommerce — все кадры через запятую, OpenCart — oc_product_image, REST — массив images
+    const withGallery = items.find((p) => (p.images || []).length > 0);
+    assert.ok(withGallery, 'catalog has gallery products for CMS export');
+    const wcLine = wcCsv.split('\n').find((l) => l.startsWith(withGallery.id + ','));
+    assert.ok(wcLine && wcLine.split('uploads/catalog/').length - 1 >= 2, 'Woo CSV carries all gallery angles');
+    assert.ok(ocSql.includes('INSERT INTO oc_product_image'), 'OpenCart SQL carries gallery rows');
+    const rest = cmsBridge.toWooCommerceRestProduct(withGallery);
+    assert.ok(rest.images.length >= 2 && rest.images[0].src.includes('uploads/catalog/'), 'Woo REST carries gallery images');
 
     const wcOrder = cmsBridge.normalizeCmsWebhookOrder('woocommerce', { id: 101, total: 62320, billing: { first_name: 'Алексей', phone: '+79990001122' } });
     assert.equal(wcOrder.total, 62320);
@@ -140,7 +148,7 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
 
   it('9. Catalog Photo Integrity: уникальные официальные фото, галерея реальных ракурсов в PDP работает', async () => {
     const products = g.state.products;
-    assert.equal(products.length, 407);
+    assert.equal(products.length, 395);
 
     // Все локальные фото каталога существуют на диске и весят больше 5 КБ
     for (const p of products) {
@@ -289,7 +297,14 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
       assert.ok(!garminWatchImgs.has(p.image), `Brand ${p.brand} product #${p.id} collides with Garmin image ${p.image}`);
     }
 
-    // PDP: ровно одно главное фото + миниатюры реальных ракурсов; подмен и 3D нет
+    // Покрытие ракурсами: у каждой позиции от 1 до 5 реальных кадров, большинство — с галереей.
+    // Одиночные фото допустимы только там, где у референса нет больше кадров:
+    // аксессуары с одним официальным кадром, снятые с производства модели, Huawei (официальный сайт недоступен).
+    const counts = [0, 0, 0, 0, 0, 0];
+    for (const p of products) counts[Math.min(1 + (p.images || []).length, 5)]++;
+    const with3 = counts[3] + counts[4] + counts[5];
+    assert.ok(with3 / products.length >= 0.7, `gallery coverage >=70%: ${with3}/${products.length}`);
+    assert.equal(counts[0], 0, 'no photo-less products');
     g.openProduct(1);
     let detailHtml = g.document.getElementById('product-detail-box').innerHTML;
     assert.match(detailHtml, /id="product-main-img"/, 'PDP must render #product-main-img');

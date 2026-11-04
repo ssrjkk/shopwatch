@@ -1,7 +1,7 @@
 /**
  * cms-bridge.js — Мост интеграции Watchop с движками WooCommerce, OpenCart 3/4 и PrestaShop 8.
  * Обеспечивает:
- * 1) Экспорт каталога (407 товаров с официальными фото) в форматы импорта WooCommerce CSV, OpenCart CSV/SQL и PrestaShop CSV.
+ * 1) Экспорт каталога (395 товаров с официальными фото) в форматы импорта WooCommerce CSV, OpenCart CSV/SQL и PrestaShop CSV.
  * 2) Совместимые REST-эндпоинты (/wp-json/wc/v3/products, /api/opencart/products, /api/prestashop/products).
  * 3) Приём вебхуков заказов из WooCommerce, OpenCart и PrestaShop с записью в единую БД и уведомлением админов в Telegram и MAX.
  */
@@ -21,6 +21,24 @@ function absImageUrl(image) {
   if (!s || /^https?:\/\//i.test(s) || s.startsWith('data:')) return s;
   const base = (typeof process !== 'undefined' && process.env && process.env.SHOP_URL ? String(process.env.SHOP_URL) : 'https://ssrjkk.github.io/shopwatch').replace(/\/+$/, '');
   return base + '/' + s.replace(/^\/+/, '');
+}
+
+// Все кадры товара абсолютными URL: первичное фото + реальные ракурсы галереи.
+// Порядок важен: первая картинка становится главной в WooCommerce/PrestaShop.
+function allImageUrls(p) {
+  const out = [];
+  const push = (u) => {
+    const a = absImageUrl(u);
+    if (a && !out.includes(a)) out.push(a);
+  };
+  push(p.image);
+  const extra = Array.isArray(p.images) ? p.images : [];
+  for (const u of extra.slice(0, 4)) {
+    const s = String(u || '');
+    if (!s || /^https?:\/\//i.test(s) || s.startsWith('data:')) continue;
+    push(s);
+  }
+  return out;
 }
 
 function toWooCommerceCsv(products) {
@@ -55,7 +73,7 @@ function toWooCommerceCsv(products) {
       regPrice,
       salePrice,
       cat,
-      absImageUrl(p.image),
+      allImageUrls(p).join(', '),
       'Бренд',
       p.brand || '',
       1,
@@ -109,7 +127,7 @@ function sqlEsc(val) {
 
 function toOpenCartSql(products, prefix = 'oc_') {
   const out = [
-    '-- Watchop OpenCart 3.x / 4.x Catalog Seed (407 Products with Official Images)',
+    '-- Watchop OpenCart 3.x / 4.x Catalog Seed (395 Products with Official Images)',
     'SET NAMES utf8mb4;',
     'START TRANSACTION;'
   ];
@@ -141,6 +159,10 @@ function toOpenCartSql(products, prefix = 'oc_') {
     if (cid >= 100) {
       out.push(`INSERT IGNORE INTO ${prefix}product_to_category (product_id, category_id) VALUES (${id}, ${cid});`);
     }
+    // Дополнительные ракурсы — в штатную таблицу картинок OpenCart
+    allImageUrls(p).slice(1).forEach((u, i) => {
+      out.push(`INSERT INTO ${prefix}product_image (product_id, image, sort_order) VALUES (${id}, ${sqlEsc(u)}, ${i + 1}) ON DUPLICATE KEY UPDATE image=VALUES(image);`);
+    });
     if (hasSale) {
       out.push(`DELETE FROM ${prefix}product_special WHERE product_id = ${id};`);
       out.push(`INSERT INTO ${prefix}product_special (product_id, customer_group_id, priority, price) VALUES (${id}, 1, 1, ${Number(p.price)});`);
@@ -176,7 +198,7 @@ function toPrestaShopCsv(products) {
       p.specs || '',
       `${p.name || ''} (${p.brand || ''} ${p.series || ''}). ${p.specs || ''}`,
       stock,
-      absImageUrl(p.image),
+      allImageUrls(p).join(','),
       hasSale ? 1 : 0
     ];
     lines.push(row.map((c) => csvCell(c, ';')).join(';'));
@@ -209,7 +231,7 @@ function toWooCommerceRestProduct(p) {
     stock_status: stock > 0 ? 'instock' : 'onbackorder',
     categories: [{ id: 1, name: String(p.category || 'Спортивные часы'), slug: String(p.category || 'watches') }],
     brands: [{ id: 1, name: String(p.brand || 'GARMIN') }],
-    images: p.image ? [{ id: id * 10, src: absImageUrl(p.image), name: String(p.name || '') }] : [],
+    images: allImageUrls(p).map((src, i) => ({ id: id * 10 + i, src, name: String(p.name || '') })),
     attributes: [
       { id: 1, name: 'Бренд', options: [String(p.brand || '')] },
       { id: 2, name: 'Серия', options: [String(p.series || '')] }
@@ -269,6 +291,7 @@ function normalizeCmsWebhookOrder(engine, body) {
 
 module.exports = {
   absImageUrl,
+  allImageUrls,
   toWooCommerceCsv,
   toOpenCartCsv,
   toOpenCartSql,

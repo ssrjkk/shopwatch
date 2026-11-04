@@ -24,13 +24,11 @@
 23;SAMSUNG-23;REF-0023;Samsung Galaxy Watch 7 44 мм Green;SAMSUNG;Спортивные часы;Galaxy Watch;26990;22940;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/6a309d7634a7.jpg;3 нм, BioActive, двухчастотный GPS.
 24;SUUNTO-24;REF-0024;Suunto Vertical Titanium Solar Canyon;SUUNTO;Спортивные часы;Suunto;64900;55160;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/0c0cc5828a34.jpg;Офлайн-карты, 60 дней.
 25;SUUNTO-25;REF-0025;Suunto Race S Titanium Canary AMOLED;SUUNTO;Спортивные часы;Suunto;41500;35280;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/fa58d622c06a.jpg;Мультиспорт, AMOLED.
-26;POLAR-26;REF-0026;Polar Grit X2 Pro Titan Sapphire;POLAR;Спортивные часы;Polar;68400;58140;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/6393356c2dfe.jpg;ЭКГ, SpO2, титан.
-27;POLAR-27;REF-0027;Polar Vantage V3 Night Black;POLAR;Спортивные часы;Polar;54900;46660;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/6393356c2dfe.jpg;Elixir biosensing, AMOLED.
 28;COROS-28;REF-0028;COROS VERTIX 2S Space;COROS;Спортивные часы;COROS;63500;53980;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-vertix-space.jpg;40 дней, офлайн-карты, сапфир+титан.
 29;COROS-29;REF-0029;COROS Pace 3 White Nylon;COROS;Спортивные часы;COROS;22990;19540;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-pace-white.jpg;Легкие 30 г, 38 часов GPS.
 30;HUAWEI-30;REF-0030;Huawei Watch Ultimate Green Zirconium;HUAWEI;Спортивные часы;Huawei Watch;59990;50990;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/1ebf9c114332.jpg;Жидкий металл, 100 м.
 31;HUAWEI-31;REF-0031;Huawei Watch GT 5 Pro Black Titanium;HUAWEI;Спортивные часы;Huawei Watch;32990;28040;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/83fbf2100a11.jpg;Титан, ECG, 14 дней.
-32;AMAZFIT-32;REF-0032;Amazfit T-Rex 3 48 мм Onyx Military;AMAZFIT;Спортивные часы;Amazfit;25900;22020;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/d52d0a6d8b31.jpg;2000 нит, -30C, 27 дней.
+32;AMAZFIT-32;REF-0032;Amazfit T-Rex 3 48 мм Onyx Military;AMAZFIT;Спортивные часы;Amazfit;25900;22020;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-trex3-a.jpg;2000 нит, -30C, 27 дней.
 33;CASIO-33;REF-0033;Casio G-Shock GBD-H2000-1A9 Solar GPS;CASIO;Спортивные часы;G-Shock;38590;32800;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/casio-GBD-H2000-1A9.jpg;Пульсометр, GPS, solar.
 34;GARMIN-34;REF-0034;Garmin Fenix 8 43 мм AMOLED Sapphire Black Slate;GARMIN;Спортивные часы;fēnix;58500;49720;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/wch-fenix8.jpg;"AMOLED 1.3"", сапфир, фонарик LED, дайвинг 40 м."
 35;GARMIN-35;REF-0035;Garmin Fenix 8 43 мм AMOLED Sapphire White Stone;GARMIN;Спортивные часы;fēnix;60000;51000;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/wch-fenix8.jpg;"AMOLED 1.3"", сапфир, фонарик LED, дайвинг 40 м."
@@ -148,16 +146,6 @@
 149;SUUNTO-149;REF-0149;Suunto 9 Peak Pro Ocean Blue;SUUNTO;Спортивные часы;Suunto;34900;29660;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/suunto-9pp-blue.jpg;Ультратонкие, титан, 21 день.
 150;SUUNTO-150;REF-0150;Suunto Ocean Steel Black Black;SUUNTO;Спортивные часы;Suunto;58900;50060;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/suunto-ocean-black.jpg;Дайвинг + мультиспорт, AMOLED.
 151;SUUNTO-151;REF-0151;Suunto Ocean Steel Black Sand;SUUNTO;Спортивные часы;Suunto;59900;50920;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/suunto-ocean-sand.jpg;Дайвинг + мультиспорт, AMOLED.
-152;POLAR-152;REF-0152;Polar Grit X2 Pro Titan Sapphire AMOLED Night Black;POLAR;Спортивные часы;Polar;68400;58140;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/6393356c2dfe.jpg;ЭКГ, SpO2, титан, сапфир.
-153;POLAR-153;REF-0153;Polar Grit X2 Pro Titan Sapphire AMOLED Stone Grey;POLAR;Спортивные часы;Polar;69900;59420;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/6393356c2dfe.jpg;ЭКГ, SpO2, титан, сапфир.
-154;POLAR-154;REF-0154;Polar Grit X2 Brown Copper Brown Copper;POLAR;Спортивные часы;Polar;49900;42420;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/6393356c2dfe.jpg;Аутдор, MIL-STD, карты Komoot.
-155;POLAR-155;REF-0155;Polar Vantage V3 Night Black Night Black;POLAR;Спортивные часы;Polar;54900;46660;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/6393356c2dfe.jpg;Elixir biosensing, AMOLED.
-156;POLAR-156;REF-0156;Polar Vantage V3 Night Black Sky Blue;POLAR;Спортивные часы;Polar;55900;47520;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/6393356c2dfe.jpg;Elixir biosensing, AMOLED.
-157;POLAR-157;REF-0157;Polar Pacer Pro Carbon Grey Carbon Grey;POLAR;Спортивные часы;Polar;29900;25420;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/a56ac85f7355.jpg;Бег, тесты, барометр.
-158;POLAR-158;REF-0158;Polar Pacer Pro Carbon Grey Autumn Maroon;POLAR;Спортивные часы;Polar;30400;25840;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/a56ac85f7355.jpg;Бег, тесты, барометр.
-159;POLAR-159;REF-0159;Polar Ignite 3 Titanium Silver Silver;POLAR;Спортивные часы;Polar;27900;23720;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/a56ac85f7355.jpg;Фитнес, сон, AMOLED.
-160;POLAR-160;REF-0160;Polar Ignite 3 Titanium Silver Black;POLAR;Спортивные часы;Polar;27900;23720;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/a56ac85f7355.jpg;Фитнес, сон, AMOLED.
-161;POLAR-161;REF-0161;Polar Verity Sense Red;POLAR;Спортивные часы;Polar;8900;7560;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/a56ac85f7355.jpg;Оптический датчик на руку.
 162;COROS-162;REF-0162;COROS VERTIX 2S Adventure Space Space;COROS;Спортивные часы;COROS;63500;53980;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-vertix-space.jpg;40 дней, офлайн-карты, сапфир+титан.
 163;COROS-163;REF-0163;COROS VERTIX 2S Adventure Space Earth;COROS;Спортивные часы;COROS;64500;54820;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-vertix-earth.jpg;40 дней, офлайн-карты, сапфир+титан.
 164;COROS-164;REF-0164;COROS Pace 3 White Nylon White Nylon;COROS;Спортивные часы;COROS;22990;19540;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/coros-pace-white.jpg;Лёгкие 30 г, 38 часов GPS.
@@ -177,17 +165,16 @@
 178;HUAWEI-178;REF-0178;Huawei Watch 4 Pro Space Edition Dark Brown Leather;HUAWEI;Спортивные часы;Huawei Watch;39990;33990;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/83fbf2100a11.jpg;eSIM, титан, здоровье.
 179;HUAWEI-179;REF-0179;Huawei Watch Fit 3 Grey Nylon Grey Nylon;HUAWEI;Спортивные часы;Huawei Watch;11990;10190;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/ea5cf521bd71.jpg;Тонкие, AMOLED, 10 дней.
 180;HUAWEI-180;REF-0180;Huawei Watch Fit 3 Grey Nylon Black Fluoroelastomer;HUAWEI;Спортивные часы;Huawei Watch;11990;10190;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/a0a073706fd1.jpg;Тонкие, AMOLED, 10 дней.
-181;AMAZFIT-181;REF-0181;Amazfit T-Rex 3 48 мм Onyx Military AMOLED Onyx;AMAZFIT;Спортивные часы;Amazfit;25900;22020;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/80439f334dcb.jpg;2000 нит, -30°C, 27 дней.
-182;AMAZFIT-182;REF-0182;Amazfit T-Rex 3 48 мм Onyx Military AMOLED Lava;AMAZFIT;Спортивные часы;Amazfit;26900;22860;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/d52d0a6d8b31.jpg;2000 нит, -30°C, 27 дней.
-183;AMAZFIT-183;REF-0183;Amazfit Balance Sunset Grey Sunset Grey;AMAZFIT;Спортивные часы;Amazfit;19990;16990;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/222f50774385.jpg;AMOLED, Body Composition, Zepp AI.
-184;AMAZFIT-184;REF-0184;Amazfit Balance Sunset Grey Midnight;AMAZFIT;Спортивные часы;Amazfit;19990;16990;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/80439f334dcb.jpg;AMOLED, Body Composition, Zepp AI.
-185;AMAZFIT-185;REF-0185;Amazfit GTR 4 New Brown Leather Brown Leather;AMAZFIT;Спортивные часы;Amazfit;17990;15290;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/d52d0a6d8b31.jpg;Классика, AMOLED, Alexa.
-186;AMAZFIT-186;REF-0186;Amazfit GTR 4 New Brown Leather Black;AMAZFIT;Спортивные часы;Amazfit;17990;15290;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/222f50774385.jpg;Классика, AMOLED, Alexa.
-187;AMAZFIT-187;REF-0187;Amazfit GTS 4 Mini Mint Blue Mint Blue;AMAZFIT;Спортивные часы;Amazfit;11990;10190;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/80439f334dcb.jpg;Компактные, 5 спутников.
-188;AMAZFIT-188;REF-0188;Amazfit GTS 4 Mini Mint Blue Black;AMAZFIT;Спортивные часы;Amazfit;11990;10190;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/d52d0a6d8b31.jpg;Компактные, 5 спутников.
-189;AMAZFIT-189;REF-0189;Amazfit Cheetah Pro Black;AMAZFIT;Спортивные часы;Amazfit;24990;21240;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/222f50774385.jpg;Бег, AI-тренер, двухчастотный GPS.
-190;AMAZFIT-190;REF-0190;Amazfit Bip 5 Unity Grey Grey;AMAZFIT;Спортивные часы;Amazfit;7990;6790;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/80439f334dcb.jpg;Доступные, звонки, 11 дней.
-191;AMAZFIT-191;REF-0191;Amazfit Bip 5 Unity Grey Black;AMAZFIT;Спортивные часы;Amazfit;7990;6790;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/d52d0a6d8b31.jpg;Доступные, звонки, 11 дней.
+181;AMAZFIT-181;REF-0181;Amazfit T-Rex 3 48 мм Onyx Military AMOLED Onyx;AMAZFIT;Спортивные часы;Amazfit;25900;22020;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-trex3-a.jpg;2000 нит, -30°C, 27 дней.
+182;AMAZFIT-182;REF-0182;Amazfit T-Rex 3 48 мм Onyx Military AMOLED Lava;AMAZFIT;Спортивные часы;Amazfit;26900;22860;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-trex3-a.jpg;2000 нит, -30°C, 27 дней.
+183;AMAZFIT-183;REF-0183;Amazfit Balance Sunset Grey Sunset Grey;AMAZFIT;Спортивные часы;Amazfit;19990;16990;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-balance-a.jpg;AMOLED, Body Composition, Zepp AI.
+184;AMAZFIT-184;REF-0184;Amazfit Balance Sunset Grey Midnight;AMAZFIT;Спортивные часы;Amazfit;19990;16990;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-balance-a.jpg;AMOLED, Body Composition, Zepp AI.
+185;AMAZFIT-185;REF-0185;Amazfit Balance 3 Black;AMAZFIT;Спортивные часы;Amazfit;28490;24220;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-bal3-b.jpg;"AMOLED 1.5"", GPS, HRV, 14 дней."
+186;AMAZFIT-186;REF-0186;Amazfit Balance 3 Grey;AMAZFIT;Спортивные часы;Amazfit;28490;24220;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-bal3-a.jpg;"AMOLED 1.5"", GPS, HRV, 14 дней."
+187;AMAZFIT-187;REF-0187;Amazfit GTS 4 Mini Mint Blue Mint Blue;AMAZFIT;Спортивные часы;Amazfit;11990;10190;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-gts4mini-a.jpg;Компактные, 5 спутников.
+188;AMAZFIT-188;REF-0188;Amazfit GTS 4 Mini Mint Blue Black;AMAZFIT;Спортивные часы;Amazfit;11990;10190;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-gts4mini-b.jpg;Компактные, 5 спутников.
+189;AMAZFIT-189;REF-0189;Amazfit Cheetah Pro Black;AMAZFIT;Спортивные часы;Amazfit;24990;21240;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-cheetah-a.jpg;Бег, AI-тренер, двухчастотный GPS.
+190;AMAZFIT-190;REF-0190;Amazfit Bip 6;AMAZFIT;Спортивные часы;Amazfit;7990;6790;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/amz-bip6-a.jpg;"AMOLED 1.97"", GPS, 14 дней."
 192;CASIO-192;REF-0192;Casio G-Shock GBD-H2000-1A9 Solar GPS Black;CASIO;Спортивные часы;G-Shock;38590;32800;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/casio-GBD-H2000-1A9.jpg;Пульсометр, GPS, solar.
 194;CASIO-194;REF-0194;Casio G-Shock GBD-200-1ER Black;CASIO;Спортивные часы;G-Shock;15490;13170;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/casio-GBD-200-1ER.jpg;Квадрат, шагомер, Bluetooth.
 195;CASIO-195;REF-0195;Casio G-Shock GBD-200-7 White;CASIO;Спортивные часы;G-Shock;15490;13170;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/casio-GBD-200-7.jpg;Квадрат, шагомер, Bluetooth.
@@ -328,13 +315,13 @@
 330;GARMIN-330;REF-0330;Garmin HRM 600;GARMIN;Пульсометры;HRM;16990;14440;4;1;1;https://ssrjkk.github.io/shopwatch/uploads/catalog/hrm-600.jpg;Новый датчик пульса, память тренировки.
 331;GARMIN-331;REF-0331;Garmin HRM-Fit White;GARMIN;Пульсометры;HRM;16990;14440;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-13314-00.jpg;Женский, на бюстгальтер, ANT+/BLE.
 332;GARMIN-332;REF-0332;Garmin HRM 600 M-XL;GARMIN;Пульсометры;HRM;16990;14440;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/grm-010-13383-01.jpg;Новый датчик пульса, размер M-XL.
-333;GARMIN-333;REF-0333;Ремешок Garmin QuickFit 26 мм Black;GARMIN;Аксессуары;QuickFit;5990;5090;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-26-orange.jpg;Силикон, быстросъём.
+333;GARMIN-333;REF-0333;Ремешок Garmin QuickFit 26 мм Black;GARMIN;Аксессуары;QuickFit;5990;5090;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-26-black.jpg;Силикон, быстросъём.
 334;GARMIN-334;REF-0334;Ремешок Garmin QuickFit 26 мм Orange;GARMIN;Аксессуары;QuickFit;6490;5520;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-26-orange.jpg;Силикон, быстросъём.
-335;GARMIN-335;REF-0335;Ремешок Garmin QuickFit 26 мм Green;GARMIN;Аксессуары;QuickFit;6490;5520;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-26-orange.jpg;Силикон, быстросъём.
-336;GARMIN-336;REF-0336;Ремешок Garmin QuickFit 26 мм Titanium;GARMIN;Аксессуары;QuickFit;11990;10190;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-26-orange.jpg;Силикон, быстросъём.
-337;GARMIN-337;REF-0337;Ремешок Garmin QuickFit 22 мм Black;GARMIN;Аксессуары;QuickFit;4990;4240;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-22-orange.jpg;Силикон/нейлон.
-338;GARMIN-338;REF-0338;Ремешок Garmin QuickFit 22 мм Navy;GARMIN;Аксессуары;QuickFit;5390;4580;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-22-olive.jpg;Силикон/нейлон.
-339;GARMIN-339;REF-0339;Ремешок Garmin QuickFit 22 мм Leather Brown;GARMIN;Аксессуары;QuickFit;7490;6370;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-22-orange.jpg;Силикон/нейлон.
+335;GARMIN-335;REF-0335;Ремешок Garmin QuickFit 26 мм Green;GARMIN;Аксессуары;QuickFit;6490;5520;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-26-moss.jpg;Силикон, быстросъём.
+336;GARMIN-336;REF-0336;Ремешок Garmin QuickFit 26 мм Titanium;GARMIN;Аксессуары;QuickFit;11990;10190;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-26-titan.jpg;Силикон, быстросъём.
+337;GARMIN-337;REF-0337;Ремешок Garmin QuickFit 22 мм Black;GARMIN;Аксессуары;QuickFit;4990;4240;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-22-black.jpg;Силикон/нейлон.
+338;GARMIN-338;REF-0338;Ремешок Garmin QuickFit 22 мм Navy;GARMIN;Аксессуары;QuickFit;5390;4580;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-22-navy.jpg;Силикон/нейлон.
+339;GARMIN-339;REF-0339;Ремешок Garmin QuickFit 22 мм Leather Brown;GARMIN;Аксессуары;QuickFit;7490;6370;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/strap-22-walnut.jpg;Силикон/нейлон.
 340;GARMIN-340;REF-0340;Кабель Garmin USB Type-C — Type-C 1 м;GARMIN;Аксессуары;Зарядка;2990;2540;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/garmin-usbc-usbc-1m.jpg;Оригинал Garmin, длина 1 м.
 341;GARMIN-341;REF-0341;Кабель Garmin USB Type-A — Type-C 0.5 м;GARMIN;Аксессуары;Зарядка;2490;2120;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/garmin-usba-usbc-05m.jpg;Оригинал Garmin, длина 0.5 м.
 342;GARMIN-342;REF-0342;Защитное стекло Garmin Fenix 7X/8 51 мм 51 мм;GARMIN;Аксессуары;Защита;1490;1270;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/60612ffd7012.jpg;Комплект 2 шт.
@@ -406,3 +393,4 @@
 408;CASIO-408;REF-0408;Casio Vintage F-91WS-4EF Red Classic;CASIO;Спортивные часы;Vintage;2790;2370;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/casio-F-91WS-4EF.jpg;37.5x33.5x8.5 мм, WR, батарея CR2016 ~7 лет, модуль 593, икона 1989
 409;CASIO-409;REF-0409;Casio MTP-1374D-1A Steel Analog;CASIO;Спортивные часы;Vintage;6990;5940;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/casio-MTP-1374D-1A.jpg;41.5 мм, сталь, 100M, батарея ~3 года, классика под костюм
 410;CASIO-410;REF-0410;Casio Vintage AQ-230A-1D Gold Ana-Digi;CASIO;Спортивные часы;Vintage;4400;3740;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/casio-AQ-230A-1D.jpg;39.5x28.1x7.8 мм, 30M, батарея CR1616 ~3 года, золотистый корпус
+411;APPLE-411;REF-0411;Apple Watch Ultra 4 49mm Titanium, Black Case + Black Ocean Band (GPS + Cellular);APPLE;Спортивные часы;Apple Watch;101499;86270;4;1;0;https://ssrjkk.github.io/shopwatch/uploads/catalog/apl-ultra-black.jpg;"49мм титан, Always-On LTPO3 3000 нит, S11, 64 ГБ; до 50 ч (84 ч эко, 45 ч макс-трек), 100м/EN13319/MIL-STD, 2-частотный GPS, спутник SOS"
