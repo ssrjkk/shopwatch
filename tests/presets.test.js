@@ -110,7 +110,7 @@ describe('подбор по пресетам и цене, лайтбокс, пр
     assert.equal(box.classList.contains('hidden'), false, 'оверлей показан');
     assert.ok(String(img.src).includes('uploads/'), 'в лайтбоксе — локальное фото, а не хотлинк');
     assert.ok(!/unsplash\.com|placeholder/.test(String(img.src)), 'в лайтбоксе нет чужих картинок');
-    assert.ok(String(img.src).includes('uploads/demo/'), 'демо-плейсхолдер в лайтбоксе');
+    assert.ok(String(img.src).includes('uploads/catalog/'), 'локальное фото каталога в лайтбоксе');
     assert.ok(String(img.alt).includes(item.name), 'альт подписан названием товара');
     g.closeLightbox();
     assert.equal(box.classList.contains('hidden'), true, 'закрытие прячет оверлей');

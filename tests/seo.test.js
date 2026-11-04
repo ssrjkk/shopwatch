@@ -129,59 +129,261 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     for (const p of items) {
       assert.ok(String(p.image).startsWith('uploads/'), `Product #${p.id} must use local photo, got ${p.image}`);
     }
-    assert.ok(wcCsv.includes('https://example.invalid/demo/uploads/demo/'), 'Woo CSV carries absolute image URLs');
-    assert.ok(psCsv.includes('https://example.invalid/demo/uploads/demo/'), 'Presta CSV carries absolute image URLs');
-    assert.ok(ocSql.includes('https://example.invalid/demo/uploads/demo/'), 'OpenCart SQL carries absolute image URLs');
-    // Демо: галерей нет — у каждого товара один плейсхолдер, он и едет в движки
-    const first = items[0];
-    const wcLine = wcCsv.split('\n').find((l) => l.startsWith(first.id + ','));
-    assert.ok(wcLine && wcLine.includes('uploads/demo/'), 'Woo CSV carries demo placeholder image');
-    assert.ok(!ocSql.includes('INSERT INTO oc_product_image'), 'OpenCart SQL has no gallery rows in demo');
-    const rest = cmsBridge.toWooCommerceRestProduct(first);
-    assert.equal(rest.images.length, 1, 'Woo REST carries single demo image');
-    assert.ok(rest.images[0].src.includes('uploads/demo/'), 'Woo REST demo image path');
+    assert.ok(wcCsv.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'Woo CSV carries absolute image URLs');
+    assert.ok(psCsv.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'Presta CSV carries absolute image URLs');
+    assert.ok(ocSql.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'OpenCart SQL carries absolute image URLs');
+    // Галерея едет в движки: WooCommerce — все кадры через запятую, OpenCart — oc_product_image, REST — массив images
+    const withGallery = items.find((p) => (p.images || []).length > 0);
+    assert.ok(withGallery, 'catalog has gallery products for CMS export');
+    const wcLine = wcCsv.split('\n').find((l) => l.startsWith(withGallery.id + ','));
+    assert.ok(wcLine && wcLine.split('uploads/catalog/').length - 1 >= 2, 'Woo CSV carries all gallery angles');
+    assert.ok(ocSql.includes('INSERT INTO oc_product_image'), 'OpenCart SQL carries gallery rows');
+    const rest = cmsBridge.toWooCommerceRestProduct(withGallery);
+    assert.ok(rest.images.length >= 2 && rest.images[0].src.includes('uploads/catalog/'), 'Woo REST carries gallery images');
 
     const wcOrder = cmsBridge.normalizeCmsWebhookOrder('woocommerce', { id: 101, total: 62320, billing: { first_name: 'Алексей', phone: '+79990001122' } });
     assert.equal(wcOrder.total, 62320);
     assert.equal(wcOrder.customer_name, 'Алексей');
   });
 
-  it('9. Demo Photo Policy: все фото — локальные SVG-плейсхолдеры демо, чужих фото нет', async () => {
+  it('9. Catalog Photo Integrity: уникальные официальные фото, галерея реальных ракурсов в PDP работает', async () => {
     const products = g.state.products;
     assert.equal(products.length, 391);
-    // Каждое фото — плейсхолдер uploads/demo/ph-<id>.svg, галерей нет, хотлинков нет
+
+    // Все локальные фото каталога существуют на диске и весят больше 5 КБ
     for (const p of products) {
-      assert.match(String(p.image), /^uploads\/demo\/ph-\d+\.svg$/, `Product #${p.id} must use demo placeholder, got ${p.image}`);
-      assert.ok((p.images || []).length === 0, `Demo product #${p.id} ships single placeholder, no gallery`);
-      for (const g of [p.image, ...(p.images || [])]) {
-        assert.ok(!String(g).startsWith('http'), `no hotlink photos for #${p.id}`);
-        assert.ok(fs.existsSync(path.join(ROOT, 'public', String(g))), `Missing public/${g} for #${p.id}`);
-        assert.ok(fs.existsSync(path.join(ROOT, String(g))), `Missing ${g} for #${p.id} (root mirror)`);
+      assert.ok(p.image, `Product #${p.id} missing image`);
+      if (p.image.startsWith('uploads/')) {
+        const full1 = path.join(ROOT, 'public', p.image);
+        const full2 = path.join(ROOT, p.image);
+        assert.ok(fs.existsSync(full1), `Missing public/${p.image} for #${p.id}`);
+        assert.ok(fs.existsSync(full2), `Missing ${p.image} for #${p.id}`);
+        assert.ok(fs.statSync(full1).size > 5000, `Image public/${p.image} too small`);
+      } else {
+        assert.fail(`Product #${p.id} must use local photo, got ${p.image}`);
+      }
+      for (const extra of p.images || []) {
+        assert.ok(String(extra).startsWith('uploads/'), `Gallery of #${p.id} must be local, got ${extra}`);
+        assert.ok(!String(extra).includes('..'), `Gallery of #${p.id} must not escape catalog`);
+        const gfull = path.join(ROOT, 'public', String(extra));
+        assert.ok(fs.existsSync(gfull), `Missing gallery file public/${extra} for #${p.id}`);
+        assert.ok(!String(extra).startsWith('http'), `no hotlink photos in gallery of #${p.id}`);
       }
     }
-    // В витрине нет чужих CDN и остатков старого пула фото
-    assert.ok(!/images\.unsplash\.com|upload\.wikimedia\.org|pitergsm\.ru|res\.garmin\.com|cdn\.shopify\.com|image-(us|ru)\.samsung\.com/.test(HTML), 'no third-party photo hosts in storefront');
-    assert.ok(!HTML_NO_SCRIPTS.includes('uploads/catalog/'), 'no legacy catalog photo references outside scripts');
-    // PDP рендерит плейсхолдер, лайтбокс открывается с ним же, миниатюр нет
-    const probe = products[0];
-    g.openProduct(probe.id);
-    const detailHtml = g.document.getElementById('product-detail-box').innerHTML;
-    assert.ok(detailHtml.includes('id="product-main-img"'), 'PDP must render #product-main-img');
+
+    // Рисованных заглушек больше нет: ни одна позиция не ссылается на старые общие кадры
+    const retired = ['b9d6f4ef6615.jpg', '7ccfea8dd6a3.jpg', '117ad77b91d1.jpg', 'c1a51daed239.jpg'];
+    for (const p of products) {
+      for (const f of [p.image, ...(p.images || [])]) {
+        assert.ok(!retired.some((r) => String(f).includes(r)), `Product #${p.id} still uses retired placeholder ${f}`);
+      }
+    }
+
+    // Бывшие «общие» полки теперь на уникальных официальных фото Garmin:
+    // эхолоты/вело/GPS — только grm-*, охота — grm-* (Alpha/TT), аксессуары — grm-/strap-/cable-case
+    const grmEcho = products.filter((p) => p.category === 'Эхолоты' && p.brand === 'GARMIN');
+    assert.ok(grmEcho.length >= 30);
+    for (const p of grmEcho) {
+      assert.match(p.image, /^uploads\/catalog\/(grm-|1a03db|60612ffd)/, `Garmin fishfinder #${p.id} must use its own official photo`);
+    }
+    const bike = products.filter((p) => p.category === 'Велокомпьютеры');
+    assert.ok(bike.length >= 25);
+    for (const p of bike) {
+      assert.match(p.image, /^uploads\/catalog\/(grm-|strap-)/, `Bike product #${p.id} must use its own official photo`);
+    }
+    const gps = products.filter((p) => p.category === 'GPS навигаторы');
+    assert.ok(gps.length >= 20);
+    for (const p of gps) {
+      assert.match(p.image, /^uploads\/catalog\/grm-/, `GPS product #${p.id} must use its own official photo`);
+    }
+    const hrm = products.filter((p) => p.category === 'Пульсометры');
+    assert.ok(hrm.length >= 3);
+    for (const p of hrm) {
+      assert.match(p.image, /^uploads\/catalog\/(grm-|hrm-)/, `HRM product #${p.id} must use its own official photo`);
+    }
+    // Часы Garmin: у каждой модели своё официальное фото (семейство), без межмодельных подмен.
+    // Исключение: Instinct 2X снят с CDN Garmin — у тройки 2X эксклюзивные реальные кадры Instinct
+    // (c6c21c631092.jpg, dc44ad2d853f.jpg), не делящиеся ни с одной другой моделью.
+    // Флагманы ноября (348-355) — проверенные официальные кадры новинок.
+    const legacy2x = new Set(['c6c21c631092.jpg', 'dc44ad2d853f.jpg']);
+    const flagships = new Set(['151ac55518b4.jpg', 'e47c1ab7782b.jpg', '50b0168da31b.jpg', 'b9be435821f2.jpg', '21e6e8b54831.jpg', 'abab639295cb.jpg', '705b4833de45.jpg', 'b51f6af2a838.jpg']);
+    const garminWatches = products.filter((p) => p.brand === 'GARMIN' && ['Спортивные часы', 'Дайвинг компьютеры', 'Фитнес-трекеры'].includes(p.category));
+    assert.ok(garminWatches.length >= 120);
+    for (const p of garminWatches) {
+      const f = String(p.image).split('/').pop();
+      const ok = /^uploads\/catalog\/(wch-|grm-|apl-|descent-|edge-|garmin-|hrm-)/.test(p.image) || (legacy2x.has(f) && [12, 75, 76].includes(p.id)) || (flagships.has(f) && p.id >= 348 && p.id <= 355);
+      assert.ok(ok, `Garmin watch #${p.id} must use its own official family photo, got ${p.image}`);
+    }
+    // COROS: по-модельные официальные кадры. Vertix 2S Space — белые (28-r0..r2),
+    // чёрные с бахромой вычищены; Earth без белых фото удалён из каталога.
+    for (const p of products.filter((x) => x.brand === 'COROS')) {
+      assert.match(p.image, /^uploads\/catalog\/(coros-|b51f6af2a838|2[89]-r\d+\.jpg|165-r\d+\.jpg|166-r\d+\.jpg|167-r\d+\.jpg|170-r\d+\.jpg)/, `COROS #${p.id} must use its own official photo`);
+    }
+    // Suunto: официальные кадры suunto.com, локально. fa58 был гармином —
+    // вычищен: Race S только белые 25-r*. Вертикали Canyon — оранжевые 24-r*.
+    for (const p of products.filter((x) => x.brand === 'SUUNTO')) {
+      assert.match(p.image, /^uploads\/catalog\/(suunto-|0c0cc5828a34|705b4833de45|2[45]-r\d+\.jpg|150-r\d+\.jpg|151-r\d+\.jpg|354-r\d+\.jpg)/, `SUUNTO #${p.id} must use its own official shot, got ${p.image}`);
+      assert.ok(!String(p.image).includes('fa58d622c06a'), `SUUNTO #${p.id} still uses Garmin photo fa58`);
+    }
+    // Casio: официальные кадры дилера-референса AllTime, локально. Старых общих
+    // плейсхолдеров (rangeman/dw5600) в каталоге больше нет — ни primary, ни галереи.
+    const casioLegacy = new Set(['casio-rangeman.jpg', 'casio-dw5600.jpg']);
+    for (const p of products.filter((x) => x.brand === 'CASIO')) {
+      const f = String(p.image).split('/').pop();
+      assert.ok(String(p.image).startsWith('uploads/catalog/casio-'), `CASIO #${p.id} must use official shot, got ${p.image}`);
+      assert.ok(!casioLegacy.has(f), `CASIO #${p.id} still uses legacy placeholder ${f}`);
+      for (const g of p.images || []) {
+        assert.ok(!casioLegacy.has(String(g).split('/').pop()), `CASIO #${p.id} gallery still uses legacy placeholder ${g}`);
+      }
+    }
+
+    // Verify Deeper uses bf348a64fec3.jpg
+    const deeper = products.filter((p) => p.category === 'Эхолоты' && p.brand !== 'GARMIN');
+    for (const p of deeper) {
+      assert.equal(p.image, 'uploads/catalog/bf348a64fec3.jpg');
+    }
+
+    // Охота: 9 позиций на официальных фото (Alpha 300/TT25, Astro, DriveTrack, Tread, PRO 550)
+    const hunting = products.filter((p) => p.category === 'Охота и дрессировка');
+    assert.equal(hunting.length, 9);
+    for (const p of hunting) {
+      assert.match(p.image, /^uploads\/catalog\/grm-/, `Hunting #${p.id} must use official photo`);
+    }
+
+    // Точечная проверка исправленных позиций: трансмиттеры, кабели, чехлы, чехлы Striker, Varia, Rally, датчики, ошейники, HRM
+    const must = {
+      318: 'uploads/catalog/descent-t2-transmitter.jpg',
+      319: 'uploads/catalog/descent-t1-transmitter.jpg',
+      340: 'uploads/catalog/garmin-usbc-usbc-1m.jpg',
+      341: 'uploads/catalog/garmin-usba-usbc-05m.jpg',
+      345: 'uploads/catalog/edge-case-black.jpg',
+      346: 'uploads/catalog/edge-case-red.jpg',
+      230: 'uploads/catalog/grm-010-13130-00.jpg',
+      231: 'uploads/catalog/grm-010-13131-00.jpg',
+      244: 'uploads/catalog/grm-010-02890-00.jpg',
+      246: 'uploads/catalog/grm-010-02703-01.jpg',
+      248: 'uploads/catalog/grm-010-02252-00.jpg',
+      249: 'uploads/catalog/grm-010-01674-00.jpg',
+      252: 'uploads/catalog/grm-010-02388-03.jpg',
+      255: 'uploads/catalog/grm-010-13118-05.jpg',
+      256: 'uploads/catalog/grm-010-13383-01.jpg',
+      257: 'uploads/catalog/grm-010-12845-30.jpg',
+      258: 'uploads/catalog/grm-010-12843-30.jpg',
+      260: 'uploads/catalog/grm-010-12563-02.jpg',
+      261: 'uploads/catalog/grm-010-12563-00.jpg',
+      271: 'uploads/catalog/grm-010-02734-00.jpg',
+      272: 'uploads/catalog/grm-010-02782-00.jpg',
+      273: 'uploads/catalog/grm-010-02759-00.jpg',
+      347: 'uploads/catalog/wch-fenix9.jpg',
+      28: 'uploads/catalog/28-r0.jpg',
+      165: 'uploads/catalog/coros-pace-black.jpg',
+      281: 'uploads/catalog/grm-010-02755-70.jpg',
+      284: 'uploads/catalog/grm-010-02602-30.jpg',
+      330: 'uploads/catalog/hrm-600.jpg',
+      331: 'uploads/catalog/grm-010-13314-00.jpg',
+      332: 'uploads/catalog/grm-010-13383-01.jpg',
+      333: null, // ремешок — strap-*
+    };
+    for (const [id, img] of Object.entries(must)) {
+      const p = products.find((x) => x.id === Number(id));
+      assert.ok(p, `Product #${id} exists`);
+      if (img) assert.equal(p.image, img, `Product #${id} photo`);
+      else assert.ok(String(p.image).includes('strap-'), `QuickFit strap #${id} must use strap photo`);
+    }
+    assert.equal(products.find((p) => p.id === 343).image, 'uploads/catalog/60612ffd7012.jpg');
+    // Apple: только официальные кадры apple.com, локально (новая линейка — apl-*, прошлые — проверенные legacy-кадры)
+    const appleLegacy = new Set(['ac502e2323a5.jpg', 'f52aeeb5346a.jpg', '161cd1030748.jpg', '2e854a960bcd.jpg', '312d50ca27f4.jpg', '4449d1120508.jpg']);
+    for (const p of products.filter((x) => x.brand === 'APPLE')) {
+      const f = String(p.image).split('/').pop();
+      assert.ok(String(p.image).startsWith('uploads/catalog/apl-') || appleLegacy.has(f), `Apple #${p.id} must use official apple.com shot, got ${p.image}`);
+    }
+
+    // Verify non-Garmin watch brands do not collide with Garmin photos
+    const garminWatchImgs = new Set(products.filter((p) => p.brand === 'GARMIN' && (p.category === 'Спортивные часы' || p.category === 'Дайвинг компьютеры')).map((p) => p.image));
+    for (const p of products.filter((p) => p.brand !== 'GARMIN' && p.category === 'Спортивные часы')) {
+      assert.ok(!garminWatchImgs.has(p.image), `Brand ${p.brand} product #${p.id} collides with Garmin image ${p.image}`);
+    }
+
+    // Покрытие ракурсами: норма — 4–5 реальных кадров на позицию (primary + галерея).
+    // Исключения — только там, где у официального референса физически нет больше
+    // белых кадров (проверено вручную по сайтам производителей):
+    // - аксессуары Garmin с 1–2 официальными кадрами (крепления, кабели, чехлы,
+    //   датчики, ошейники, трансмиттеры, стекла, ремешки QuickFit)
+    // - снятый с CDN Instinct 2X (12, 75, 76), Suunto Canyon (24, 142 — всего 3 белых),
+    //   Huawei без части цветов (30, 171, 172, 173, 174, 180), Watch 6 Classic Silver (137),
+    //   GTS 4 Mini Mint (187), Baby-G BGD-565U-1 (395)
+    const FEWER_THAN_4_OK = new Set([
+      12, 75, 76, 219, 226, 227, 228, 229, 230, 231, 232, 233, 256, 279, 322, 328,
+      329, 330, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 362,
+      24, 142, 143, 30, 171, 172, 173, 174, 180, 137, 187, 395,
+      28, 29, 162, 164, 165, 166, 167, 176, 188, 150,
+      // 25/144 вышли из thin-списка (волна 6): официальные белые Canary с Shopify CDN
+      // 146/147 Charcoal и 163 Earth удалены: честных фото нет вообще
+      // wch-аудит: 14/89 (MARQ Athlete без белых углов), 348 (Bounce 2 без чёрных углов)
+      14, 89, 348,
+      // волна 2: честных белых углов у производителя нет — только studio-primary
+      // 299 (vivosmart 5 Black: руки/групповое долой), 306 (Bounce Black: цветные фоны долой),
+      // 307 (Bounce Lilac: сиреневый primary, углов нет), 359 (Edge Explore 3: тёмные lifestyle долой),
+      // 31/177 (GT5 Pro Black: чёрный фон макро долой)
+      31, 177, 299, 306, 307, 359,
+      // волна 3: 353 (GT6 Green: постеры с русским текстом долой, остались 2 белых)
+      353,
+      // волна 4: Casio — только тёмные/мелкие lifestyle и коробка долой
+      // (387 MTG: тёмные руки; 390 CasiOak металл: тёмные lifestyle; 391/392 mini: мелкий
+      // товар; 393/394 Baby-G: мелкий товар; 399 Edifice: чёрный фон; 403 ProTrek: коробка)
+      387, 390, 391, 392, 393, 394, 399, 403,
+      // волна 5: сканер тёмного фона по всему каталогу (30 файлов — все остальные
+      // тёмные это принятые официальные сеты COROS/Suunto) — последние два Casio:
+      // 396 (Edifice: тёмный lifestyle, товар мелко), 410 (Vintage: часы на чёрной трубе)
+      396, 410,
+      // волна 9: эхолоты/Edge/T5X — пейзажи без товара, lifestyle, постеры с текстом долой;
+      // 199-202 остались при 4; 212/218/271 добраны белыми студийными с Garmin (вышли из thin);
+      // 236-238/245/281 остались при 4
+      // волна 7: баннер Rally с текстом (253 — остался при 4), lifestyle педалей (363 —
+      // добран белыми углами XC200 с Garmin, вышел из thin), голубые дубли ошейника T20
+      // и flatlay (280/323: остался белый primary + один студийный + белый TT-угол)
+      280, 323,
+      // волна 8: 145 (Race S All Black жил с чужим белым primary — теперь верный чёрный
+      // сет, вышел из thin); 332 остался при 3 (добавлен белый HRM-угол)
+      // Apple-исключение: официальных белых студийных кадров не существует в природе —
+      // Apple отдаёт только рендеры на светло-сером (primary) и чистые кадры на чёрном
+      // (apl-s12-r2..r5, apl-ultra-r2..r4, apl-se-r2..r5). Кадры чистые, без баннеров —
+      // оставлены как официальный сет производителя (прецедент чёрных COROS/Suunto).
+      // Позиции 364-373, 411 покрытием обеспечены (по 5 фото), в thin-список не входят.
+    ]);
+    const counts = [0, 0, 0, 0, 0, 0];
+    for (const p of products) counts[Math.min(1 + (p.images || []).length, 5)]++;
+    const with4 = counts[4] + counts[5];
+    assert.ok(with4 / products.length >= 0.8, `gallery coverage >=80%: ${with4}/${products.length}`);
+    assert.equal(counts[0], 0, 'no photo-less products');
+    for (const p of products) {
+      const n = 1 + (p.images || []).length;
+      if (n < 4) assert.ok(FEWER_THAN_4_OK.has(p.id), `Product #${p.id} has only ${n} photos without documented exception`);
+    }
+    g.openProduct(1);
+    let detailHtml = g.document.getElementById('product-detail-box').innerHTML;
+    assert.match(detailHtml, /id="product-main-img"/, 'PDP must render #product-main-img');
+    assert.equal((detailHtml.match(/id="product-main-img"/g) || []).length, 1, 'PDP has exactly one main photo');
+    assert.ok(!detailHtml.includes('switchProductGalleryPhoto'), 'PDP must not render fake multi-angle switcher');
+    assert.ok(!detailHtml.includes('product-3d-stage'), 'PDP must not render SVG 3D stage');
+    assert.ok(!detailHtml.includes('renderModelStudioSVG'), 'PDP must not embed drawn renders');
+    assert.match(detailHtml, /По коду WATCH10:/, 'PDP must render 585 Золотой club price box');
+    g.setProductJsonLd(null);
+
+    // PDP товара с галереей: миниатюры переключают главное фото, все кадры локальные
+    const withGallery = products.find((p) => (p.images || []).length > 0);
+    assert.ok(withGallery, 'catalog has products with real multi-angle gallery');
+    g.openProduct(withGallery.id);
+    detailHtml = g.document.getElementById('product-detail-box').innerHTML;
+    assert.ok(detailHtml.includes('pdp-th0'), 'PDP gallery renders thumbnails');
     const mainBefore = detailHtml.match(/id="product-main-img" src="([^"]+)"/);
     assert.ok(mainBefore, 'main photo has src');
-    assert.match(mainBefore[1], /^uploads\/demo\/ph-\d+\.svg$/, 'PDP main photo is demo placeholder');
-    assert.ok(!detailHtml.includes('pdp-th0'), 'demo PDP has no thumbnail switcher (single placeholder)');
-    g.setPdpPhoto(0);
+    g.setPdpPhoto(1);
+    const detailAfter = g.document.getElementById('product-detail-box').innerHTML;
+    void detailAfter;
     const mainEl = g.document.getElementById('product-main-img');
-    assert.equal(String(mainEl.src), mainBefore[1], 'single demo photo stays');
-    g.openLightbox();
-    const box = g.document.getElementById('lightbox');
-    const img = g.document.getElementById('lightbox-img');
-    assert.equal(box.classList.contains('hidden'), false, 'lightbox opens');
-    assert.ok(String(img.src).includes('uploads/demo/'), 'lightbox shows demo placeholder');
-    assert.ok(!/unsplash\.com/.test(String(img.src)), 'no hotlink in lightbox');
-    g.closeLightbox();
+    assert.ok(mainEl && mainEl.src !== mainBefore[1], 'thumbnail switches main photo');
+    assert.match(String(mainEl.src), /^uploads\/catalog\/(wch-|grm-|apl-|descent-|edge-|garmin-|hrm-|coros-)/, 'gallery photo is local official shot');
     g.setProductJsonLd(null);
   });
-
 });

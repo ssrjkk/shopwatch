@@ -49,6 +49,6 @@ describe('PWA manifest: один сайт, витрина ссылается н�
     assert.ok(html.includes('<link rel="icon" href="data:image/svg+xml,'), 'нет фавикона');
     assert.ok(!html.includes('images.unsplash.com'), 'в витрине остался хотлинк Unsplash');
     assert.ok(!html.includes('pitergsm.ru'), 'в витрине остался хотлинк PiterGSM');
-    assert.ok(html.includes('uploads/demo/ph-1.svg'), 'og:image не на локальном демо-фото');
+    assert.ok(html.includes('uploads/catalog/f88df70ab8a2.jpg'), 'og:image не на локальном фото каталога');
   });
 });
