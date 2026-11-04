@@ -387,7 +387,7 @@ describe('фильтры по бренду и характеристикам, с
 
   it('на статической витрине промокод не выдумывает скидку, а уходит в deep link', () => {
     const pages = mountFrontend({ location: { hostname: 'ssrjkk.github.io', protocol: 'https:' }, fetch: "async () => ({ ok: false })" });
-    assert.equal(pages.IS_STATIC_DEMO, true, 'хост *.github.io опознан как статический');
+    assert.equal(pages.IS_STATIC, true, 'хост *.github.io опознан как статический');
     pages.document.getElementById('promo-input').value = 'watch10';
     pages.applyPromoCode();
     assert.equal(pages.state.promoCode, 'WATCH10');

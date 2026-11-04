@@ -75,7 +75,7 @@ const EXPOSE = [
   'moveSuggest', 'onSearchFocus', 'onSearchKey', 'narrowSuggestions', 'paintSuggestions', 'toggleFilterSheet', 'closeFilterSheet', 'resetFilters',
   'updateFilterChrome', 'activeFilterCount', 'filterSheetOpen', 'toggleSupportMenu', 'updateToTop', 'resetAllFilters', 'setBrandFilter', 'toggleSpecFilter', 'copyPromoCode', 'openPromoModal', 'closePromoModal', 'openCallbackModal', 'closeCallbackModal', 'submitCallback',
   'readStore', 'rememberOrder', 'lastOrder', 'showOrderSuccess', 'applyOrderToDom', 'suggestionCount', 'invalidateSugCounts', 'applySettingsToUI',
-  'scrollToGrid', 'buildSugMap', 'sugMap', 'renderSuggestionsNow', 'scheduleSuggestions', 'sortedSug', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC_DEMO', 'esc',
+  'scrollToGrid', 'buildSugMap', 'sugMap', 'renderSuggestionsNow', 'scheduleSuggestions', 'sortedSug', 'CAT_ORDER', 'CAT_KEYS', 'TRANSLIT', 'IS_STATIC', 'esc',
   'catalogFp', 'syncCatalogFp',
   'oldPriceHTML', 'productCardHTML', 'safeCardHTML', 'gallerySrc', 'productGallery', 'productImages', 'setPdpPhoto', 'openLightboxAt', 'openLightboxPrev', 'openLightboxNext', 'localOrders', 'pushLocalOrder', 'renderOrders', 'imgSrc', 'imgUrl', 'renderWindow', 'scheduleWindow', 'WINDOW_CARDS', 'renderFavorites',
   'PRESETS', 'presetOf', 'presetBounds', 'presetCount', 'applyPreset', 'applyPriceRange', 'priceRangeFromInputs', 'priceRangeLabel',

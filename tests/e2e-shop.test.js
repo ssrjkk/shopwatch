@@ -12,7 +12,7 @@ try {
   chromium = require('D:/Dev/Temp/opencode/shot/node_modules/playwright').chromium;
 }
 
-describe('E2E демо-витрина: каталог → корзина → промо → оформление', () => {
+describe('E2E витрина: каталог → корзина → промо → оформление', () => {
   const PORT = 3221;
   const BASE = `http://localhost:${PORT}`;
   let child;
@@ -20,7 +20,7 @@ describe('E2E демо-витрина: каталог → корзина → п�
   let browser;
 
   before(async () => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'vector-demo-e2e-'));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'vector-e2e-'));
     child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
       cwd: tmp,
       env: { ...process.env, PORT: String(PORT), TG_BOT_TOKEN: '', TG_ADMIN_ID: '', MAX_BOT_TOKEN: '', MAX_ADMIN_ID: '', ORDER_COOLDOWN_MS: '300' },
@@ -29,7 +29,7 @@ describe('E2E демо-витрина: каталог → корзина → п�
     await new Promise((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('server boot timeout')), 20000);
       child.stdout.on('data', (d) => {
-        if (String(d).includes('demo running')) { clearTimeout(t); resolve(); }
+        if (String(d).includes('Vektor running')) { clearTimeout(t); resolve(); }
       });
       child.on('error', reject);
     });
@@ -54,8 +54,8 @@ describe('E2E демо-витрина: каталог → корзина → п�
     page.on('pageerror', (e) => errors.push(String(e.message || e).slice(0, 120)));
     await page.goto(`${BASE}/#/catalog`, { waitUntil: 'load', timeout: 45000 });
     await page.waitForSelector('#products-grid > *', { timeout: 20000 });
-    // демо-баннер виден
-    assert.match(await page.textContent('#demo-banner'), /Демо-проект/, label + ': banner');
+    // hero на месте
+    assert.match(await page.textContent('#ui-hero-title'), /Часовой магазин/, label + ': hero');
     // пагинация: 10 по умолчанию
     assert.equal(await page.locator('#products-grid > *').count(), 10, label + ': 10 cards');
     // добавить в корзину (клик через JS: устойчиво к липкой шапке)
@@ -84,13 +84,13 @@ describe('E2E демо-витрина: каталог → корзина → п�
     // оформление
     await page.getByRole('button', { name: 'Перейти к оформлению' }).click();
     await page.waitForSelector('#view-checkout:not(.hidden)', { timeout: 15000 });
-    await page.locator('#f-fio').fill('Демо Покупатель');
+    await page.locator('#f-fio').fill('Покупатель');
     await page.locator('#f-phone').fill('+7 000 000-00-00');
     await page.getByRole('button', { name: 'Подтвердить заказ' }).click();
     await page.waitForSelector('#view-order-success:not(.hidden)', { timeout: 20000 });
     const code = await page.textContent('#order-code-badge');
     assert.match(code.trim(), /^TG-\d+$/, label + ': order code');
-    assert.match(await page.textContent('#view-order-success'), /Демо-режим/, label + ': demo note');
+    assert.match(await page.textContent('#view-order-success'), /Заявка сохранена/, label + ': success note');
     assert.deepEqual(errors, [], label + ': no page errors: ' + errors.join(' | '));
     await page.close();
   }

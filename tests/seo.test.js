@@ -22,7 +22,7 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.match(HTML, /<meta charset="UTF-8"\s*\/>/i);
     assert.match(HTML, /<meta name="viewport" content="width=device-width, initial-scale=1\.0"\s*\/>/);
     assert.match(HTML, /<meta name="robots" content="index, follow, max-image-preview:large/);
-    assert.match(HTML, /<link rel="canonical" href="https:\/\/example\.invalid\/demo\/"\s*\/>/);
+    assert.match(HTML, /<link rel="canonical" href="https:\/\/ssrjkk\.github\.io\/shopwatch\/"\s*\/>/);
 
     const titleMatch = HTML.match(/<title>([^<]+)<\/title>/);
     assert.ok(titleMatch, 'тег <title> присутствует');

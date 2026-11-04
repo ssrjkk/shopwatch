@@ -43,7 +43,7 @@ describe('аудит фото: 200 + картинка + валидный JPEG у
     await new Promise((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('server boot timeout')), 20000);
       child.stdout.on('data', (d) => {
-        if (String(d).includes('demo running')) { clearTimeout(t); resolve(); }
+        if (String(d).includes('Vektor running')) { clearTimeout(t); resolve(); }
       });
       child.on('error', reject);
     });

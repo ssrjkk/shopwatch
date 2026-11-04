@@ -8,7 +8,7 @@ const { mountFrontend } = require('./helpers/dom');
 
 const realFetch = globalThis.fetch.bind(globalThis);
 
-describe('корзина демо: суммы целыми, очистка, восстановление, промокод', () => {
+describe('корзина: суммы целыми, очистка, восстановление, промокод', () => {
   let g;
   before(async () => {
     g = mountFrontend();
@@ -93,7 +93,7 @@ describe('корзина демо: суммы целыми, очистка, во
   });
 });
 
-describe('демо-тема: переключатель светлой/тёмной, запоминание', () => {
+describe('тема: переключатель светлой/тёмной, запоминание', () => {
   let g;
   before(async () => {
     g = mountFrontend();
@@ -110,13 +110,13 @@ describe('демо-тема: переключатель светлой/тёмн�
     m1.toggleTheme();
     assert.ok(m1.document.body.classList.contains('stealth-edition'));
     assert.equal(m1.document.documentElement.getAttribute('data-theme'), 'dark');
-    assert.equal(globalThis.__themestore.demo_theme, 'dark', 'выбор записан');
+    assert.equal(globalThis.__themestore.app_theme, 'dark', 'выбор записан');
     // «перезапуск»: новый маунт читает сохранённую тему и применяет её сам
     const m2 = mountFrontend({ storage: mem });
     assert.ok(m2.document.body.classList.contains('stealth-edition'), 'после перезапуска тёмная тема сама встала');
     m2.toggleTheme();
     assert.ok(!m2.document.body.classList.contains('stealth-edition'));
-    assert.equal(globalThis.__themestore.demo_theme, 'light');
+    assert.equal(globalThis.__themestore.app_theme, 'light');
   });
 
   it('квиз-модалка есть во всех витринах и открывается/закрывается', () => {
@@ -134,13 +134,13 @@ describe('демо-тема: переключатель светлой/тёмн�
   });
 });
 
-describe('сервер демо: код TG-XXXX уникален, суммы целые', () => {
+describe('сервер: код TG-XXXX уникален, суммы целые', () => {
   const PORT = 3219;
   const BASE = `http://localhost:${PORT}`;
   let child;
   let tmp;
   before(async () => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'vector-demo-cart-'));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'vector-cart-'));
     child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
       cwd: tmp,
       env: { ...process.env, PORT: String(PORT), TG_BOT_TOKEN: '', TG_ADMIN_ID: '', MAX_BOT_TOKEN: '', MAX_ADMIN_ID: '', ORDER_COOLDOWN_MS: '300' },
@@ -149,7 +149,7 @@ describe('сервер демо: код TG-XXXX уникален, суммы ц�
     await new Promise((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('server boot timeout')), 15000);
       child.stdout.on('data', (d) => {
-        if (String(d).includes('demo running')) { clearTimeout(t); resolve(); }
+        if (String(d).includes('Vektor running')) { clearTimeout(t); resolve(); }
       });
       child.on('error', reject);
     });
@@ -168,7 +168,7 @@ describe('сервер демо: код TG-XXXX уникален, суммы ц�
   const order = (idem, items, promo) => realFetch(`${BASE}/api/order`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': idem },
-    body: JSON.stringify({ items: items || [{ id: 1, qty: 1 }], customer: { fio: 'Демо Тест', phone: '+7 000 000-00-00' }, ...(promo ? { promo } : {}) }),
+    body: JSON.stringify({ items: items || [{ id: 1, qty: 1 }], customer: { fio: 'Тест', phone: '+7 000 000-00-00' }, ...(promo ? { promo } : {}) }),
   }).then((r) => r.json());
 
   it('пять заказов подряд получают разные коды TG-XXXX', async () => {

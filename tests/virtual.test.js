@@ -118,8 +118,8 @@ describe('catalog virtualization', () => {
 
   it('deep link points to the bot with order and cart payload', () => {
     const items = [{ id: 15, qty: 2, price: 25900 }, { id: 3, qty: 1, price: 10000 }];
-    assert.equal(g.tgOrderLink('TG-1176', items), '#demo?start=TG-1176_15x2x25900_3x1x10000');
-    assert.equal(g.tgOrderLink('consult'), '#demo');
+    assert.equal(g.tgOrderLink('TG-1176', items), '#contacts?start=TG-1176_15x2x25900_3x1x10000');
+    assert.equal(g.tgOrderLink('consult'), '#contacts');
   });
 
   it('hits section renders flagged products', () => {

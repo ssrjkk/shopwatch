@@ -40,7 +40,7 @@ describe('PWA manifest: один сайт, витрина ссылается н�
     assert.match(robots, /^User-agent: \*/m, 'robots без User-agent');
     assert.match(robots, /sitemap\.xml/, 'robots без ссылки на sitemap');
     const sm = fs.readFileSync(path.join(__dirname, '..', 'sitemap.xml'), 'utf8');
-    assert.match(sm, /https:\/\/example\.invalid\/demo\//, 'sitemap без канонического URL');
+    assert.match(sm, /https:\/\/ssrjkk\.github\.io\/shopwatch\//, 'sitemap без канонического URL');
   });
 
   it('соцкарточки и фавикон на месте, в витрине нет чужих хотлинков', () => {

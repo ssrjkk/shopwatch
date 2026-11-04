@@ -1,12 +1,12 @@
-# Vektor — demo watch storefront with Telegram and MAX bots (educational project)
+# Vektor — watch store with Telegram and MAX bots
 
-> **Demo project.** Orders are not processed, no payments accepted. The «Vektor» brand, details, reviews and prices are fictional. Photos are demo placeholders.
+> Working store: cart orders go to a manager in Telegram/MAX, payment follows order confirmation. Catalog photos are official manufacturer shots.
 
-[Demo storefront](https://example.invalid/demo/) · [Bot: disabled in demo] · [Demo author: fictional] · [Русская версия](README.ru.md)
+[Storefront](https://ssrjkk.github.io/shopwatch/) · [Русская версия](README.md)
 
-![Vektor demo storefront: catalog, placeholders and prices](docs/screenshots/catalog-1280-light.png)
+![Vektor storefront: catalog, photos and prices](docs/screenshots/catalog-1280-light.png)
 ![Catalog: dark theme via toggle](docs/screenshots/catalog-1280-dark.png)
-![Product page: demo photo and sample content](docs/screenshots/product-1280-light.png)
+![Product page: photo and specs](docs/screenshots/product-1280-light.png)
 
 Storefront: a catalog of 391 products read from `products-data.js` (exported from the live
 database together with their ids), which the server also uses to seed and upgrade the database;
@@ -93,7 +93,7 @@ Admins manage codes from both bots: the `Промокоды` screen in the menu,
 codes with their conditions, adds one with a line like `VIP20 20 GARMIN min100000` and removes it; a percent
 outside 1–90, a code shorter than two characters and an unparseable rule are refused.
 
-## Demo on GitHub Pages (no server)
+## Running on GitHub Pages (no server)
 
 One site, two entry points with byte-identical files. `public/` is canonical: the server
 (`node server.js`, Docker) serves `public/index.html` + `public/products-data.js`. The root
@@ -150,7 +150,7 @@ The database and admin photos live in the volume (`DB_PATH=/data/watchop.db`,
 - `GITHUB_PUSH_TOKEN` — optional: a fine-grained PAT with `Contents: Write` on this repository, needed for the `Выгрузить и опубликовать` button where git has no stored credentials (for example inside a container on a VPS). Unset — the push uses stored credentials. The token never reaches a commit or `.git/config` and is stripped from error output
 - `GITHUB_PUSH_REMOTE`, `GITHUB_PUSH_BRANCH` — where to push and into which branch (`https://github.com/ssrjkk/shopwatch/`, `main` by default)
 
-Without tokens the server still runs in demo mode. `.env` is not committed (see `.gitignore`).
+Without tokens the server still runs in storefront mode: orders go through bot deep links. `.env` is not committed (see `.gitignore`).
 
 ## Telegram bot (admin panel)
 
@@ -222,7 +222,7 @@ neither corrupt the working file nor overwrite the backup.
 
 Measured against the working catalog of 391 products, not eyeballed:
 
-- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 252 501 B → 51 212 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 167 547 B → 16 327 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
+- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 249 170 B → 50 473 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 167 547 B → 16 327 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
 - **Windowed catalog grid.** Never more than 60 cards in the DOM, however far you scroll: spacers above and below hold the height of what is hidden, so the scrollbar does not jump. Before this the grid only ever grew — after scrolling to the end it held 347 cards and 3470 nodes instead of 60 and 600. The numeric check is in `tests/virtual.test.js`.
 - **Images sized to their slot.** The database baked in `w=600` although a card in the `max-w-md` layout is 181 px and a cart thumbnail is 64 px. The storefront now asks for `w=400` on a card, `w=700` on the product page and `w=160`/`w=140` for thumbnails. Unsplash URLs also get `fm=webp`, verified by fact — `Content-Type: image/webp`, a `RIFF…WEBP` signature, 7 786 B instead of 10 882 B per card (−28%). Other hosts (Wikimedia) are left as they are: they do not understand the width parameter.
 - **Photo cache.** `/uploads/...` is served with `Cache-Control: public, max-age=31536000, immutable` — the file name is unique per upload, so it cannot go stale. The storefront HTML itself cannot be cached forever (`max-age=0`), otherwise a price change would not appear until the visitor cleared the cache.

@@ -207,7 +207,7 @@ describe('витрина: поиск, фильтры и оформление н�
       fetch: 'async () => { (global.__calls = (global.__calls || 0) + 1); return { ok: true, json: async () => ({}) }; }',
     });
     await new Promise((r) => setTimeout(r, 50));
-    assert.equal(pages.IS_STATIC_DEMO, true);
+    assert.equal(pages.IS_STATIC, true);
     calls = global.__calls || 0;
     assert.equal(calls, 0, '/api/state на статическом хостинге не зовём');
     pages.state.cart = [];
