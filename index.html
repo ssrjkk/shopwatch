@@ -2255,7 +2255,7 @@ function renderCatalog(){
   state.windowFrom=0;
   state.windowTo=Math.min(state.filtered.length,WINDOW_CARDS);
   state.shownCount=0;
-  try{if(typeof windowState!=='undefined')windowState.cat={rowH:0,colN:0};}catch(e){}
+  try{if(typeof windowState!=='undefined')windowState.cat={rowH:0,colN:0,sig:null,from:0,to:0};}catch(e){}
   renderWindow();
   renderDrawer();
   const fBadge=document.getElementById('active-filter-badge');
@@ -2976,12 +2976,13 @@ function renderFavorites(){
   const top=document.getElementById('favorites-top');
   const bottom=document.getElementById('favorites-bottom');
   if(!list.length){
-    if(typeof windowState!=='undefined')windowState.favorites={rowH:0};
+    if(typeof windowState!=='undefined')windowState.favorites={rowH:0,sig:null,from:0,to:0};
     if(top)top.style.height='0px';
     if(bottom)bottom.style.height='0px';
     box.innerHTML=`<div class="col-span-2 sm:col-span-4 bg-white rounded-2xl p-6 text-center text-xs text-gray-500">В избранном пока пусто. Нажмите ♥ на понравившихся часах в каталоге.</div>`;
     return;
   }
+  if(typeof windowState!=='undefined')windowState.favorites={rowH:0,sig:null,from:0,to:0};
   renderWindowed(list,'favorites',{grid:'favorites-grid',top:'favorites-top',bottom:'favorites-bottom',wrap:'favorites-window'});
 }
 
@@ -3440,7 +3441,7 @@ function renderWindowed(items,key,dom,scrollPx){
   if(total<=WINDOW_CARDS){if(top)top.style.height="0px";if(bottom)bottom.style.height="0px";grid.innerHTML=items.map((p)=>productCardHTML(p)).join("");return{from:0,to:total};}
   const cols=gridCols(grid);
   const rowsInWindow=Math.max(1,Math.ceil(WINDOW_CARDS/cols));
-  const st=windowState[key]||(windowState[key]={rowH:0});
+  const st=windowState[key]||(windowState[key]={rowH:0,sig:null,from:0,to:0});
   const first=grid.children&&grid.children[0];if(first&&first.offsetHeight)st.rowH=first.offsetHeight+gridRowGap(grid);
   const rowH=st.rowH||240;const rowsTotal=Math.ceil(total/cols);
   let scrolled;
@@ -3456,6 +3457,10 @@ function renderWindowed(items,key,dom,scrollPx){
   }
   const startRow=Math.max(0,Math.min(Math.floor(scrolled/rowH)-WINDOW_OVERSCAN_ROWS,rowsTotal-rowsInWindow));
   const endRow=startRow+rowsInWindow;
+  const firstId=items.length&&items[startRow*cols]?items[startRow*cols].id:'x';
+  const sig=total+':'+cols+':'+startRow+':'+endRow+':'+firstId+':'+Math.round(rowH);
+  if(st.sig===sig){return{from:st.from,to:st.to};}
+  st.sig=sig;st.from=startRow*cols;st.to=Math.min(total,endRow*cols);
   grid.innerHTML=items.slice(startRow*cols,endRow*cols).map((p)=>productCardHTML(p)).join("");
   if(top)top.style.height=(startRow*rowH)+"px";
   if(bottom)bottom.style.height=((rowsTotal-endRow)*rowH)+"px";
