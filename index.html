@@ -415,6 +415,9 @@ body.stealth-edition #product-3d-stage {
   .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+@supports (min-height: 100dvh) {
+  body { min-height: 100dvh; }
+}
 @media (min-width: 1024px) {
   .lg\:block { display: block !important; }
   .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -887,7 +890,8 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
       <!-- ВИРТУАЛИЗИРОВАННАЯ СЕТКА ТОВАРОВ -->
       <div id="grid-window"><div id="grid-top" style="height:0px"></div><div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4"></div><div id="grid-bottom" style="height:0px"></div></div>
       <div id="grid-sentinel" class="h-2"></div>
-      <div id="grid-status" class="text-center text-xs font-mono text-slate-500 pb-2"></div>
+      <div id="grid-status" class="text-center text-xs font-mono text-slate-500"></div>
+      <div class="text-center pt-1 pb-2"><button id="show-all-btn" onclick="toggleShowAll()" class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-white border border-gray-200 text-gray-800 hover:border-[#0E9F6E] hover:text-[#0E9F6E] transition-colors shadow-xs">Показать весь каталог</button></div>
     </div>
   </div>
 
@@ -1174,6 +1178,7 @@ let state={
   activeBrand:'ALL',
   activePreset:'all',
   promoCode:'',
+  showAll:false,
   promoDiscount:0,
   promoDiscountRub:0,
   favorites:safeParse(localStorage.getItem('watchop_favs'),'[]') instanceof Array ? safeParse(localStorage.getItem('watchop_favs'),[]) : [],
@@ -3469,7 +3474,7 @@ function gridRowGap(grid){
 function renderWindowed(items,key,dom,scrollPx){
   const grid=document.getElementById(dom.grid);if(!grid)return{from:0,to:0};
   const top=document.getElementById(dom.top);const bottom=document.getElementById(dom.bottom);const total=items.length;
-  if(total<=WINDOW_CARDS){if(top)top.style.height="0px";if(bottom)bottom.style.height="0px";grid.innerHTML=items.map((p)=>productCardHTML(p)).join("");return{from:0,to:total};}
+  if(total<=WINDOW_CARDS||(key==='cat'&&state.showAll)){if(top)top.style.height="0px";if(bottom)bottom.style.height="0px";const sig='all:'+total+':'+(items[0]?items[0].id:'x');const st0=windowState[key]||(windowState[key]={rowH:0,sig:null,from:0,to:0});if(st0.sig===sig)return{from:st0.from,to:st0.to};st0.sig=sig;st0.from=0;st0.to=total;grid.innerHTML=items.map((p)=>productCardHTML(p)).join("");return{from:0,to:total};}
   const cols=gridCols(grid);
   const rowsInWindow=Math.max(1,Math.ceil(WINDOW_CARDS/cols));
   const st=windowState[key]||(windowState[key]={rowH:0,sig:null,from:0,to:0});
@@ -3507,6 +3512,20 @@ function renderWindowAt(px){
     if(!total)st.textContent="Ничего не найдено. Попробуйте короче: «Fenix», «эхолот», «чехол» или «до 60000».";
     else st.textContent=state.windowTo<total?("Показаны "+(state.windowFrom+1)+"–"+state.windowTo+" из "+total+" — листайте вниз"):(total>WINDOW_CARDS?("Показаны все "+total):"");
   }
+  try{
+    const sab=document.getElementById('show-all-btn');
+    if(sab){
+      const on=!!state.showAll;
+      sab.textContent=on?'Свернуть ленту':'Показать весь каталог ('+state.filtered.length+')';
+      sab.classList.toggle('hidden',!(total>WINDOW_CARDS));
+    }
+  }catch(e){}
+}
+function toggleShowAll(){
+  state.showAll=!state.showAll;
+  try{windowState.cat={rowH:0,colN:0,sig:null,from:0,to:0};}catch(e){}
+  renderWindow();
+  try{scrollToCatalog();}catch(e){}
 }
 function renderWindow(){
   let sy=0;
