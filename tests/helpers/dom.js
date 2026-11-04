@@ -48,6 +48,8 @@ global.document = {
     const m = sel.match(/data-fav-heart="(\\d+)"/);
     return m ? (hearts.get(Number(m[1])) || []) : [];
   },
+  body: mkEl('body'),
+  documentElement: (() => { const attrs = {}; return { setAttribute: (k, v) => { attrs[k] = String(v); }, getAttribute: (k) => (k in attrs ? attrs[k] : null) }; })(),
 };
 global.window = {
   innerHeight: 800, scrollY: 0, scrollTo: () => {}, requestAnimationFrame: (fn) => fn(),
@@ -65,7 +67,7 @@ global.fetch = ${fetchImpl};
 
 const EXPOSE = [
   'state', 'renderCatalog', 'renderHits', 'toggleFav', 'openProduct', 'tgOrderLink', 'addToCart',
-  'changeQty', 'removeFromCart', 'clearCart', 'sanitizeCart', 'cartCount', 'cartTotal', 'renderCart', 'renderCheckout', 'goCheckout',
+  'changeQty', 'removeFromCart', 'clearCart', 'sanitizeCart', 'cartCount', 'cartTotal', 'renderCart', 'renderCheckout', 'goCheckout', 'showMore', 'setPageSize', 'toggleTheme', 'applyTheme', 'currentTheme',
   'switchTab', 'showView', 'route', 'toggleDrawer', 'submitOrder', 'renderFilters', 'setCategory', 'setSeries',
   'getFiltered', 'parseSearch', 'hayOf', 'isHit', 'tokenHit', 'onSearchInput', 'resetSearch', 'searchQuery',
   'setSearchQuery', 'syncCatalogHash', 'goAllProducts', 'goCatalogHome', 'quickOrder', 'fallbackCopy',

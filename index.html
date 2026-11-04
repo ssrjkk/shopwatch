@@ -41,6 +41,9 @@
   --border: #E2E8F0;
   --transition: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
+body.stealth-edition{--bg:#0B0F17;--surface:#141926;--surface-2:#0E121B;--text:#F8FAFC;--text-muted:#94a3b8;--brand:#10B981;--brand-light:#34d399;--tg:#38BDF8;--border:#26314a;}
+body{background-color:var(--bg);color:var(--text);}
+}
 html {
   scrollbar-gutter: stable;
   overflow-x: hidden;
@@ -593,6 +596,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
 
       <!-- Правая панель иконок с подписями в стиле демо-стиль -->
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+        <button onclick="toggleTheme()" id="theme-btn" aria-label="Переключить тему" title="Тёмная/светлая тема" class="flex flex-col items-center justify-center px-2.5 py-1 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"><span id="theme-icon" class="text-base leading-none">🌙</span><span class="text-[10px] font-semibold mt-0.5">Тема</span></button>
         <button onclick="openQuizModal()" class="hidden lg:flex flex-col items-center justify-center px-2.5 py-1 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors" title="Подбор часов за 30 секунд">
           <svg class="w-4 h-4 text-[#0E9F6E]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span class="text-[10px] font-semibold mt-0.5">Подбор</span>
@@ -670,7 +674,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
         <div class="flex flex-wrap items-center gap-2.5 pt-1">
           <button onclick="scrollToCatalog()" class="btn-luxury-gold font-extrabold text-xs px-5 py-3 rounded-xl">Смотреть каталог (391)</button>
           <a id="ui-consult-btn" href="#demo" target="_blank" class="bg-[#2AABEE] hover:bg-[#229ED9] text-white font-bold text-xs px-5 py-3 rounded-xl transition-colors" style="color:#FFFFFF !important">Написать в Telegram</a>
-          <button onclick="openQuizModal()" class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 font-semibold text-xs px-4 py-3 rounded-xl transition-colors">Подбор за 30 сек →</button>
+        <button onclick="openQuizModal()" class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 font-semibold text-xs px-4 py-3 rounded-xl transition-colors">Подбор за 30 сек →</button>
         </div>
         <div class="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200 max-w-md text-[11px]">
           <div><div class="font-mono font-extrabold text-sm text-gray-900">391</div><div class="text-gray-500">Моделей в каталоге</div></div>
@@ -895,7 +899,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
       <div id="grid-window"><div id="grid-top" style="height:0px"></div><div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4"></div><div id="grid-bottom" style="height:0px"></div></div>
       <div id="grid-sentinel" class="h-2"></div>
       <div id="grid-status" class="text-center text-xs font-mono text-slate-500"></div>
-      <div class="text-center pt-1 pb-2"><button id="show-all-btn" onclick="toggleShowAll()" class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-white border border-gray-200 text-gray-800 hover:border-[#0E9F6E] hover:text-[#0E9F6E] transition-colors shadow-xs">Показать весь каталог</button></div>
+      <div class="text-center pt-1 pb-2 space-y-2"><div class="text-xs text-slate-500">Показано <b id="grid-shown">0</b> из <b id="grid-total">0</b></div><div class="flex items-center justify-center gap-2 flex-wrap"><label class="text-xs text-slate-500">Шаг: <select id="page-step" onchange="setPageSize(this.value)" class="bg-white border border-gray-200 rounded-lg text-xs font-bold px-2 py-1.5 outline-none"><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="100">100</option></select></label><button id="show-more-btn" onclick="showMore()" class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-white border border-gray-200 text-gray-800 hover:border-[#0E9F6E] hover:text-[#0E9F6E] transition-colors shadow-xs">Показать весь каталог</button></div>
     </div>
   </div>
 
@@ -1182,7 +1186,8 @@ let state={
   activeBrand:'ALL',
   activePreset:'all',
   promoCode:'',
-  showAll:false,
+  pageSize:(function(){try{const n=Number(localStorage.getItem('demo_page_size'));return [10,20,30,40,50,100].includes(n)?n:10;}catch(e){return 10;}})(),
+  shownMax:10,
   promoDiscount:0,
   promoDiscountRub:0,
   favorites:safeParse(localStorage.getItem('watchop_favs'),'[]') instanceof Array ? safeParse(localStorage.getItem('watchop_favs'),[]) : [],
@@ -1239,7 +1244,6 @@ const TRANSLIT_MAP=[
   ['ситизен','citizen'],['ориент','orient'],['страйкер','striker'],['эдж','edge']
 ];
 
-const PAGE_SIZE=20;
 let heroTimer=null;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1361,6 +1365,21 @@ if(typeof document!=='undefined'&&document.addEventListener){
     }catch(_){}
   },true);
 }
+function currentTheme(){try{return localStorage.getItem('demo_theme')||'light';}catch(e){return 'light';}}
+function applyTheme(t){
+  const dark=t==='dark';
+  try{document.body.classList.toggle('stealth-edition',dark);}catch(e){}
+  try{document.body.classList.toggle('classic-edition',!dark);}catch(e){}
+  try{const ic=document.getElementById('theme-icon');if(ic)ic.textContent=dark?'☀️':'🌙';}catch(e){}
+  try{document.documentElement.setAttribute('data-theme',dark?'dark':'light');}catch(e){}
+}
+function toggleTheme(){
+  const next=currentTheme()==='dark'?'light':'dark';
+  try{localStorage.setItem('demo_theme',next);}catch(e){}
+  applyTheme(next);
+  try{showToast(next==='dark'?'Тёмная тема включена':'Светлая тема включена');}catch(e){}
+}
+try{applyTheme(currentTheme());}catch(e){}
 function showToast(msg){
   const t=document.getElementById('toast');
   if(!t)return;
@@ -1616,6 +1635,7 @@ function applySettingsToUI(){
 }
 
 function showView(tab){
+  const prevView=(function(){try{return state.currentView;}catch(e){return null;}})();
   try{state.currentView=tab;}catch(e){}
   ['catalog','product','order-success','cart','checkout','favorites','orders','about','delivery','warranty','contacts','offer','privacy'].forEach(v=>{
     const el=document.getElementById('view-'+v);
@@ -1637,7 +1657,7 @@ function showView(tab){
   if(tab==='checkout')renderCheckout();
   if(tab==='catalog')requestAnimationFrame(function(){try{renderWindow();}catch(e){}});
   syncMiniAppNav(tab);
-  if(typeof window!=='undefined'&&window.scrollTo)window.scrollTo({top:0,behavior:'auto'});
+  if(tab!==prevView&&typeof window!=='undefined'&&window.scrollTo)window.scrollTo({top:0,behavior:'auto'});
 }
 
 function switchTab(tab){
@@ -2097,7 +2117,6 @@ function applyPresetFilter(preset){
     }
   });
   renderCatalog();
-  scrollToCatalog();
 }
 
 function resetAllFilters(){
@@ -2276,7 +2295,6 @@ function selectSearchTag(tag){
   openSearchDropdown(false);
   showView('catalog');
   renderCatalog();
-  scrollToCatalog();
 }
 
 function renderSearchSuggestions(raw){
@@ -2306,7 +2324,8 @@ function renderCatalog(){
   try{const sec=document.getElementById('hits-section');if(sec)sec.classList.toggle('hidden',!!searchQuery());}catch(e){}
   state.filtered=getFiltered();
   state.windowFrom=0;
-  state.windowTo=Math.min(state.filtered.length,WINDOW_CARDS);
+  state.shownMax=state.pageSize;
+  state.windowTo=Math.min(state.filtered.length,state.shownMax);
   state.shownCount=0;
   try{if(typeof windowState!=='undefined')windowState.cat={rowH:0,colN:0,sig:null,from:0,to:0};}catch(e){}
   renderWindow();
@@ -2336,9 +2355,9 @@ function updateGridStatus(){
   if(!total){
     st.textContent='Ничего не найдено. Попробуйте изменить запрос.';
   }else if(state.shownCount<total){
-    st.textContent=`Показано ${state.shownCount} из ${total} — листайте вниз`;
+    st.textContent=`Показано 1–${Math.min(state.shownMax||10,total)} из ${total} — листайте вниз или нажмите «Показать ещё»`;
   }else{
-    st.textContent=total>PAGE_SIZE?`Показаны все ${total}`:'';
+    st.textContent=total>(state.pageSize||10)?`Показаны все ${total}`:'';
   }
 }
 
@@ -3158,7 +3177,6 @@ function onSearchKeyDown(e){
     openSearchDropdown(false);
     showView('catalog');
     renderCatalog();
-    scrollToCatalog();
   }
 }
 
@@ -3243,7 +3261,6 @@ function applyQuizSelection(){
   showView('catalog');
   renderFilters();
   renderCatalog();
-  scrollToCatalog();
   showToast(`Подобрано моделей: ${state.filtered.length}`);
 }
 
@@ -3508,12 +3525,13 @@ function gridRowGap(grid){
 function renderWindowed(items,key,dom,scrollPx){
   const grid=document.getElementById(dom.grid);if(!grid)return{from:0,to:0};
   const top=document.getElementById(dom.top);const bottom=document.getElementById(dom.bottom);const total=items.length;
-  if(total<=WINDOW_CARDS||(key==='cat'&&state.showAll)){if(top)top.style.height="0px";if(bottom)bottom.style.height="0px";const sig='all:'+total+':'+(items[0]?items[0].id:'x');const st0=windowState[key]||(windowState[key]={rowH:0,sig:null,from:0,to:0});if(st0.sig===sig)return{from:st0.from,to:st0.to};st0.sig=sig;st0.from=0;st0.to=total;grid.innerHTML=items.map((p)=>productCardHTML(p)).join("");return{from:0,to:total};}
+  const effTotal=(key==='cat')?Math.min(total,Math.max(1,state.shownMax||10)):total;
+  if(effTotal<=WINDOW_CARDS){if(top)top.style.height="0px";if(bottom)bottom.style.height="0px";const sig='cap:'+effTotal+':'+total+':'+(items[0]?items[0].id:'x');const st0=windowState[key]||(windowState[key]={rowH:0,sig:null,from:0,to:0});if(st0.sig===sig&&st0.to===effTotal)return{from:st0.from,to:st0.to};st0.sig=sig;st0.from=0;st0.to=effTotal;grid.innerHTML=items.slice(0,effTotal).map((p)=>productCardHTML(p)).join("");return{from:0,to:effTotal};}
   const cols=gridCols(grid);
   const rowsInWindow=Math.max(1,Math.ceil(WINDOW_CARDS/cols));
   const st=windowState[key]||(windowState[key]={rowH:0,sig:null,from:0,to:0});
   const first=grid.children&&grid.children[0];if(first&&first.offsetHeight)st.rowH=first.offsetHeight+gridRowGap(grid);
-  const rowH=st.rowH||240;const rowsTotal=Math.ceil(total/cols);
+  const rowH=st.rowH||240;const rowsTotal=Math.ceil(((key==="cat")?effTotal:total)/cols);
   let scrolled;
   if(typeof scrollPx==='number'){scrolled=Math.max(0,scrollPx);}
   else{
@@ -3530,36 +3548,47 @@ function renderWindowed(items,key,dom,scrollPx){
   const firstId=items.length&&items[startRow*cols]?items[startRow*cols].id:'x';
   const sig=total+':'+cols+':'+startRow+':'+endRow+':'+firstId+':'+Math.round(rowH);
   if(st.sig===sig){return{from:st.from,to:st.to};}
-  st.sig=sig;st.from=startRow*cols;st.to=Math.min(total,endRow*cols);
+  st.sig=sig;st.from=startRow*cols;st.to=Math.min((key==="cat"?effTotal:total),endRow*cols);
   grid.innerHTML=items.slice(startRow*cols,endRow*cols).map((p)=>productCardHTML(p)).join("");
   if(top)top.style.height=(startRow*rowH)+"px";
   if(bottom)bottom.style.height=((rowsTotal-endRow)*rowH)+"px";
-  return{from:startRow*cols,to:Math.min(total,endRow*cols)};
+  return{from:startRow*cols,to:Math.min((key==="cat"?effTotal:total),endRow*cols)};
 }
 function renderWindowAt(px){
   const w=renderWindowed(state.filtered,"cat",{grid:"products-grid",top:"grid-top",bottom:"grid-bottom",wrap:"grid-window"},px);
   state.windowFrom=w.from;state.windowTo=w.to;state.shownCount=w.to-w.from;
   const total=state.filtered.length;
   const fc=document.getElementById("found-count");if(fc)fc.textContent="Найдено: "+total;
+  const cap=Math.min(total,Math.max(1,state.shownMax||10));
+  try{const gs=document.getElementById("grid-shown");if(gs)gs.textContent=String(Math.min(state.windowTo,cap));}catch(e){}
+  try{const gt=document.getElementById("grid-total");if(gt)gt.textContent=String(total);}catch(e){}
+  try{const ps=document.getElementById("page-step");if(ps&&String(ps.value)!==String(state.pageSize||10))ps.value=String(state.pageSize||10);}catch(e){}
   const st=document.getElementById("grid-status");
   if(st){
     if(!total)st.textContent="Ничего не найдено. Попробуйте короче: «Fenix», «эхолот», «чехол» или «до 60000».";
-    else st.textContent=state.windowTo<total?("Показаны "+(state.windowFrom+1)+"–"+state.windowTo+" из "+total+" — листайте вниз"):(total>WINDOW_CARDS?("Показаны все "+total):"");
+    else st.textContent=cap<total?("Показано 1–"+cap+" из "+total+" — листайте вниз или нажмите «Показать ещё»"):("Показаны все "+total);
   }
   try{
-    const sab=document.getElementById('show-all-btn');
+    const sab=document.getElementById('show-more-btn');
     if(sab){
-      const on=!!state.showAll;
-      sab.textContent=on?'Свернуть ленту':'Показать весь каталог ('+state.filtered.length+')';
-      sab.classList.toggle('hidden',!(total>WINDOW_CARDS));
+      const rest=total-cap;
+      sab.textContent=rest>0?('Показать ещё ('+Math.min(state.pageSize||10,rest)+' из '+total+')'):'Показаны все';
+      sab.classList.toggle('hidden',!(rest>0));
     }
   }catch(e){}
 }
-function toggleShowAll(){
-  state.showAll=!state.showAll;
+function showMore(){
+  state.shownMax=Math.min(state.filtered.length,(state.shownMax||10)+(state.pageSize||10));
   try{windowState.cat={rowH:0,colN:0,sig:null,from:0,to:0};}catch(e){}
   renderWindow();
-  try{scrollToCatalog();}catch(e){}
+}
+function setPageSize(v){
+  const n=Number(v);
+  state.pageSize=[10,20,30,40,50,100].indexOf(n)>=0?n:10;
+  try{localStorage.setItem('demo_page_size',String(state.pageSize));}catch(e){}
+  state.shownMax=state.pageSize;
+  try{windowState.cat={rowH:0,colN:0,sig:null,from:0,to:0};}catch(e){}
+  renderWindow();
 }
 function renderWindow(){
   let sy=0;

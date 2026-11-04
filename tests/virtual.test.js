@@ -22,91 +22,75 @@ describe('catalog virtualization', () => {
   const domCards = () => g.document.getElementById('products-grid').children.length;
   const scrollTop = (px) => { g.window.scrollY = px; g.renderWindow(); };
 
-  it('держит в DOM окно не больше WINDOW_CARDS карточек', () => {
+  it('пагинация по умолчанию: 10 позиций, шаг 10, кнопка «Показать ещё»', () => {
+    g.setPageSize(10);
     seed350();
-    assert.ok(g.WINDOW_CARDS <= 60, `окно слишком большое: ${g.WINDOW_CARDS}`);
-    // первый чанк — PAGE_SIZE, окно предзаявлено на WINDOW_CARDS
-    assert.ok(domCards() <= g.WINDOW_CARDS, `карточек в DOM: ${domCards()}`);
-    assert.equal(g.state.windowFrom, 0);
-    assert.equal(g.state.windowTo, g.WINDOW_CARDS);
+    assert.equal(g.state.pageSize, 10);
+    assert.equal(g.state.shownMax, 10);
+    assert.equal(domCards(), 10, 'первый чанк — 10 позиций');
+    assert.equal(g.document.getElementById('grid-shown').textContent, '10');
+    assert.equal(g.document.getElementById('grid-total').textContent, '350');
+    assert.equal(g.document.getElementById('grid-status').textContent, 'Показано 1–10 из 350 — листайте вниз или нажмите «Показать ещё»');
     assert.equal(g.document.getElementById('found-count').textContent, 'Найдено: 350');
-    // прокрутка включает окно: в DOM только окно, хвост дописывается чанками
-    scrollTop(20000);
-    assert.ok(domCards() <= g.WINDOW_CARDS, `после прокрутки в DOM ${domCards()} карточек`);
-    assert.equal(g.document.getElementById('found-count').textContent, 'Найдено: 350');
-    assert.equal(g.document.getElementById('grid-top').style.height === '0px', g.state.windowFrom === 0);
-    g.window.scrollY = 0;
-    g.renderCatalog();
+    assert.equal(g.state.windowTo, 10);
   });
 
-  it('на любом глубине прокрутки карточек столько же, а не всё до этого места', () => {
+  it('«Показать ещё» добавляет шаг и не скроллит страницу', () => {
+    g.setPageSize(10);
     seed350();
-    const heights = [];
-    for (const px of [0, 1000, 5000, 12000, 20000, 40000]) {
-      scrollTop(px);
-      heights.push(domCards());
-      assert.ok(domCards() <= g.WINDOW_CARDS, `на ${px}px в DOM ${domCards()} карточек`);
+    g.window.scrollY = 5000;
+    g.showMore();
+    assert.equal(domCards(), 20, 'стало 20 позиций');
+    assert.equal(g.state.shownMax, 20);
+    assert.equal(g.window.scrollY, 5000, 'скролл не тронут');
+    assert.equal(g.document.getElementById('grid-status').textContent, 'Показано 1–20 из 350 — листайте вниз или нажмите «Показать ещё»');
+    g.window.scrollY = 0;
+  });
+
+  it('шаг 10/20/30/40/50/100 переключается, мусор отбрасывается в 10', () => {
+    seed350();
+    for (const step of [20, 30, 40, 50, 100]) {
+      g.setPageSize(String(step));
+      assert.equal(g.state.pageSize, step);
+      assert.equal(domCards(), step <= 60 ? step : g.WINDOW_CARDS, 'при шаге ' + step);
     }
-    assert.deepEqual([...new Set(heights)], [g.WINDOW_CARDS]);
-    // середина списка: окно пришло за серединой, а не упёрлось в край
-    scrollTop(20000);
-    assert.ok(g.state.windowFrom > 100 && g.state.windowFrom < 250, `окно началось с ${g.state.windowFrom}`);
-    // конец списка: последние позиции на экране, нижняя заглушка нулевая
-    scrollTop(99999);
-    assert.equal(g.state.windowTo, 350);
-    assert.equal(g.document.getElementById('grid-bottom').style.height, '0px');
-    assert.equal(g.document.getElementById('grid-status').textContent, 'Показаны все 350');
-    g.window.scrollY = 0;
+    g.setPageSize('zzz');
+    assert.equal(g.state.pageSize, 10);
+    g.setPageSize(10);
   });
 
-  it('избранное сидит в том же окне, что и каталог', () => {
+  it('виртуализация держит в DOM не больше WINDOW_CARDS при большом лимите', () => {
+    g.setPageSize(100);
     seed350();
-    g.state.favorites = g.state.filtered.map((p) => p.id);
-    g.window.scrollY = 0;
-    g.renderFavorites();
-    const fav = g.document.getElementById('favorites-grid');
-    assert.equal(fav.children.length, g.WINDOW_CARDS, `в избранном отрисовано ${fav.children.length}`);
-    assert.equal(g.document.getElementById('favorites-bottom').style.height !== '0px', true, 'нижняя заглушка держит высоту');
-    g.window.scrollY = 30000;
-    g.renderFavorites();
-    assert.equal(fav.children.length, g.WINDOW_CARDS, 'после прокрутки карточек не больше');
-    g.window.scrollY = 0;
-    g.state.favorites = [];
-    g.renderFavorites();
-    assert.match(g.document.getElementById('favorites-grid').innerHTML, /В избранном пока пусто/);
-    assert.equal(g.document.getElementById('favorites-bottom').style.height, '0px');
+    assert.ok(domCards() <= g.WINDOW_CARDS, 'в DOM не больше окна: ' + domCards());
+    g.showMore(); g.showMore(); g.showMore();
+    assert.ok(domCards() <= g.WINDOW_CARDS, 'после догрузки в DOM не больше окна');
+    assert.equal(g.state.shownMax, 350);
+    assert.equal(g.document.getElementById('grid-status').textContent, 'Показаны все 350');
+    assert.equal(g.document.getElementById('show-more-btn').classList.contains('hidden'), true, 'кнопка прячется в конце');
+    g.setPageSize(10);
   });
 
-  it('короткий список рендерится целиком, без заглушек', () => {
+  it('короткий список и смена фильтра сбрасывают лимит к шагу', () => {
+    g.setPageSize(10);
     g.state.products = Array.from({ length: 12 }, (_, i) => ({ id: 2000 + i, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Tiny ' + i, price: 5000 + i, image: 'x.jpg', specs: 's' }));
     g.document.getElementById('search-input').value = '';
     g.renderCatalog();
-    assert.equal(domCards(), 12);
-    assert.equal(g.document.getElementById('grid-top').style.height || '0px', '0px');
-    assert.equal(g.document.getElementById('grid-bottom').style.height || '0px', '0px');
-    assert.equal(g.document.getElementById('grid-status').textContent, '');
-  });
-
-  it('после смены фильтра окно остаётся внутри нового списка и не пустует', () => {
+    assert.equal(domCards(), 10, 'из 12 показано 10');
+    assert.equal(g.document.getElementById('grid-status').textContent, 'Показано 1–10 из 12 — листайте вниз или нажмите «Показать ещё»');
+    g.showMore();
+    assert.equal(domCards(), 12, 'догрузили остаток');
+    assert.equal(g.document.getElementById('grid-status').textContent, 'Показаны все 12');
+    g.setPageSize(10);
     seed350();
-    g.window.scrollY = 0;
-    g.renderCatalog();
-    assert.equal(g.state.windowFrom, 0, 'со верха страницы — с первой карточки');
-    scrollTop(20000);
-    const mid = g.state.windowFrom;
-    assert.ok(mid > 0, 'после прокрутки окно ушло от начала');
+    g.showMore();
+    assert.equal(g.state.shownMax, 20);
     g.document.getElementById('search-input').value = 'garmin';
-    g.window.scrollY = 0;
     g.renderCatalog();
-    assert.equal(g.state.filtered.length, 175);
-    const shown = domCards();
-    assert.ok(shown > 0 && shown <= g.WINDOW_CARDS, `карточек в DOM: ${shown}`);
-    assert.ok(g.state.windowTo <= 175 && g.state.windowFrom >= 0, `окно ${g.state.windowFrom}–${g.state.windowTo} вышло за 175`);
-    assert.equal(g.state.windowFrom, 0, 'фильтр сбрасывает окно к началу');
-    g.window.scrollY = 0;
+    assert.equal(g.state.shownMax, 10, 'фильтр сбрасывает лимит к шагу');
+    assert.equal(domCards(), 10);
     g.document.getElementById('search-input').value = '';
     g.renderCatalog();
-    assert.equal(g.state.windowFrom, 0);
   });
 
   it('escapes HTML in product fields (stored XSS protection)', () => {
