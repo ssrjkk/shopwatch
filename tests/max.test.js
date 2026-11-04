@@ -457,7 +457,7 @@ ${extractBackupBlock()}
     assert.equal(row.total, p1 * 2 + p3, 'итог пересчитан по ценам базы');
   });
 
-  it('дизайн и тексты: кнопки доставки, категорий и смены дизайна на месте', async () => {
+  it('тексты и наличие: кнопки доставки, категорий и остатка на месте', async () => {
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Тексты и контакты'));
     const cfg = JSON.stringify(api.lastTo(999).body.attachments);
     assert.ok(cfg.includes('Доставка'), 'доставки правятся из бота');
@@ -473,9 +473,6 @@ ${extractBackupBlock()}
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Наличие #' + prod.id));
     await api.handleMaxUpdate(api.upd(999, 'Admin', '12'));
     assert.equal(api.db.prepare('SELECT stock FROM products WHERE id=?').get(prod.id).stock, 12);
-    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Дизайн'));
-    const menu = JSON.stringify(api.lastTo(999).body.attachments);
-    assert.ok(menu.includes('Дизайн: Stealth') && menu.includes('Дизайн: Classic'), 'оба дизайна на выбор');
   });
 
   it('кнопка «Бекап БД» подтверждает выполнение текстом (файл — в Telegram)', async () => {

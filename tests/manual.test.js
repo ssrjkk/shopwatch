@@ -20,7 +20,7 @@ CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT C
   const getSetting = (k) => memdb.prepare('SELECT value FROM settings WHERE key = ?').get(k)?.value ?? '';
   const setSetting = (k, v) => memdb.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
   const api = new Function('seedKey', 'db', 'getSetting', 'setSetting', 'fs', 'path',
-    `${extractEncodingBlock()}\n${extractImportBlock()}\n${extractAdminBlock()}\n${extractOrderCodeFn()}\nreturn { PRODUCT_FIELD_LABELS, setProductField, parseManualItems, createManualOrder, deliveryMethods, normalizeDelivery, catalogPage, ordersPage, productById, ADMIN_PAGE, ADMIN_ORDER_PAGE, extraCategories, allStoreCategories, normalizeCategory, STORE_DESIGNS, storeDesignName, setStoreDesign };`
+    `${extractEncodingBlock()}\n${extractImportBlock()}\n${extractAdminBlock()}\n${extractOrderCodeFn()}\nreturn { PRODUCT_FIELD_LABELS, setProductField, parseManualItems, createManualOrder, deliveryMethods, normalizeDelivery, catalogPage, ordersPage, productById, ADMIN_PAGE, ADMIN_ORDER_PAGE, extraCategories, allStoreCategories, normalizeCategory };`
   )(seedKey, memdb, getSetting, setSetting, require('fs'), require('path'));
   return { api, db: memdb, getSetting, setSetting };
 }
@@ -59,23 +59,6 @@ describe('ручная заявка и доставки (ядро для TG и M
     assert.equal(api.normalizeCategory('Квадрокоптеры', core.db), null, 'убрали из настройки — полка закрыта');
   });
 
-  it('смена дизайна пишет оба файла и запоминается', () => {
-    const fs = require('fs');
-    const os = require('os');
-    const path = require('path');
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'watchop-design-'));
-    fs.mkdirSync(path.join(dir, 'public'));
-    fs.writeFileSync(path.join(dir, 'public', 'index-stealth.html'), '<html>STEALTH products-data.js</html>');
-    fs.writeFileSync(path.join(dir, 'public', 'index-classic.html'), '<html>CLASSIC products-data.js</html>');
-    assert.equal(api.setStoreDesign(dir, 'classic').ok, true);
-    assert.ok(fs.readFileSync(path.join(dir, 'public', 'index.html'), 'utf8').includes('CLASSIC'));
-    assert.ok(fs.readFileSync(path.join(dir, 'index.html'), 'utf8').includes('CLASSIC'));
-    assert.equal(api.storeDesignName(core.db), 'classic');
-    assert.equal(api.setStoreDesign(dir, 'nope').ok, false, 'неизвестный дизайн отклонён');
-    fs.writeFileSync(path.join(dir, 'public', 'index-classic.html'), 'мусор без каталога');
-    assert.equal(api.setStoreDesign(dir, 'classic').ok, false, 'файл без каталога не ставим');
-    fs.rmSync(dir, { recursive: true, force: true });
-  });
 
   it('parseManualItems понимает "12x2, 45" и бракует мусор', () => {
     assert.deepEqual(api.parseManualItems('1x2, 3'), { ok: true, items: [{ id: 1, qty: 2 }, { id: 3, qty: 1 }] });

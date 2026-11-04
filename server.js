@@ -192,7 +192,7 @@ function tgAdminMenuKb() {
     ['Последние заказы', 'Экспорт каталога'],
     ['Импорт товаров', 'Админы'],
     ['Сводка сайта', 'Фото на стоках'],
-    ['Промокоды', 'Дизайн'],
+    ['Промокоды'],
     ['Статистика', 'Журнал'],
     ['Бекап БД']
   ]).resize();
@@ -343,7 +343,6 @@ const defaultSettings = {
   legal_corr: '',
   delivery_methods: 'СДЭК,Почта России,Boxberry',
   extra_categories: '',
-  store_design: 'stealth',
   payment_details: 'СБП / Т-Банк / Сбер: +7 (900) 000-00-00 (Татьяна Ю.)\nВ комментарии к переводу укажите номер заказа.',
   show_payment: '1',
   promo_highlight: '0',
@@ -355,9 +354,7 @@ for (const [k, v] of Object.entries(defaultSettings)) initSettingStmt.run(k, v);
 
 // Что админка имеет право переписывать текстом. last_order_num — служебный счётчик
 // номеров заявок: его порча ломает выдачу кодов, поэтому его в списке нет.
-// store_design меняется только кнопками «Дизайн» (там проверка файла),
-// произвольный текст в этой настройке ломал бы витрину.
-const EDITABLE_SETTINGS = Object.keys(defaultSettings).filter((k) => k !== 'last_order_num' && k !== 'store_design');
+const EDITABLE_SETTINGS = Object.keys(defaultSettings).filter((k) => k !== 'last_order_num');
 function isEditableSetting(key) {
   return EDITABLE_SETTINGS.indexOf(String(key || '')) >= 0;
 }
@@ -748,28 +745,6 @@ function normalizeDelivery(conn, raw) {
   return list.includes(v) ? v : list[0];
 }
 
-// Два дизайна витрины. Файлы-источники живут рядом: public/index-stealth.html
-// и public/index-classic.html; активный собирается в public/index.html + index.html.
-// Админ переключает кнопкой в боте — квадратные метры кода не трогаем, только файлы.
-const STORE_DESIGNS = { stealth: 'Stealth Titanium', classic: 'Classic Light' };
-function storeDesignName(conn) {
-  const v = String((conn || db).prepare('SELECT value FROM settings WHERE key = ?').get('store_design')?.value || 'stealth').trim();
-  return STORE_DESIGNS[v] ? v : 'stealth';
-}
-function setStoreDesign(rootDir, name) {
-  const key = String(name || '').trim().toLowerCase();
-  if (!STORE_DESIGNS[key]) return { ok: false, error: 'Дизайн: stealth или classic.' };
-  const src = path.join(rootDir, 'public', `index-${key}.html`);
-  let html;
-  try { html = fs.readFileSync(src, 'utf8'); } catch (e) { return { ok: false, error: 'Файл дизайна не найден: ' + src }; }
-  if (!html.includes('products-data.js')) return { ok: false, error: 'Файл не похож на витрину: нет подключения каталога.' };
-  try {
-    fs.writeFileSync(path.join(rootDir, 'public', 'index.html'), html);
-    fs.writeFileSync(path.join(rootDir, 'index.html'), html);
-  } catch (e) { return { ok: false, error: 'Не записать файлы дизайна: ' + e.message }; }
-  setSetting('store_design', key);
-  return { ok: true, design: key, label: STORE_DESIGNS[key] };
-}
 
 function catalogShelves(conn) {
   const rows = conn.prepare('SELECT category, COUNT(*) AS c FROM products GROUP BY category ORDER BY c DESC').all();
@@ -2330,28 +2305,6 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     ctx.answerCbQuery(res.ok ? `Статус: ${res.status}` : res.error);
     if (res.ok) showOrderTg(ctx, res.code);
   });
-  function showDesignTg(ctx) {
-    const cur = storeDesignName(db);
-    ctx.reply(
-      'Дизайн витрины: сейчас «' + STORE_DESIGNS[cur] + '». Переключение меняет public/index.html и корень, дальше — «Экспорт каталога» + коммит.',
-      Markup.inlineKeyboard([
-        [Markup.button.callback((cur === 'stealth' ? '● ' : '') + 'Stealth Titanium', 'design_stealth'),
-          Markup.button.callback((cur === 'classic' ? '● ' : '') + 'Classic Light', 'design_classic')],
-      ])
-    );
-  }
-  tgBot.hears('Дизайн', (ctx) => {
-    if (!isTgAdmin(ctx)) return;
-    ctx.session = {};
-    showDesignTg(ctx);
-  });
-  tgBot.action(/^design_(stealth|classic)$/, (ctx) => {
-    if (!isTgAdmin(ctx)) return;
-    ctx.answerCbQuery();
-    const res = setStoreDesign(__dirname, ctx.match[1]);
-    if (!res.ok) return ctx.reply(res.error);
-    ctx.reply('Включён дизайн «' + res.label + '». Проверь витрину, затем жми «Экспорт каталога» и коммить.');
-  });
   tgBot.hears('Экспорт каталога', (ctx) => {    if (!isTgAdmin(ctx)) return;
     const preview = summarizeDiff(diffCatalog(fileCatalog(), catalogFromDb()));
     ctx.reply(
@@ -3052,11 +3005,11 @@ function maxPromoKb() {
   return [['Добавить промокод', 'Убрать промокод'], [hl ? 'Красные ценники: вкл' : 'Красные ценники: выкл'], ['Отмена']];
 }
 
-const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках'], ['Статистика', 'Журнал'], ['Промокоды', 'Дизайн'], ['Бекап БД', 'Отмена']];
+const MAX_MENU = [['Добавить часы', 'Товары и цены'], ['Реквизиты оплаты', 'Тексты и контакты'], ['Последние заказы', 'Экспорт каталога'], ['Импорт товаров', 'Админы'], ['Сводка сайта', 'Фото на стоках'], ['Статистика', 'Журнал'], ['Промокоды', 'Бекап БД'], ['Отмена']];
 const MAX_CANCEL = [['Отмена']];
 // Кнопки меню и навигации админки. Пока бот ждёт значение поля или шаг мастера,
 // нажатие такой кнопки обязано прервать ввод, а не уехать в него текстом.
-const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Категории', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Статистика', 'Журнал', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Дизайн', 'Дизайн: Stealth', 'Дизайн: Classic', 'Бекап БД', 'Добавить промокод', 'Убрать промокод', 'Красные ценники: вкл', 'Красные ценники: выкл', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
+const MAX_MENU_COMMANDS = new Set(['Добавить часы', 'Товары и цены', 'Полки', 'Реквизиты оплаты', 'Тексты и контакты', 'Доставка', 'Категории', 'Новая заявка', 'Последние заказы', 'Экспорт каталога', 'Импорт товаров', 'Сводка сайта', 'Фото на стоках', 'Статистика', 'Журнал', 'Админы', 'Добавить по ID', 'Добавить по имени', 'Промокоды', 'Бекап БД', 'Добавить промокод', 'Убрать промокод', 'Красные ценники: вкл', 'Красные ценники: выкл', 'К списку', 'К заявкам', 'Найти товар', 'Найти заявку', 'Отмена', 'Подтвердить экспорт', 'Выгрузить и опубликовать', 'Подтвердить публикация']);
 function maxIsMenuCommand(text) {
   const t = String(text || '').trim();
   return MAX_MENU_COMMANDS.has(t)
@@ -3630,17 +3583,6 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   }
   if (text === 'Админы') {
     return sendMaxMessage(senderId, maxAdminsText(senderId), maxAdminsKb());
-  }
-  if (text === 'Дизайн') {
-    const cur = storeDesignName(db);
-    return sendMaxMessage(senderId, 'Дизайн витрины: сейчас «' + STORE_DESIGNS[cur] + '». После смены — «Экспорт каталога» + коммит.', [['Дизайн: Stealth', 'Дизайн: Classic'], ['Отмена']]);
-  }
-  const designMatch = text.match(/^Дизайн: (Stealth|Classic)$/i);
-  if (designMatch) {
-    const key = designMatch[1].toLowerCase();
-    const res = setStoreDesign(__dirname, key);
-    if (!res.ok) return sendMaxMessage(senderId, res.error, MAX_MENU);
-    return sendMaxMessage(senderId, 'Включён дизайн «' + res.label + '». Проверь витрину, затем: «Экспорт каталога» + коммит.', MAX_MENU);
   }
   if (text === 'Промокоды') {
     return sendMaxMessage(senderId, `${promoRulesText(getSetting('promo_codes'))}\n\nПравило задаётся строкой «КОД ПРОЦЕНТ [БРЕНД] [minСУММА]», например «VIP20 20 GARMIN min100000». Скидку считает сервер по ценам своей базы, клиент присылает только код.`, maxPromoKb());

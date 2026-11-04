@@ -101,7 +101,7 @@ describe('квиз и состояние витрины', () => {
   });
 
   it('квиз-модалка есть во всех витринах и открывается/закрывается', () => {
-    for (const f of ['index.html', 'public/index.html', 'public/index-classic.html', 'public/index-stealth.html']) {
+    for (const f of ['index.html', 'public/index.html']) {
       const html = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
       assert.ok(html.includes('id="quiz-modal"'), f + ': quiz modal markup');
       for (const id of ['qz-goal-run', 'qz-goal-outdoor', 'qz-goal-classic', 'qz-goal-dive', 'qz-bud-low', 'qz-bud-mid', 'qz-bud-all']) {

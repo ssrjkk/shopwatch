@@ -124,7 +124,7 @@ describe('TG admins: несколько админов по ID и юзерней
     assert.deepEqual(rows.find((r) => r.value === '777'), { source: 'бот', kind: 'id', value: '777' });
   });
 
-  it('админка TG: бренд, доставки, категории, дизайн и ручная заявка проведены', () => {
+  it('админка TG: бренд, доставки, категории и ручная заявка проведены', () => {
     const { serverSrc } = require('./helpers/load');
     const src = serverSrc();
     const checks = [
@@ -140,10 +140,6 @@ describe('TG admins: несколько админов по ID и юзерней
       ["tg_cfg_legal_bik", "кнопка БИК в панели текстов"],
       ["tg_cfg_legal_corr", "кнопка К/с в панели текстов"],
       ["tg_cfg_extra_categories", "кнопка категорий в панели текстов"],
-      ["Дизайн", "пункт дизайна в админ-меню"],
-      ["design_stealth", "кнопка дизайна stealth"],
-      ["design_classic", "кнопка дизайна classic"],
-      ["setStoreDesign(__dirname", "применение дизайна пишет файлы"],
       ["Бекап БД", "кнопка бекапа в админ-меню"],
       ["handleBackupRequest(ctx)", "обработчик бекапа отдаёт файл"],
       ["pendingOrderAuth", "защита номеров от перебора"],
