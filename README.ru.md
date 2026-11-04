@@ -6,7 +6,7 @@
 ![Catalog: sharp model photos filling each card](docs/screenshots/catalog.jpg)
 ![Product page: large photo plus studio render](docs/screenshots/product.jpg)
 
-Storefront: a catalog of 395 products read from `products-data.js` (exported from the live
+Storefront: a catalog of 394 products read from `products-data.js` (exported from the live
 database together with their ids), which the server also uses to seed and upgrade the database;
 bestseller strip; burger menu with counters; filters in a bottom sheet (categories, model lines,
 sorting — a `Фильтры · N` button next to the `Все товары` heading); cart with checkout (full
@@ -218,15 +218,15 @@ neither corrupt the working file nor overwrite the backup.
 
 ## Storefront: speed
 
-Measured against the working catalog of 395 products, not eyeballed:
+Measured against the working catalog of 394 products, not eyeballed:
 
-- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 234 828 B → 48 243 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 165 944 B → 15 940 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
+- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 235 286 B → 48 206 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 172 256 B → 16 278 B. Images and responses under 1 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
 - **Windowed catalog grid.** Never more than 60 cards in the DOM, however far you scroll: spacers above and below hold the height of what is hidden, so the scrollbar does not jump. Before this the grid only ever grew — after scrolling to the end it held 347 cards and 3470 nodes instead of 60 and 600. The numeric check is in `tests/virtual.test.js`.
 - **Images sized to their slot.** The database baked in `w=600` although a card in the `max-w-md` layout is 181 px and a cart thumbnail is 64 px. The storefront now asks for `w=400` on a card, `w=700` on the product page and `w=160`/`w=140` for thumbnails. Unsplash URLs also get `fm=webp`, verified by fact — `Content-Type: image/webp`, a `RIFF…WEBP` signature, 7 786 B instead of 10 882 B per card (−28%). Other hosts (Wikimedia) are left as they are: they do not understand the width parameter.
 - **Photo cache.** `/uploads/...` is served with `Cache-Control: public, max-age=31536000, immutable` — the file name is unique per upload, so it cannot go stale. The storefront HTML itself cannot be cached forever (`max-age=0`), otherwise a price change would not appear until the visitor cleared the cache.
 - **Favorites use the same window.** The same limiter as in the catalog: over 60 cards never reach the DOM at any scroll depth.
 - **Database indexes.** `products(category)`, `products(is_hit)`, `orders(status)`, `orders(created_at)`: shelves, hits, summary filters and the 7-day order window are read through indexes, plans shown by `EXPLAIN QUERY PLAN`.
-- **What was not optimized, and why.** Catalog search: `getFiltered()` over 395 products costs 0.02–0.31 ms, and precomputing snippets would only add code. Reading the database under the server: `/api/state` answers in 5–11 ms end to end.
+- **What was not optimized, and why.** Catalog search: `getFiltered()` over 394 products costs 0.02–0.31 ms, and precomputing snippets would only add code. Reading the database under the server: `/api/state` answers in 5–11 ms end to end.
 
 ## Telegram Mini App
 
@@ -290,7 +290,7 @@ younger than 24 hours, otherwise `403`).
 - `tests/ui.test.js` — suggestions (built from the catalog, counters matching the result set and the active filter, Escape in two steps, the index rebuilt when the catalog changes, a digit in the query narrowing results), the filter sheet (heading `Все товары` / active filter, counter on the button, reset, dialog semantics for a screen reader), scroll-to-top appearing on scroll, the `Заказ принят` screen without an order, a phone typed from letters, broken `localStorage`, cart and favorites reset when the catalog is rebuilt (and kept when it is not), brand suggestions in one inflected form («Garmin», not «GARMIN Descent» next to it), the hidden MAX link, markup: tabs ending with the cart, the cart icon, Telegram/MAX logos in the support badge, and the product count in `og:description` matching the catalog length, and the sizes quoted in both READMEs matching the real byte length and brotli output of `index.html` and `products-data.js`
 - `tests/presets.test.js` — quick pick, facets, comparison and product-page extras: the count on the `Хиты` chip equals the length of the result it produces, preset bounds and the price fields intersect with a typed query, a swapped range is read as a window, the selection survives through the hash link and is cleared by reset, the `Фильтры · N` counter sees it, brand chips reproduce the brands in the catalog and their counts match the result length, a spec chip is not drawn when no position matches it, several facets intersect instead of widening, `brand=` and `spec=` travel through the link while an unknown key in the URL is ignored, the lightbox requests `w=1200` and labels the image, `javascript:`/`data:`/`vbscript:` never becomes an image source, recently-viewed dedupes and is capped, a catalog rebuild wipes it like cart and favorites, comparison is capped at four with a repeat press removing the item and its table carrying real fields with the name escaped, and JSON-LD carries real product fields with no `availability` while a `</script>` in a product name cannot break out, and the cart's promo field only shows what the server returned — on a static host the code is handed to the bot through the deep link instead of being discounted locally
 - `tests/helpers/dom.js` — shared harness: mounts the inline storefront script on fake elements
-- `tests/seo.test.js` — SEO, accessibility and CMS: `lang="ru"`, robots/canonical/title/description, Open Graph + Twitter Cards, Schema.org Store + SearchAction and Product, dynamic `document.title`, `<noscript>` catalog and a11y landmarks, zero-CLS cards (`width`/`height`, `alt`, `loading="lazy"`), XSS gates, export of all 395 products to WooCommerce/OpenCart/PrestaShop, catalog photo integrity (no cross-brand or cross-category collisions) and PDP gallery switching
+- `tests/seo.test.js` — SEO, accessibility and CMS: `lang="ru"`, robots/canonical/title/description, Open Graph + Twitter Cards, Schema.org Store + SearchAction and Product, dynamic `document.title`, `<noscript>` catalog and a11y landmarks, zero-CLS cards (`width`/`height`, `alt`, `loading="lazy"`), XSS gates, export of all 394 products to WooCommerce/OpenCart/PrestaShop, catalog photo integrity (no cross-brand or cross-category collisions) and PDP gallery switching
 
 ## CMS bridges (WooCommerce / OpenCart / PrestaShop)
 

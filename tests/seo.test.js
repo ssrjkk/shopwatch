@@ -32,7 +32,7 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     const descMatch = HTML.match(/<meta name="description" content="([^"]+)"/);
     assert.ok(descMatch, 'meta description присутствует');
     assert.ok(descMatch[1].length >= 80 && descMatch[1].length <= 220, `длина description оптимальна: ${descMatch[1].length}`);
-    assert.match(descMatch[1], /395/);
+    assert.match(descMatch[1], /394/);
   });
 
   it('2. Social SEO: полная разметка Open Graph (включая og:locale и og:site_name) и Twitter Cards', () => {
@@ -114,15 +114,15 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.equal(g.safeImageSrc('vbscript:msgbox(1)'), '');
   });
 
-  it('8. CMS-интеграция: экспорт 395 товаров в WooCommerce CSV, OpenCart CSV/SQL, PrestaShop CSV и нормализация вебхуков', () => {
+  it('8. CMS-интеграция: экспорт 394 товаров в WooCommerce CSV, OpenCart CSV/SQL, PrestaShop CSV и нормализация вебхуков', () => {
     const items = g.state.products;
-    assert.equal(items.length, 395);
+    assert.equal(items.length, 394);
     const wcCsv = cmsBridge.toWooCommerceCsv(items);
     const ocCsv = cmsBridge.toOpenCartCsv(items);
     const ocSql = cmsBridge.toOpenCartSql(items);
     const psCsv = cmsBridge.toPrestaShopCsv(items);
-    assert.ok(wcCsv.includes('Regular price') && wcCsv.split('\n').length >= 396);
-    assert.ok(ocCsv.includes('product_id;model;sku') && ocCsv.split('\n').length >= 396);
+    assert.ok(wcCsv.includes('Regular price') && wcCsv.split('\n').length >= 395);
+    assert.ok(ocCsv.includes('product_id;model;sku') && ocCsv.split('\n').length >= 395);
     assert.ok(ocSql.includes('INSERT INTO oc_product') && ocSql.includes('COMMIT;'));
     assert.ok(psCsv.includes('Product ID;Active (0/1)') && psCsv.split('\n').length >= 356);
     // Фото в выгрузках — абсолютные URL: WooCommerce/OpenCart/PrestaShop качают картинки по ссылкам
@@ -148,7 +148,7 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
 
   it('9. Catalog Photo Integrity: уникальные официальные фото, галерея реальных ракурсов в PDP работает', async () => {
     const products = g.state.products;
-    assert.equal(products.length, 395);
+    assert.equal(products.length, 394);
 
     // Все локальные фото каталога существуют на диске и весят больше 5 КБ
     for (const p of products) {
@@ -222,12 +222,16 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     for (const p of products.filter((x) => x.brand === 'SUUNTO')) {
       assert.match(p.image, /^uploads\/catalog\/(suunto-|0c0cc5828a34|fa58d622c06a|705b4833de45)/, `SUUNTO #${p.id} must use official shot, got ${p.image}`);
     }
-    // Casio: официальные кадры дилера-референса AllTime, локально; старые общие — только у legacy-позиций
+    // Casio: официальные кадры дилера-референса AllTime, локально. Старых общих
+    // плейсхолдеров (rangeman/dw5600) в каталоге больше нет — ни primary, ни галереи.
     const casioLegacy = new Set(['casio-rangeman.jpg', 'casio-dw5600.jpg']);
     for (const p of products.filter((x) => x.brand === 'CASIO')) {
       const f = String(p.image).split('/').pop();
-      const ok = String(p.image).startsWith('uploads/catalog/casio-') || (casioLegacy.has(f) && [196, 197, 198].includes(p.id));
-      assert.ok(ok, `CASIO #${p.id} must use official shot, got ${p.image}`);
+      assert.ok(String(p.image).startsWith('uploads/catalog/casio-'), `CASIO #${p.id} must use official shot, got ${p.image}`);
+      assert.ok(!casioLegacy.has(f), `CASIO #${p.id} still uses legacy placeholder ${f}`);
+      for (const g of p.images || []) {
+        assert.ok(!casioLegacy.has(String(g).split('/').pop()), `CASIO #${p.id} gallery still uses legacy placeholder ${g}`);
+      }
     }
 
     // Verify Deeper uses bf348a64fec3.jpg
