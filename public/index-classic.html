@@ -909,7 +909,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
 <section id="view-cart" class="hidden space-y-4">
   <div class="flex items-center justify-between">
     <h2 class="font-display text-xl font-extrabold text-white inline-flex items-center gap-2.5"><svg class="w-5 h-5 text-[#38BDF8]" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg><span>Корзина</span></h2>
-    <div class="flex items-center gap-2.5"><button onclick="copyCartShareLink()" class="text-xs font-bold text-[#E2E8F0] bg-white/[0.04] px-3.5 py-1.5 rounded-full border border-[#38BDF8]/30">🔗 Поделиться корзиной</button><a href="#/catalog" class="text-xs font-bold text-[#E2E8F0]">← В каталог</a></div>
+    <div class="flex items-center gap-2.5"><button onclick="clearCart()" class="text-xs font-bold text-rose-300 bg-white/[0.04] px-3.5 py-1.5 rounded-full border border-rose-400/30">Очистить</button><button onclick="copyCartShareLink()" class="text-xs font-bold text-[#E2E8F0] bg-white/[0.04] px-3.5 py-1.5 rounded-full border border-[#38BDF8]/30">🔗 Поделиться корзиной</button><a href="#/catalog" class="text-xs font-bold text-[#E2E8F0]">← В каталог</a></div>
   </div>
   <div id="cart-list" class="space-y-2.5"></div>
   <div class="bg-[#0E121B] rounded-3xl p-6 border border-white/10 space-y-4 shadow-xl">
@@ -1153,7 +1153,7 @@ let state={
   promoDiscount:0,
   promoDiscountRub:0,
   favorites:safeParse(localStorage.getItem('watchop_favs'),'[]') instanceof Array ? safeParse(localStorage.getItem('watchop_favs'),[]) : [],
-  cart:safeParse(localStorage.getItem('watchop_cart'),'[]') instanceof Array ? safeParse(localStorage.getItem('watchop_cart'),[]) : [],
+  cart:sanitizeCart(safeParse(localStorage.getItem('watchop_cart'),'[]')),
   simOrders:[],
   lastOrderAt:0,
   currentProductId:null,
@@ -2893,6 +2893,23 @@ function changeQty(id,d){
   else line.qty=Math.min(line.qty,99);
   saveCart();
   renderCart();
+}
+function sanitizeCart(raw){
+  if(!Array.isArray(raw))return [];
+  const out=[];
+  for(const l of raw){
+    const id=Number(l&&l.id),qty=Number(l&&l.qty);
+    if(!Number.isSafeInteger(id)||id<=0)continue;
+    out.push({id,qty:Number.isSafeInteger(qty)?Math.min(Math.max(qty,1),99):1});
+  }
+  return out;
+}
+function clearCart(){
+  if(!state.cart.length){showToast('Корзина уже пуста');return;}
+  state.cart=[];
+  saveCart();
+  renderCart();
+  showToast('Корзина очищена');
 }
 function removeFromCart(id){
   state.cart=state.cart.filter(x=>x.id!==id);

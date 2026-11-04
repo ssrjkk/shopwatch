@@ -1936,7 +1936,9 @@ async function handleApiOrder(req, res) {
     : `Итого: ${Number(serverTotal).toLocaleString('ru-RU')} ₽`;
   const clientTag = tgUser ? `\nКлиент TG: @${tgUser.username || tgUser.first_name} (id ${tgUser.id})` : '';
   const custLine = `\n👤 ${customer.fio}\n📞 ${customer.phone}${customer.email ? `\n✉️ ${customer.email}` : ''}\n📍 ${customer.address || '—'}\n🚚 ${customer.delivery}`;
-  const notifyMsg = `НОВАЯ ЗАЯВКА ${orderCode}\n\nСостав:\n${itemsText}\n\n${totalLine}${promoLine}${clientTag}${custLine}\nРеквизиты:\n${getSetting('payment_details')}`;
+  const payLineRaw = String(getSetting('payment_details') || '').trim();
+  const payLine = payLineRaw ? `Реквизиты:\n${payLineRaw}` : 'Демо-режим: реквизитов нет, оплата не принимается.';
+  const notifyMsg = `НОВАЯ ЗАЯВКА ${orderCode}\n\nСостав:\n${itemsText}\n\n${totalLine}${promoLine}${clientTag}${custLine}\n${payLine}`;
 
   notifyTgAdmins(notifyMsg, {
     ...Markup.inlineKeyboard([
@@ -1974,7 +1976,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       const payload = ctx.startPayload;
       const codeMatch = String(payload || '').match(/TG-\d+/i);
       if (codeMatch) return handleSiteOrderPayload(ctx, codeMatch[0].toUpperCase(), payload);
-      await ctx.reply('Здравствуйте! Магазин Watchop. Отправьте номер заказа (например, TG-1176), менеджер проверит наличие и пришлет реквизиты.');
+      await ctx.reply('Здравствуйте! Демо-витрина «Вектор» (учебный проект). Отправьте номер демо-заявки (например, TG-1176). Заказы не обрабатываются, менеджеров нет.');
       if (shopKb.length) return ctx.reply('Каталог и заказ в 1 клик — прямо в Telegram:', Markup.inlineKeyboard([shopKb]));
       return;
     }
@@ -2439,7 +2441,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       if (m) return handleClientOrderLookupTg(ctx, m[0].toUpperCase());
       const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
       notifyTgAdmins(`Сообщение от клиента (${tag}, ID ${ctx.from.id}):\n${txt}`);
-      return ctx.reply('Спасибо! Менеджер получил сообщение и скоро ответит.');
+      return ctx.reply('Спасибо! Демо-режим: сообщения никуда не уходят, менеджеров нет. Это учебный проект.');
     }
     const s = ctx.session || {};
     if (txt === 'Отмена') { ctx.session = {}; return ctx.reply('Отменено. Выберите действие:', tgAdminMenuKb()); }
@@ -2627,7 +2629,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       notifyTgAdmins(
         `⚠️ ЗАКАЗ ${code} НЕ СОЗДАН: каталог на витрине расходится с базой\n👤 ${clientTag} (ID: ${ctx.from.id})\n${detail}\nНужно обновить файл: кнопка «Экспорт каталога» в админке, затем коммит products-data.js.`
       );
-      return ctx.reply(`Каталог на сайте сейчас расходится с нашей базой, поэтому заявку по этим позициям не создали, чтобы не перепутать товар. Напишите менеджеру — подтвердим наличие и цену вручную.`);
+      return ctx.reply(`Каталог демо-витрины сейчас расходится с базой, поэтому заявку по этим позициям не создали. Демо-режим: заказы не обрабатываются.`);
     }
     // Одинаковый номер у двух покупателей статической витрины — не их вина: счётчик
     // живёт в их браузере. Совпал состав — показываем существующую заявку,
@@ -2669,8 +2671,8 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       }
     }
     if (!order) {
-      if (parsed.unknown.length) return ctx.reply(`Не нашёл в каталоге позиции: ${parsed.unknown.join(', ')}. Отправьте заказ заново или напишите менеджеру.`);
-      return ctx.reply('Не удалось распознать состав заказа. Отправьте номер (например, TG-1176) или напишите менеджеру.');
+      if (parsed.unknown.length) return ctx.reply(`Не нашёл в каталоге позиции: ${parsed.unknown.join(', ')}. Отправьте заказ заново (демо-режим).`);
+      return ctx.reply('Не удалось распознать состав заказа. Отправьте номер (например, TG-1176). Демо-режим: заказы не обрабатываются.');
     }
     try { recordBotOpened(db, String(ctx.from.id), order.order_code); } catch (e) {}
     return handleClientOrderLookupTg(ctx, order.order_code);
@@ -2693,7 +2695,8 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const code = order.order_code;
     const items = JSON.parse(order.items_json || '[]');
     const list = items.map((i) => `• ${i.name} (${Number(i.price).toLocaleString('ru-RU')} ₽)`).join('\n');
-    ctx.reply(`Ваш заказ ${code} найден!\n\n${list}\nИтого: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\nРеквизиты:\n${getSetting('payment_details')}`);
+    const payRaw = String(getSetting('payment_details') || '').trim();
+    ctx.reply(`Ваш заказ ${code} найден!\n\n${list}\nИтого: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\n${payRaw ? `Реквизиты:\n${payRaw}` : 'Демо-режим: реквизитов нет, оплата не принимается.'}`);
     const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
     notifyTgAdmins(`Клиент ${tag} обратился по заказу ${code}`);
   }
@@ -2720,7 +2723,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     }
     if (pend.tries >= 3) {
       pendingOrderAuth.delete(requester);
-      return ctx.reply('Трижды мимо — проверка сброшена. Напишите номер заявки заново или обратитесь к менеджеру.');
+      return ctx.reply('Трижды мимо — проверка сброшена. Напишите номер заявки заново (демо-режим, менеджеров нет).');
     }
     return ctx.reply('Не совпало с телефоном из заказа. Осталось попыток: ' + (3 - pend.tries) + '.');
   }
@@ -2731,7 +2734,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const admin = tgAdminIdList().includes(requester);
     if (admin || String(order.owner_tg || '') === requester) return showOrderToRequester(ctx, order);
     if (order.owner_tg && String(order.owner_tg) !== requester) {
-      return ctx.reply(`Заказ ${code} оформлен другим покупателем. Состав и реквизиты пришлёт менеджер — напишите, если нужна помощь.`);
+      return ctx.reply(`Заказ ${code} оформлен другим покупателем (демо-режим).`);
     }
     if (!orderPhoneLast4(order)) {
       bindOrderOwner(order.order_code, requester);
@@ -3787,7 +3790,7 @@ try {
   if (!last || Date.now() - Date.parse(last) > 24 * 3600 * 1000) runBackup('startup: старше суток');
 } catch (e) { console.error('Backup check failed:', e.message); }
 setInterval(() => runBackup('scheduled: раз в сутки'), 24 * 3600 * 1000).unref?.();
-const server = process.env.HOST ? app.listen(PORT, HOST, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`)) : app.listen(PORT, () => console.log(`Watchop running on http://${HOST}:${server.address().port}`));
+const server = process.env.HOST ? app.listen(PORT, HOST, () => console.log(`Vektor demo running on http://${HOST}:${server.address().port}`)) : app.listen(PORT, () => console.log(`Vektor demo running on http://${HOST}:${server.address().port}`));
 
 function gracefulShutdown() {
   try { if (server && server.close) server.close(); } catch (e) {}
