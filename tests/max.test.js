@@ -15,7 +15,7 @@ describe('MAX bot (parity with Telegram)', () => {
     memdb.exec(`CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, old_price INTEGER DEFAULT 0, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4, seed_key TEXT);
 CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQUE, items_json TEXT, total INTEGER, status TEXT DEFAULT 'Новый', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, customer_json TEXT, owner_tg TEXT, owner_max TEXT, promo_code TEXT, discount INTEGER DEFAULT 0);`);
-    const seed = { payment_details: 'PAY', show_payment: '1', hero_title: 'H', phone: 'P', email: 'E', address: 'A', delivery_methods: 'СДЭК,Почта России,Boxberry', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I' };
+    const seed = { payment_details: 'PAY', show_payment: '1', hero_title: 'H', phone: 'P', email: 'E', address: 'A', delivery_methods: 'СДЭК,Почта России,Boxberry', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I', legal_account: '', legal_bank: '', legal_bik: '', legal_corr: '' };
     for (const [k, v] of Object.entries(seed)) memdb.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(k, v);
     memdb.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('GARMIN', 'fēnix', 'Спортивные часы', 'Fenix 8', 60000, 'img', 's');
     memdb.prepare('INSERT INTO products (brand, series, category, name, price, image, specs) VALUES (?,?,?,?,?,?,?)').run('APPLE', 'Apple Watch', 'Спортивные часы', 'Ultra 2', 70000, 'img', 's');
@@ -23,7 +23,7 @@ CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, order_code TEXT UNIQU
 
     const prelude = `
 const db = memdb;
-const defaultSettings = { hero_title: 'H', phone: 'P', email: 'E', address: 'A', delivery_methods: 'СДЭК,Почта России,Boxberry', extra_categories: '', store_design: 'stealth', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I', legal_ogrnip: 'O', payment_details: 'PAY', show_payment: '1', last_order_num: '1175' };
+const defaultSettings = { hero_title: 'H', phone: 'P', email: 'E', address: 'A', delivery_methods: 'СДЭК,Почта России,Boxberry', extra_categories: '', store_design: 'stealth', tg_link: 'T', max_link: 'M', legal_name: 'L', legal_inn: 'I', legal_ogrnip: 'O', legal_account: '', legal_bank: '', legal_bik: '', legal_corr: '', payment_details: 'PAY', show_payment: '1', last_order_num: '1175' };
 ${extractSettingsGuard()}
 const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?').get(k)?.value ?? '';
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
@@ -207,6 +207,27 @@ ${extractBackupBlock()}
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Телефон'));
     await api.handleMaxUpdate(api.upd(999, 'Admin', '+7-000'));
     assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='phone'").get().value, '+7-000');
+  });
+
+  it('реквизиты ИП правятся кнопками «Р/с / Банк / БИК / К/с»', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Тексты и контакты'));
+    const kb = JSON.stringify(api.lastTo(999).body.attachments);
+    for (const label of ['Р/с', 'Банк', 'БИК', 'К/с']) assert.ok(kb.includes(label), `нет кнопки «${label}»`);
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Р/с'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '40802810000000000001'));
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='legal_account'").get().value, '40802810000000000001');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Тексты и контакты'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Банк'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Тест-Банк'));
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='legal_bank'").get().value, 'Тест-Банк');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Тексты и контакты'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'БИК'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '044525000'));
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='legal_bik'").get().value, '044525000');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Тексты и контакты'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'К/с'));
+    await api.handleMaxUpdate(api.upd(999, 'Admin', '30101810000000000000'));
+    assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='legal_corr'").get().value, '30101810000000000000');
   });
 
   it('права админа: экран «Тексты и контакты» покрывает все настраиваемые поля', async () => {

@@ -1063,7 +1063,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
       <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10"><div class="text-xs text-slate-400">Электронная почта</div><a id="ui-email" href="mailto:info@example.invalid" class="font-bold text-xs text-white mt-1 block">info@example.invalid</a></div>
       <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10"><div class="text-xs text-slate-400">Мессенджеры</div><a href="#contacts" target="_blank" class="font-extrabold text-xs text-[#E2E8F0] mt-1 block">Написать в Telegram</a></div>
     </div>
-    <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10 text-xs text-slate-400"><div class="font-bold text-white mb-1">Юридическая информация</div><div id="ui-legal-name">«Вектор»</div><div>ИНН <span id="ui-legal-inn">по запросу</span> · ОГРНИП <span id="ui-legal-ogrnip">по запросу</span></div></div>
+    <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10 text-xs text-slate-400"><div class="font-bold text-white mb-1">Юридическая информация</div><div id="ui-legal-name">ИП Жукова Татьяна Юрьевна</div><div>ИНН <span id="ui-legal-inn">по запросу</span> · ОГРНИП <span id="ui-legal-ogrnip">304362725400110</span></div><div id="ui-legal-account-row" style="display:none">Р/с <span id="ui-legal-account"></span></div><div id="ui-legal-bank-row" style="display:none">Банк: <span id="ui-legal-bank"></span></div><div id="ui-legal-bik-row" style="display:none">БИК <span id="ui-legal-bik"></span></div><div id="ui-legal-corr-row" style="display:none">К/с <span id="ui-legal-corr"></span></div></div>
   </div>
 </section>
 
@@ -1120,7 +1120,7 @@ html.no-transitions *, html.no-transitions *::before, html.no-transitions *::aft
     </div>
     <div class="text-[11px] text-soft border-t border-white/[0.07] pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
       <div>
-        <span id="ft-legal-name" class="font-bold text-slate-300">«Вектор»</span> · ИНН <span id="ft-legal-inn">по запросу</span> · ОГРНИП <span id="ft-legal-ogrnip">по запросу</span>
+        <span id="ft-legal-name" class="font-bold text-slate-300">ИП Жукова Татьяна Юрьевна</span> · ИНН <span id="ft-legal-inn">по запросу</span> · ОГРНИП <span id="ft-legal-ogrnip">304362725400110</span><span id="ft-legal-account-row" style="display:none"> · Р/с <span id="ft-legal-account"></span></span><span id="ft-legal-bank-row" style="display:none"> · <span id="ft-legal-bank"></span></span>
       </div>
       <div>© Вектор Atelier, 2018–2026. Все права защищены.</div>
     </div>
@@ -1206,7 +1206,11 @@ let state={
     max_link:'',
     legal_name:'«Вектор»',
     legal_inn:'по запросу',
-    legal_ogrnip:'по запросу',
+    legal_ogrnip:'304362725400110',
+    legal_account:'',
+    legal_bank:'',
+    legal_bik:'',
+    legal_corr:'',
     payment_details:'',
     show_payment:'0'
   },
@@ -1658,6 +1662,13 @@ function applySettingsToUI(){
   setTxt('ft-legal-name',s.legal_name);
   setTxt('ft-legal-inn',s.legal_inn);
   setTxt('ft-legal-ogrnip',s.legal_ogrnip);
+  const setReq=(rowId,valId,v)=>{const r=document.getElementById(rowId),el=document.getElementById(valId);const str=String(v||'').trim();if(el&&v!=null)el.textContent=str;if(r)r.style.display=str?'':'none';};
+  setReq('ui-legal-account-row','ui-legal-account',s.legal_account);
+  setReq('ui-legal-bank-row','ui-legal-bank',s.legal_bank);
+  setReq('ui-legal-bik-row','ui-legal-bik',s.legal_bik);
+  setReq('ui-legal-corr-row','ui-legal-corr',s.legal_corr);
+  setReq('ft-legal-account-row','ft-legal-account',s.legal_account);
+  setReq('ft-legal-bank-row','ft-legal-bank',s.legal_bank);
   setHref('ui-consult-btn',s.tg_link);
   setHref('ui-float-tg',s.tg_link);
   setHref('ui-float-max',s.max_link);

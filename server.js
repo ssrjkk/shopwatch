@@ -337,6 +337,10 @@ const defaultSettings = {
   legal_name: 'ИП Жукова Татьяна Юрьевна',
   legal_inn: '0000000000',
   legal_ogrnip: '304362725400110',
+  legal_account: '',
+  legal_bank: '',
+  legal_bik: '',
+  legal_corr: '',
   delivery_methods: 'СДЭК,Почта России,Boxberry',
   extra_categories: '',
   store_design: 'stealth',
@@ -2196,7 +2200,9 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       [Markup.button.callback('Адрес', 'tg_cfg_address')],
       [Markup.button.callback('Доставка', 'tg_cfg_delivery_methods'), Markup.button.callback('Категории', 'tg_cfg_extra_categories')],
       [Markup.button.callback('Ссылка ТГ', 'tg_cfg_tg_link'), Markup.button.callback('Ссылка MAX', 'tg_cfg_max_link')],
-      [Markup.button.callback('ИП ФИО', 'tg_cfg_legal_name'), Markup.button.callback('ИНН', 'tg_cfg_legal_inn'), Markup.button.callback('ОГРНИП', 'tg_cfg_legal_ogrnip')]
+      [Markup.button.callback('ИП ФИО', 'tg_cfg_legal_name'), Markup.button.callback('ИНН', 'tg_cfg_legal_inn'), Markup.button.callback('ОГРНИП', 'tg_cfg_legal_ogrnip')],
+      [Markup.button.callback('Р/с', 'tg_cfg_legal_account'), Markup.button.callback('Банк', 'tg_cfg_legal_bank')],
+      [Markup.button.callback('БИК', 'tg_cfg_legal_bik'), Markup.button.callback('К/с', 'tg_cfg_legal_corr')]
     ]));
   });
   tgBot.action(/^tg_cfg_(.+)$/, (ctx) => {
@@ -3241,7 +3247,8 @@ async function answerMaxOrderAuth(senderId, senderName, digits) {
 const MAX_CFG_BUTTONS = {
   'Баннер': 'hero_title', 'Телефон': 'phone', 'Email': 'email', 'Адрес': 'address',
   'Доставка': 'delivery_methods', 'Категории': 'extra_categories',
-  'Ссылка ТГ': 'tg_link', 'Ссылка MAX': 'max_link', 'ИП': 'legal_name', 'ИНН': 'legal_inn', 'ОГРНИП': 'legal_ogrnip'
+  'Ссылка ТГ': 'tg_link', 'Ссылка MAX': 'max_link', 'ИП': 'legal_name', 'ИНН': 'legal_inn', 'ОГРНИП': 'legal_ogrnip',
+  'Р/с': 'legal_account', 'Банк': 'legal_bank', 'БИК': 'legal_bik', 'К/с': 'legal_corr'
 };
 async function handleMaxUpdate(upd) {
   if (upd.update_type === 'message_callback' && upd.callback) {
@@ -3681,7 +3688,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     return sendMaxMessage(senderId, `Показ реквизитов: ${next === '1' ? 'Включен' : 'Выключен'}`, MAX_MENU);
   }
   if (text === 'Тексты и контакты') {
-    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес', 'Доставка'], ['Категории'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН'], ['ОГРНИП', 'Отмена']]);
+    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес', 'Доставка'], ['Категории'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН', 'ОГРНИП'], ['Р/с', 'Банк'], ['БИК', 'К/с', 'Отмена']]);
   }
   if (MAX_CFG_BUTTONS[text]) {
     const key = MAX_CFG_BUTTONS[text];

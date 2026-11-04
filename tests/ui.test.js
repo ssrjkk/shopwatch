@@ -333,6 +333,31 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.equal(Number(m[1]), SEED.length, `витрина обещает ${m && m[1]} моделей, в каталоге ${SEED.length}`);
   });
 
+  it('реквизиты организации показываются в контактах и подвале, пустые скрыты', () => {
+    const keep = { ...g.state.settings };
+    g.state.settings = {
+      ...g.state.settings,
+      legal_name: 'ИП Тест', legal_inn: '123456789012', legal_ogrnip: '304000000000000',
+      legal_account: '40802810000000000001', legal_bank: 'Тест-Банк', legal_bik: '044525000', legal_corr: '30101810000000000000',
+    };
+    g.applySettingsToUI();
+    const doc = g.document;
+    assert.equal(doc.getElementById('ui-legal-account').textContent, '40802810000000000001');
+    assert.equal(doc.getElementById('ui-legal-bank').textContent, 'Тест-Банк');
+    assert.notEqual(doc.getElementById('ui-legal-account-row').style.display, 'none');
+    assert.notEqual(doc.getElementById('ui-legal-bik-row').style.display, 'none');
+    assert.ok(doc.getElementById('ft-legal-account').textContent.includes('40802810000000000001'));
+    assert.notEqual(doc.getElementById('ft-legal-bank-row').style.display, 'none');
+    g.state.settings = { ...g.state.settings, legal_account: '', legal_bank: '', legal_bik: '', legal_corr: '' };
+    g.applySettingsToUI();
+    assert.equal(doc.getElementById('ui-legal-account-row').style.display, 'none');
+    assert.equal(doc.getElementById('ui-legal-corr-row').style.display, 'none');
+    assert.equal(doc.getElementById('ft-legal-account-row').style.display, 'none');
+    assert.equal(doc.getElementById('ft-legal-bank-row').style.display, 'none');
+    g.state.settings = keep;
+    g.applySettingsToUI();
+  });
+
   it('размеры файлов витрины в README совпадают с фактическими (обе языки)', () => {
     const zlib = require('zlib');
     const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'));
