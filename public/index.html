@@ -1242,11 +1242,9 @@ function syncCatalogFp(){
       state.favorites=[];
       state.recent=[];
       state.recentIds=[];
-      state.watchlist=[];
       localStorage.setItem('watchop_cart','[]');
       localStorage.setItem('watchop_favs','[]');
       localStorage.setItem('watchop_recent','[]');
-      localStorage.setItem('watchop_watchlist','[]');
       try{localStorage.setItem('watchop_compare','[]');}catch(_){}
       state.compare=[];
       localStorage.setItem('watchop_catfp',fp);
@@ -1443,22 +1441,6 @@ function copyCompareShareLink() {
   } catch (e) {}
   showToast('Ссылка на сравнение скопирована');
   return hash;
-}
-function togglePriceWatch(id) {
-  const n = Number(id);
-  if (!n) return false;
-  const list = (state.watchlist || []).map(Number);
-  const idx = list.indexOf(n);
-  if (idx >= 0) list.splice(idx, 1);
-  else list.push(n);
-  state.watchlist = list;
-  try { localStorage.setItem('watchop_watchlist', JSON.stringify(state.watchlist)); } catch (e) {}
-  return idx < 0;
-}
-function watchPriceTgLink(p) {
-  const base = String((state.settings && state.settings.tg_link) || '#contacts').split('?')[0].replace(/\/$/, '');
-  const id = Number(p && p.id) || 0;
-  return `${base}?start=WATCH_${id}`;
 }
 function toggleCompareDiffOnly(){
   state.compareDiffOnly = !state.compareDiffOnly;
@@ -2525,10 +2507,6 @@ function openProduct(id){
             <input id="bat-gps-hours" type="range" min="0" max="20" value="4" oninput="updateBatteryCalc(${p.id})" class="flex-1 min-w-[100px] accent-[#0E9F6E]" />
             <label class="inline-flex items-center gap-1 cursor-pointer"><input id="bat-aod-toggle" type="checkbox" onchange="updateBatteryCalc(${p.id})" /><span>AOD</span></label>
             <label class="inline-flex items-center gap-1 cursor-pointer"><input id="bat-solar-toggle" type="checkbox" onchange="updateBatteryCalc(${p.id})" /><span>Solar</span></label>
-          </div>
-          <div class="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between gap-2">
-            <a id="price-watch-link" href="${esc(watchPriceTgLink(p))}" target="_blank" rel="noopener" onclick="togglePriceWatch(${p.id})" class="text-[11px] font-semibold text-brand hover:underline">🔔 Уведомить о скидке в Telegram</a>
-            <span class="text-[10px] text-gray-500 font-mono">Алерт в бот при уценке</span>
           </div>
         </div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-xs text-slate-300 space-y-2 mb-4"><div class="flex justify-between"><span class="text-slate-400">Референс</span><span class="font-mono font-bold text-white">REF-${String(p.id).padStart(4,'0')}</span></div><div class="flex justify-between"><span class="text-slate-400">Мануфактура</span><span class="font-semibold text-white">${esc(p.brand)}</span></div><div class="flex justify-between"><span class="text-slate-400">Коллекция</span><span class="font-semibold text-white">${esc(p.series)}</span></div><div class="flex justify-between"><span class="text-slate-400">Корпус и калибр</span><span class="font-mono font-semibold text-[#E2E8F0]">${pal.sizeLabel}</span></div><div class="flex justify-between"><span class="text-slate-400">Гарантия (пример наполнения)</span><span class="font-semibold text-[#10B981]">12 месяцев</span></div></div><p class="text-xs text-slate-400 leading-relaxed mb-5">${esc(p.specs||'Оригинальные часы с гарантией 12 месяцев.')}<br><br>${esc(CAT_DESC[p.category]||'Оригинальный экземпляр с официальной гарантией 12 месяцев, заводской комплектацией и проверкой перед отправкой.')}</p><div class="space-y-2.5"><button onclick="addToCart(event,${p.id});switchTab('cart')" class="w-full btn-luxury-gold font-extrabold text-sm py-3.5 rounded-2xl inline-flex items-center justify-center gap-2">${CART_TROLLEY_SVG}<span>В корзину — ${Number(p.price).toLocaleString('ru-RU')} ₽</span></button><div class="grid grid-cols-2 gap-2.5"><button onclick="quickOrder(event,${p.id})" class="w-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs py-3 rounded-xl">Резерв в 1 клик</button><button onclick="toggleCompare(event,${p.id})" class="w-full bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 text-slate-200 font-semibold text-xs py-3 rounded-xl">⚖ В сравнение</button></div><div class="grid grid-cols-1 gap-2.5"><a href="${tgOrderLink('consult')}" target="_blank" class="block text-center w-full bg-white/[0.04] hover:bg-white/[0.09] border border-[#38BDF8]/35 text-[#E2E8F0] font-bold text-xs py-3 rounded-xl">Консьерж</a></div></div></div></div>${relHTML}`;
   showView('product');

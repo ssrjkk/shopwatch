@@ -347,10 +347,35 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     for (const f of ['index.html', 'public/index.html']) {
       const html = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
       for (const needle of ['id="theme-btn"', 'toggleTheme(', 'applyTheme(', "localStorage.getItem('app_theme')", 'body.stealth-edition', 'body.dark-theme',
-                            'openCallbackModal', 'openTradeInModal', 'openDeliveryCalc', 'openLightbox(', 'id="hits-promo-btn"', 'Промоцены']) {
+                            'openCallbackModal', 'openTradeInModal', 'openDeliveryCalc', 'openLightbox(', 'id="hits-promo-btn"', 'Промоцены',
+                            'togglePriceWatch', 'watchPriceTgLink', 'start=WATCH_', 'price-watch-link']) {
         assert.ok(!html.includes(needle), f + ': остался хвост темы — ' + needle);
       }
     }
+  });
+
+  it('документы не обещают то, чего в проекте уже нет', () => {
+    const docs = ['README.md', 'README.ru.md', 'cms/README-CMS.md', 'docs/launch-checklist.md'];
+    // Удалённые фичи и старые имена: ни в одном документе упоминать их нельзя.
+    const gone = ['Лайтбокс', 'лайтбокс', 'lightbox', 'Lightbox', 'index-stealth', 'index-classic',
+                 'store_design', 'push-update', 'Watchop', 'ВЕКТОР', 'dark theme', 'Dark theme',
+                 'тёмная тема', 'Тёмная тема'];
+    for (const f of docs) {
+      const text = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+      for (const w of gone) assert.ok(!text.includes(w), f + ': упоминает то, чего больше нет — ' + w);
+    }
+    // Кнопка «Дизайн» в админке: её нет ни в одном описании меню.
+    for (const f of ['README.md', 'README.ru.md']) {
+      const text = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+      assert.ok(!/`Дизайн`/.test(text), f + ': в описании меню осталась кнопка «Дизайн»');
+    }
+    // Число позиций в cms-доке обязано совпадать с каталогом, который там лежат выгрузки.
+    const catalog = require(path.join(__dirname, '..', 'products-data.js'));
+    const rows = (Array.isArray(catalog) ? catalog : catalog.products).length;
+    const cms = fs.readFileSync(path.join(__dirname, '..', 'cms', 'README-CMS.md'), 'utf8');
+    assert.ok(cms.includes(rows + ' позиц'), 'cms/README-CMS.md: нет актуального числа ' + rows);
+    assert.equal(/355/.test(cms), false, 'cms/README-CMS.md: остался счётчик старого каталога');
+    assert.equal(/\b35\d\b/.test(cms), false, 'cms/README-CMS.md: остался счётчик старого каталога');
   });
 
   it('размеры файлов витрины в README совпадают с фактическими (обе языки)', () => {
