@@ -218,9 +218,10 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     for (const p of products.filter((x) => x.brand === 'COROS')) {
       assert.match(p.image, /^uploads\/catalog\/(coros-|b51f6af2a838)/, `COROS #${p.id} must use its own official photo`);
     }
-    // Suunto: официальные кадры suunto.com, локально
+    // Suunto: официальные кадры suunto.com, локально.
+    // Позиции 24/142 (Vertical Canyon) — primary из белого референса 24-r0/24-r1.
     for (const p of products.filter((x) => x.brand === 'SUUNTO')) {
-      assert.match(p.image, /^uploads\/catalog\/(suunto-|0c0cc5828a34|fa58d622c06a|705b4833de45)/, `SUUNTO #${p.id} must use official shot, got ${p.image}`);
+      assert.match(p.image, /^uploads\/catalog\/(suunto-|0c0cc5828a34|fa58d622c06a|705b4833de45|\d+-r\d+\.jpg)/, `SUUNTO #${p.id} must use official shot, got ${p.image}`);
     }
     // Casio: официальные кадры дилера-референса AllTime, локально. Старых общих
     // плейсхолдеров (rangeman/dw5600) в каталоге больше нет — ни primary, ни галереи.
@@ -301,14 +302,28 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
       assert.ok(!garminWatchImgs.has(p.image), `Brand ${p.brand} product #${p.id} collides with Garmin image ${p.image}`);
     }
 
-    // Покрытие ракурсами: у каждой позиции от 1 до 5 реальных кадров, большинство — с галереей.
-    // Одиночные фото допустимы только там, где у референса нет больше кадров:
-    // аксессуары с одним официальным кадром, снятые с производства модели, Huawei (официальный сайт недоступен).
+    // Покрытие ракурсами: норма — 4–5 реальных кадров на позицию (primary + галерея).
+    // Исключения — только там, где у официального референса физически нет больше
+    // белых кадров (проверено вручную по сайтам производителей):
+    // - аксессуары Garmin с 1–2 официальными кадрами (крепления, кабели, чехлы,
+    //   датчики, ошейники, трансмиттеры, стекла, ремешки QuickFit)
+    // - снятый с CDN Instinct 2X (12, 75, 76), Suunto Canyon (24, 142 — всего 3 белых),
+    //   Huawei без части цветов (30, 171, 172, 173, 174, 180), Watch 6 Classic Silver (137),
+    //   GTS 4 Mini Mint (187), Baby-G BGD-565U-1 (395)
+    const FEWER_THAN_4_OK = new Set([
+      12, 75, 76, 219, 226, 227, 228, 229, 230, 231, 232, 233, 256, 279, 322, 328,
+      329, 330, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 362,
+      24, 142, 30, 171, 172, 173, 174, 180, 137, 187, 395,
+    ]);
     const counts = [0, 0, 0, 0, 0, 0];
     for (const p of products) counts[Math.min(1 + (p.images || []).length, 5)]++;
-    const with3 = counts[3] + counts[4] + counts[5];
-    assert.ok(with3 / products.length >= 0.7, `gallery coverage >=70%: ${with3}/${products.length}`);
+    const with4 = counts[4] + counts[5];
+    assert.ok(with4 / products.length >= 0.85, `gallery coverage >=85%: ${with4}/${products.length}`);
     assert.equal(counts[0], 0, 'no photo-less products');
+    for (const p of products) {
+      const n = 1 + (p.images || []).length;
+      if (n < 4) assert.ok(FEWER_THAN_4_OK.has(p.id), `Product #${p.id} has only ${n} photos without documented exception`);
+    }
     g.openProduct(1);
     let detailHtml = g.document.getElementById('product-detail-box').innerHTML;
     assert.match(detailHtml, /id="product-main-img"/, 'PDP must render #product-main-img');
