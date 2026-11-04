@@ -148,10 +148,10 @@ CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT C
     assert.equal(memdb.prepare('SELECT COUNT(*) AS c FROM products').get().c, src.length - 1);
 
     // новая позиция файла (например, после выгрузки с другого сервера) добавляется
-    const fresh = { id: 9001, brand: 'TEST', series: 'TestSeries', category: 'Аксессуары', name: 'Новая позиция', price: 1000, image: 'x', specs: '', hit: 0, images: ['uploads/catalog/grm-010-02550-00-b.jpg'] };
+    const fresh = { id: 9001, brand: 'TEST', series: 'TestSeries', category: 'Аксессуары', name: 'Новая позиция', price: 1000, image: 'x', specs: '', hit: 0, images: ['uploads/demo/ph-9001.svg'] };
     assert.equal(applySeed(memdb, [...src, fresh]).added, 1, 'новые позиции догружаются');
     assert.ok(memdb.prepare('SELECT 1 AS x FROM products WHERE name = ?').get('Новая позиция'));
-    assert.deepEqual(JSON.parse(memdb.prepare('SELECT gallery FROM products WHERE name = ?').get('Новая позиция').gallery), ['uploads/catalog/grm-010-02550-00-b.jpg'], 'галерея сохраняется в базу');
+    assert.deepEqual(JSON.parse(memdb.prepare('SELECT gallery FROM products WHERE name = ?').get('Новая позиция').gallery), ['uploads/demo/ph-9001.svg'], 'галерея сохраняется в базу');
 
     const kept = src.filter((x) => x.id !== removed.id);
     const back = memdb.prepare('SELECT * FROM products ORDER BY id ASC').all();

@@ -40,7 +40,7 @@ describe('PWA manifest: один сайт, витрина ссылается н�
     assert.match(robots, /^User-agent: \*/m, 'robots без User-agent');
     assert.match(robots, /sitemap\.xml/, 'robots без ссылки на sitemap');
     const sm = fs.readFileSync(path.join(__dirname, '..', 'sitemap.xml'), 'utf8');
-    assert.match(sm, /https:\/\/ssrjkk\.github\.io\/shopwatch\//, 'sitemap без канонического URL');
+    assert.match(sm, /https:\/\/example\.invalid\/demo\//, 'sitemap без канонического URL');
   });
 
   it('соцкарточки и фавикон на месте, в витрине нет чужих хотлинков', () => {
@@ -49,6 +49,6 @@ describe('PWA manifest: один сайт, витрина ссылается н�
     assert.ok(html.includes('<link rel="icon" href="data:image/svg+xml,'), 'нет фавикона');
     assert.ok(!html.includes('images.unsplash.com'), 'в витрине остался хотлинк Unsplash');
     assert.ok(!html.includes('pitergsm.ru'), 'в витрине остался хотлинк PiterGSM');
-    assert.ok(html.includes('uploads/catalog/f88df70ab8a2.jpg'), 'og:image не на локальном фото');
+    assert.ok(html.includes('uploads/demo/ph-1.svg'), 'og:image не на локальном демо-фото');
   });
 });

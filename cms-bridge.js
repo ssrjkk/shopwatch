@@ -19,7 +19,7 @@ function csvCell(val, sep = ',') {
 function absImageUrl(image) {
   const s = String(image || '');
   if (!s || /^https?:\/\//i.test(s) || s.startsWith('data:')) return s;
-  const base = (typeof process !== 'undefined' && process.env && process.env.SHOP_URL ? String(process.env.SHOP_URL) : 'https://ssrjkk.github.io/shopwatch').replace(/\/+$/, '');
+  const base = (typeof process !== 'undefined' && process.env && process.env.SHOP_URL ? String(process.env.SHOP_URL) : 'https://example.invalid/demo').replace(/\/+$/, '');
   return base + '/' + s.replace(/^\/+/, '');
 }
 

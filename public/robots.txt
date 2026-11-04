@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://ssrjkk.github.io/shopwatch/sitemap.xml
+Sitemap: https://example.invalid/demo/sitemap.xml
