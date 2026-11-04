@@ -81,6 +81,16 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     g.renderFilters();
     assert.ok(g.document.getElementById('category-pills').innerHTML.includes('#/c/'), 'категории — ссылки #/c/');
     assert.ok(g.document.getElementById('series-pills').innerHTML.includes('#/s/'), 'серии — ссылки #/s/');
+    for (const html of [g.document.getElementById('category-pills').innerHTML, g.document.getElementById('series-pills').innerHTML]) {
+      for (const m of html.matchAll(/href="([^"]+)"/g)) {
+        assert.ok(!/[\u0400-\u04FF]|%D0|%D1/i.test(m[1]), `slug без кириллицы: ${m[1]}`);
+      }
+    }
+    assert.ok(g.document.getElementById('category-pills').innerHTML.includes('#/c/fishfinders'), 'эхолоты — /fishfinders');
+    global.location.hash = '#/c/fishfinders';
+    g.route();
+    assert.equal(g.state.activeCategory, 'Эхолоты', 'английский слаг применился');
+    assert.equal(g.state.filtered.length, SEED.filter((p) => p.category === 'Эхолоты').length, 'слаг отфильтровал эхолоты');
     global.location.hash = '#/c/' + encodeURIComponent('Эхолоты');
     g.route();
     assert.equal(g.state.activeCategory, 'Эхолоты', 'категория применилась');

@@ -201,7 +201,10 @@ describe('catalog virtualization', () => {
     g.renderFilters();
     const pillsHtml = g.document.getElementById('category-pills').innerHTML;
     assert.ok(pillsHtml.includes('href="#/c/'), 'category links present');
-    assert.ok(pillsHtml.includes(encodeURIComponent('Спортивные часы')), 'cyrillic category encoded');
+    assert.ok(pillsHtml.includes('href="#/c/sport-watches"'), 'category slug in English');
+    for (const m of pillsHtml.matchAll(/href="([^"]+)"/g)) {
+      assert.ok(!/[\u0400-\u04FF]|%D0|%D1/i.test(m[1]), `no cyrillic in category link: ${m[1]}`);
+    }
   });
 
   it('checkout shows review and completes the order', async () => {
