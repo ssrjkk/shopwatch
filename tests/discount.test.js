@@ -71,7 +71,7 @@ describe('Скидка на витрине: зачёркнутая цена', ()
   it('зачёркивание только серое и тонкое — без красного и без капса', () => {
     const html = g.oldPriceHTML({ price: 32000, old_price: 40000 });
     assert.match(html, /line-through/);
-    assert.match(html, /text-demo-muted/);
+    assert.match(html, /text-soft/);
     assert.doesNotMatch(html, /red|uppercase|font-bold/);
     assert.match(flat(html), /40 000 ₽/);
   });

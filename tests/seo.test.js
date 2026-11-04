@@ -13,7 +13,7 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
   let g;
 
   before(async () => {
-    g = mountFrontend({ location: { origin: 'https://example.invalid', pathname: '/demo/' } });
+    g = mountFrontend({ location: { origin: 'https://example.invalid', pathname: '/shopwatch/' } });
     await new Promise((r) => setTimeout(r, 30));
   });
 
