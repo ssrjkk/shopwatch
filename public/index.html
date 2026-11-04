@@ -73,8 +73,7 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent
 
 /* Строгая геометрия карточек без прыжков (Zero-CLS) на любых экранах */
 .watch-card {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 440px;
+  content-visibility: visible;
   contain: layout style paint;
   background: #FFFFFF;
   border: 1px solid #E5E7EB;
@@ -89,6 +88,13 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent
   aspect-ratio: 1 / 1;
   background: #F8FAFC;
   border: 1px solid #EEF2F6;
+}
+/* Жёсткая квадратная геометрия сцены: padding-hack вместо aspect-ratio,
+   который схлопывается в пустом состоянии и дёргает ленту при скролле */
+.watch-card .watch-stage::before {
+  content: "";
+  display: block;
+  padding-top: 100%;
 }
 .watch-stage img.watch-bg-photo {
   aspect-ratio: 1 / 1;
@@ -106,7 +112,7 @@ img { -webkit-user-drag: none; }
   animation: img-shimmer 1.2s linear infinite;
 }
 @keyframes img-shimmer { to { background-position: -200% 0; } }
-#products-grid, #favorites-grid, #hits-grid { content-visibility: auto; }
+#products-grid, #favorites-grid, #hits-grid { content-visibility: visible; }
 .gal-thumb {
   width: 56px;
   height: 56px;
@@ -2453,8 +2459,8 @@ function productCardHTML(p){
 
     <!-- ЦЕНОВОЙ БЛОК СРАЗУ ПОД ФОТО В СТИЛЕ 585 ЗОЛОТОЙ -->
     <a href="#/p/${p.id}" class="block cursor-pointer flex-1 px-0.5">
-      <div class="flex items-baseline flex-wrap gap-x-1.5 gap-y-0.5 mb-1">
-        <span class="text-[16px] sm:text-[17px] font-extrabold tracking-tight tabular-nums ${hasDisc?(saleHl?'text-[#FF5A5A]':'text-gray-900'):'text-gray-900'}">${priceNum.toLocaleString('ru-RU')} ₽${oldPriceHTML(p)}</span>
+      <div class="flex items-baseline flex-nowrap gap-x-1.5 mb-1 overflow-hidden">
+        <span class="text-[16px] sm:text-[17px] font-extrabold tracking-tight tabular-nums whitespace-nowrap ${hasDisc?(saleHl?'text-[#FF5A5A]':'text-gray-900'):'text-gray-900'}">${priceNum.toLocaleString('ru-RU')} ₽${oldPriceHTML(p,'ml-1.5 text-[11px] font-normal text-gray-400 line-through whitespace-nowrap truncate min-w-0')}</span>
       </div>
       <div class="flex flex-wrap items-center gap-1 mb-2">
         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${saleHl?'bg-rose-50 text-[#E11D48]':'bg-gray-100 text-gray-800'} text-[10px] font-extrabold tabular-nums">По коду WATCH10: ${clubPrice.toLocaleString('ru-RU')} ₽</span>
