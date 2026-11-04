@@ -18,7 +18,7 @@ describe('экспорт каталога из базы в файл-источн
     assert.deepEqual(n, {
       id: 3, brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы',
       name: 'Fenix 8 47 мм "Black"', price: 59900, old_price: 0, image: 'https://img/3.jpg',
-      specs: 'AMOLED, мульти-GNSS', hit: 1,
+      specs: 'AMOLED, мульти-GNSS', hit: 1, images: [],
     });
     assert.equal(normalizeRow(DB_ROWS[1]).hit, 0);
     assert.equal(normalizeRow({ ...DB_ROWS[0], id: '12', price: '99.7', hit: undefined, is_hit: 1 }).id, 12);
@@ -122,7 +122,7 @@ describe('экспорт каталога из базы в файл-источн
     const { DatabaseSync } = require('node:sqlite');
     const { applySeed } = require('../catalog-export.js');
     const memdb = new DatabaseSync(':memory:');
-    memdb.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4, old_price INTEGER DEFAULT 0, seed_key TEXT);
+    memdb.exec(`CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, brand TEXT, series TEXT, category TEXT, name TEXT, price INTEGER, image TEXT, specs TEXT, is_hit INTEGER DEFAULT 0, stock INTEGER DEFAULT 4, old_price INTEGER DEFAULT 0, seed_key TEXT, gallery TEXT DEFAULT '[]');
 CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
     const src = withIds(require(path.join(__dirname, '..', 'products-data.js')).slice(0, 25));
     const first = applySeed(memdb, src);
@@ -148,9 +148,10 @@ CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT C
     assert.equal(memdb.prepare('SELECT COUNT(*) AS c FROM products').get().c, src.length - 1);
 
     // новая позиция файла (например, после выгрузки с другого сервера) добавляется
-    const fresh = { id: 9001, brand: 'TEST', series: 'TestSeries', category: 'Аксессуары', name: 'Новая позиция', price: 1000, image: 'x', specs: '', hit: 0 };
+    const fresh = { id: 9001, brand: 'TEST', series: 'TestSeries', category: 'Аксессуары', name: 'Новая позиция', price: 1000, image: 'x', specs: '', hit: 0, images: ['uploads/catalog/grm-010-02550-00-b.jpg'] };
     assert.equal(applySeed(memdb, [...src, fresh]).added, 1, 'новые позиции догружаются');
     assert.ok(memdb.prepare('SELECT 1 AS x FROM products WHERE name = ?').get('Новая позиция'));
+    assert.deepEqual(JSON.parse(memdb.prepare('SELECT gallery FROM products WHERE name = ?').get('Новая позиция').gallery), ['uploads/catalog/grm-010-02550-00-b.jpg'], 'галерея сохраняется в базу');
 
     const kept = src.filter((x) => x.id !== removed.id);
     const back = memdb.prepare('SELECT * FROM products ORDER BY id ASC').all();

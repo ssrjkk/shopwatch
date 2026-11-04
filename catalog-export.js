@@ -5,7 +5,34 @@
 const crypto = require('crypto');
 const fs = require('fs');
 
-const FIELDS = ['id', 'brand', 'series', 'category', 'name', 'price', 'old_price', 'image', 'specs', 'hit'];
+const FIELDS = ['id', 'brand', 'series', 'category', 'name', 'price', 'old_price', 'image', 'specs', 'hit', 'images'];
+
+// Дополнительные ракурсы: в файле — массив images, в базе — JSON-колонка gallery.
+// Только локальные uploads/*, не больше 4, без дубля первичного фото.
+function normalizeImages(p) {
+  let raw = [];
+  if (Array.isArray(p.images)) raw = p.images;
+  else if (Array.isArray(p.gallery)) raw = p.gallery;
+  else if (typeof p.gallery === 'string' && p.gallery.trim()) {
+    try {
+      const parsed = JSON.parse(p.gallery);
+      if (Array.isArray(parsed)) raw = parsed;
+    } catch (e) { raw = String(p.gallery).split(','); }
+  } else if (typeof p.images === 'string' && p.images.trim()) {
+    raw = String(p.images).split(',');
+  }
+  const primary = String(p.image == null ? '' : p.image);
+  const out = [];
+  for (const u of raw) {
+    const s = String(u == null ? '' : u).trim();
+    if (!s || s === primary || out.includes(s)) continue;
+    if (/^(javascript|data|vbscript):/i.test(s)) continue;
+    if (/^https?:\/\//i.test(s)) continue;
+    out.push(s);
+    if (out.length >= 4) break;
+  }
+  return out;
+}
 
 // Устойчивый идентификатор позиции файла-источника. По нему сервер понимает,
 // что товар уже жил в базе, — в том числе если админ его удалил.
@@ -28,6 +55,7 @@ function normalizeRow(r) {
     image: String(r.image == null ? '' : r.image),
     specs: String(r.specs == null ? '' : r.specs),
     hit: Number(r.hit != null ? r.hit : r.is_hit) > 0 ? 1 : 0,
+    images: normalizeImages(r),
   };
 }
 
@@ -37,7 +65,7 @@ function renderCatalogFile(rows, meta) {
   const lines = items.map((x) => '  ' + JSON.stringify(x)).join(',\n');
   return [
     '// Единый источник каталога: server.js делает require(), index.html подключает <script src="products-data.js">.',
-    '// Формат элемента: { id, brand, series, category, name, price, old_price, image, specs, hit } — id задаёт порядок и deep link #/p/<id>. old_price > price означает скидку, 0 — её нет.',
+    '// Формат элемента: { id, brand, series, category, name, price, old_price, image, specs, hit, images } — id задаёт порядок и deep link #/p/<id>. old_price > price означает скидку, 0 — её нет. images — дополнительные реальные ракурсы с сайта производителя.',
     `// Выгружено из рабочей базы админ-ботом, дата ${stamp}, позиций: ${items.length}.`,
     'const PD_SEED_PRODUCTS = [',
     lines ? lines + ',' : '',
@@ -84,17 +112,29 @@ function summarizeDiff(diff) {
   return lines.join('\n');
 }
 
+function hasGalleryColumn(db) {
+  try {
+    return db.prepare('PRAGMA table_info(products)').all().some((c) => c.name === 'gallery');
+  } catch (e) { return false; }
+}
+
 // Засев/апгрейд базы из файла-источника. Таблица seed_marks хранит ключи позиций,
 // которые в базе уже были: удалённый админом товар не должен воскрешать перезапуск.
 function applySeed(db, rows) {
+  const gallery = hasGalleryColumn(db);
+  const gal = (x) => (gallery ? JSON.stringify(normalizeImages(x)) : undefined);
   const mark = db.prepare('INSERT OR IGNORE INTO seed_marks (seed_key) VALUES (?)');
   for (const r of db.prepare('SELECT brand, series, category, name FROM products').all()) mark.run(seedKey(r));
   // строки, пришедшие из файла, помечаем ключом — по нему видно, что добавлено админом
   const setKey = db.prepare('UPDATE products SET seed_key = ? WHERE id = ?');
   for (const r of db.prepare('SELECT id, brand, series, category, name FROM products WHERE seed_key IS NULL').all()) setKey.run(seedKey(r), r.id);
   const marked = new Set(db.prepare('SELECT seed_key FROM seed_marks').all().map((r) => r.seed_key));
-  const ins = db.prepare('INSERT INTO products (brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-  const insWithId = db.prepare('INSERT INTO products (id, brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const ins = gallery
+    ? db.prepare('INSERT INTO products (brand, series, category, name, price, old_price, image, specs, is_hit, seed_key, gallery) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    : db.prepare('INSERT INTO products (brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const insWithId = gallery
+    ? db.prepare('INSERT INTO products (id, brand, series, category, name, price, old_price, image, specs, is_hit, seed_key, gallery) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    : db.prepare('INSERT INTO products (id, brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   const empty = db.prepare('SELECT COUNT(*) AS c FROM products').get().c === 0;
   let added = 0;
   db.exec("SAVEPOINT apply_seed");
@@ -104,7 +144,11 @@ function applySeed(db, rows) {
       if (!empty && marked.has(key)) continue;
       const hit = Number(x.hit || x.is_hit) > 0 ? 1 : 0;
       const oldPrice = Math.trunc(Number(x.old_price)) || 0;
-      if (empty && Number(x.id) > 0) insWithId.run(Number(x.id), x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key);
+      if (gallery) {
+        const g = gal(x);
+        if (empty && Number(x.id) > 0) insWithId.run(Number(x.id), x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key, g);
+        else ins.run(x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key, g);
+      } else if (empty && Number(x.id) > 0) insWithId.run(Number(x.id), x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key);
       else ins.run(x.brand, x.series, x.category, x.name, x.price, oldPrice, x.image, x.specs, hit, key);
       mark.run(key);
       added++;
@@ -158,4 +202,4 @@ function commitCatalogFiles(paths, text, validate) {
   return { written, failed, aborted: false };
 }
 
-module.exports = { FIELDS, seedKey, normalizeRow, renderCatalogFile, readCatalogFile, rowKey, diffCatalog, summarizeDiff, applySeed, commitCatalogFiles };
+module.exports = { FIELDS, seedKey, normalizeRow, normalizeImages, hasGalleryColumn, renderCatalogFile, readCatalogFile, rowKey, diffCatalog, summarizeDiff, applySeed, commitCatalogFiles };

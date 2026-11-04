@@ -1,7 +1,7 @@
 /**
  * cms-bridge.js — Мост интеграции Watchop с движками WooCommerce, OpenCart 3/4 и PrestaShop 8.
  * Обеспечивает:
- * 1) Экспорт каталога (347 товаров с фото PiterGSM) в форматы импорта WooCommerce CSV, OpenCart CSV/SQL и PrestaShop CSV.
+ * 1) Экспорт каталога (407 товаров с официальными фото) в форматы импорта WooCommerce CSV, OpenCart CSV/SQL и PrestaShop CSV.
  * 2) Совместимые REST-эндпоинты (/wp-json/wc/v3/products, /api/opencart/products, /api/prestashop/products).
  * 3) Приём вебхуков заказов из WooCommerce, OpenCart и PrestaShop с записью в единую БД и уведомлением админов в Telegram и MAX.
  */
@@ -109,7 +109,7 @@ function sqlEsc(val) {
 
 function toOpenCartSql(products, prefix = 'oc_') {
   const out = [
-    '-- Watchop OpenCart 3.x / 4.x Catalog Seed (347 Products with PiterGSM Images)',
+    '-- Watchop OpenCart 3.x / 4.x Catalog Seed (407 Products with Official Images)',
     'SET NAMES utf8mb4;',
     'START TRANSACTION;'
   ];

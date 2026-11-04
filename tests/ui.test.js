@@ -311,7 +311,7 @@ describe('витрина-stealth: поиск, фильтры, оформлени
   });
 
   it('счётчик моделей в og:description не расходится с каталогом', () => {
-    const m = HTML.match(/<meta property="og:description" content="(\d+) моделей в каталоге/);
+    const m = HTML.match(/<meta property="og:description" content="(\d+) модел/);
     assert.ok(m, 'в og:description заявлено число моделей');
     assert.equal(Number(m[1]), SEED.length, `витрина обещает ${m && m[1]} моделей, в каталоге ${SEED.length}`);
   });

@@ -166,7 +166,7 @@ app.use(compression);
 app.use('/uploads', express.static(uploadsDir, { maxAge: '365d', immutable: true }));
 app.use(express.static(publicDir));
 
-const { applySeed, commitCatalogFiles, normalizeRow, renderCatalogFile, readCatalogFile, diffCatalog, summarizeDiff, seedKey } = require('./catalog-export.js');
+const { applySeed, commitCatalogFiles, normalizeRow, renderCatalogFile, readCatalogFile, diffCatalog, summarizeDiff, seedKey, normalizeImages } = require('./catalog-export.js');
 
 function isValidEnv(val) {
   return val && typeof val === 'string' && val.trim() !== '' && !val.startsWith('ВСТАВЬ_');
@@ -369,6 +369,7 @@ try { db.exec('ALTER TABLE products ADD COLUMN is_hit INTEGER DEFAULT 0'); } cat
 try { db.exec('ALTER TABLE products ADD COLUMN old_price INTEGER DEFAULT 0'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT 4'); } catch (e) {}
 try { db.exec('ALTER TABLE products ADD COLUMN seed_key TEXT'); } catch (e) {}
+try { db.exec("ALTER TABLE products ADD COLUMN gallery TEXT DEFAULT '[]'"); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN customer_json TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN owner_tg TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN owner_max TEXT'); } catch (e) {}
@@ -430,18 +431,28 @@ try {
   const OLD_HOSTS = ['images.unsplash.com', 'upload.wikimedia.org', 'thumb.wikimedia.org', 'pitergsm.ru'];
   const wantByKey = new Map(SEED_PRODUCTS.map((p) => [seedKey(p), String(p.image || '')]));
   const wantById = new Map(SEED_PRODUCTS.map((p) => [Number(p.id), String(p.image || '')]));
+  const wantGalByKey = new Map(SEED_PRODUCTS.map((p) => [seedKey(p), JSON.stringify(normalizeImages(p))]));
+  const wantGalById = new Map(SEED_PRODUCTS.map((p) => [Number(p.id), JSON.stringify(normalizeImages(p))]));
   const updImg = db.prepare('UPDATE products SET image = ? WHERE id = ?');
+  const updGal = db.prepare('UPDATE products SET gallery = ? WHERE id = ?');
   let refreshed = 0;
   db.exec('SAVEPOINT img_refresh');
   try {
-    for (const r of db.prepare('SELECT id, image, seed_key FROM products').all()) {
+    for (const r of db.prepare('SELECT id, image, seed_key, gallery FROM products').all()) {
       const cur = String(r.image || '');
       const want = wantById.get(Number(r.id)) || wantByKey.get(r.seed_key);
-      if (!want || want === cur) continue;
-      const isHotlink = OLD_HOSTS.some((h) => cur.includes(h));
-      const isManagedPool = cur.startsWith('uploads/catalog/');
-      if (!isHotlink && !isManagedPool) continue;
-      updImg.run(want, r.id); refreshed++;
+      if (want && want !== cur) {
+        const isHotlink = OLD_HOSTS.some((h) => cur.includes(h));
+        const isManagedPool = cur.startsWith('uploads/catalog/');
+        if (isHotlink || isManagedPool) { updImg.run(want, r.id); refreshed++; }
+      }
+      const wantGal = wantGalById.get(Number(r.id)) || wantGalByKey.get(r.seed_key);
+      if (wantGal && String(r.gallery == null ? '[]' : r.gallery) !== wantGal) {
+        const curGal = String(r.gallery == null || r.gallery === '' ? '[]' : r.gallery);
+        if (curGal === '[]' || cur.startsWith('uploads/catalog/') || OLD_HOSTS.some((h) => cur.includes(h))) {
+          updGal.run(wantGal, r.id); refreshed++;
+        }
+      }
     }
     db.exec('RELEASE SAVEPOINT img_refresh');
   } catch (e) {
