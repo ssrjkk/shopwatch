@@ -5,5 +5,13 @@
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F4F5F7",
-  "theme_color": "#141619"
+  "theme_color": "#141619",
+  "icons": [
+    {
+      "src": "uploads/catalog/prod-1-1.jpg",
+      "sizes": "900x900",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
 }
