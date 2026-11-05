@@ -79,8 +79,8 @@ const EXPOSE = [
 'PRESETS', 'presetOf', 'presetCount', 'applyPreset', 'priceRangeFromInputs', 'priceRangeLabel', 'renderPresets',
 'safeImageSrc', 'absoluteUrl', 'allBrands', 'toggleCompare', 'clearCompare', 'updateCompareBar', 'openCompareModal',
 'closeCompareModal', 'recordRecent', 'clearRecentViewed', 'recentItems', 'renderRecent', 'RECENT_MAX',
-'productJsonLd', 'setProductJsonLd', 'updateSeoTitle', 'computeBatteryLife', 'applyHashFilters', 'deepLinkPromo',
-'renderDeliveryOptions', 'beaconCheckoutStarted', 'checkoutSid',
+'productJsonLd', 'setProductJsonLd', 'updateSeoTitle', 'applyHashFilters', 'deepLinkPromo', 'renderDeliveryOptions',
+'beaconCheckoutStarted', 'checkoutSid',
 ];
 
 // Монтирует фронтенд. seed — источник данных каталога (по PRODUCTS_DATA можно подменить файл).

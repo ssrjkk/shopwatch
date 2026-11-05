@@ -51,9 +51,6 @@ describe('HTTP API (real server, temp DB)', () => {
     const d = await r.json();
     assert.ok(d.settings.hero_title);
     assert.equal(d.settings.payment_details, undefined);
-    for (const k of ['legal_name', 'legal_inn', 'legal_ogrnip', 'legal_account', 'legal_bank', 'legal_bik', 'legal_corr']) {
-      assert.ok(k in d.settings, `в /api/state нет ключа ${k}`);
-    }
     assert.ok(Array.isArray(d.products) && d.products.length >= 300);
   });
 

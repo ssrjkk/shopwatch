@@ -140,6 +140,16 @@ CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT C
     assert.equal(legacy.prepare('SELECT seed_key FROM products').get().seed_key, seedKey({ brand: 'GARMIN', series: 'fēnix', category: 'Спортивные часы', name: 'Старая позиция' }), 'ключ проставлен');
     legacy.close();
 
+    // если в живой базе оказались битые пути uploads/demo/*.svg, applySeed чинит image и gallery по файлу-источнику
+    const sample = memdb.prepare('SELECT id FROM products ORDER BY id LIMIT 1').get();
+    memdb.prepare('UPDATE products SET image = ?, gallery = ? WHERE id = ?').run('uploads/demo/ph-' + sample.id + '-1.svg', '["uploads/demo/ph-' + sample.id + '-2.svg"]', sample.id);
+    const healed = applySeed(memdb, src);
+    assert.equal(healed.added, 0, 'починка фото не плодит дубли');
+    assert.equal(healed.repaired, 1, 'битый путь uploads/demo/* автоматически восстановлен из каталога');
+    const fixedRow = memdb.prepare('SELECT image, gallery FROM products WHERE id = ?').get(sample.id);
+    assert.ok(!fixedRow.image.includes('uploads/demo/'), 'image больше не указывает на uploads/demo/');
+    assert.ok(!fixedRow.gallery.includes('uploads/demo/'), 'gallery больше не указывает на uploads/demo/');
+
     // админ удалил товар — перезапуск сервера обязан оставить его удалённым
     const removed = memdb.prepare('SELECT id, name FROM products ORDER BY id LIMIT 1').get();
     memdb.prepare('DELETE FROM products WHERE id = ?').run(removed.id);
@@ -148,10 +158,10 @@ CREATE TABLE seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT C
     assert.equal(memdb.prepare('SELECT COUNT(*) AS c FROM products').get().c, src.length - 1);
 
     // новая позиция файла (например, после выгрузки с другого сервера) добавляется
-    const fresh = { id: 9001, brand: 'TEST', series: 'TestSeries', category: 'Аксессуары', name: 'Новая позиция', price: 1000, image: 'x', specs: '', hit: 0, images: ['uploads/catalog/test-9001-b.jpg'] };
+    const fresh = { id: 9001, brand: 'TEST', series: 'TestSeries', category: 'Аксессуары', name: 'Новая позиция', price: 1000, image: 'x', specs: '', hit: 0, images: ['uploads/catalog/prod-9001-2.jpg'] };
     assert.equal(applySeed(memdb, [...src, fresh]).added, 1, 'новые позиции догружаются');
     assert.ok(memdb.prepare('SELECT 1 AS x FROM products WHERE name = ?').get('Новая позиция'));
-    assert.deepEqual(JSON.parse(memdb.prepare('SELECT gallery FROM products WHERE name = ?').get('Новая позиция').gallery), ['uploads/catalog/test-9001-b.jpg'], 'галерея сохраняется в базу');
+    assert.deepEqual(JSON.parse(memdb.prepare('SELECT gallery FROM products WHERE name = ?').get('Новая позиция').gallery), ['uploads/catalog/prod-9001-2.jpg'], 'галерея сохраняется в базу');
 
     const kept = src.filter((x) => x.id !== removed.id);
     const back = memdb.prepare('SELECT * FROM products ORDER BY id ASC').all();

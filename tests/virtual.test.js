@@ -68,6 +68,15 @@ describe('catalog virtualization', () => {
     assert.equal(g.state.shownMax, 350);
     assert.equal(g.document.getElementById('grid-status').textContent, 'Показаны все 350');
     assert.equal(g.document.getElementById('show-more-btn').classList.contains('hidden'), true, 'кнопка прячется в конце');
+    // Избранное тоже виртуализируется через WINDOW_CARDS и не перестраивает DOM впустую на скролле
+    g.state.favorites = g.state.products.slice(0, 120).map((x) => x.id);
+    g.renderFavorites();
+    const favDom = g.document.getElementById('favorites-grid').children.length;
+    assert.ok(favDom <= g.WINDOW_CARDS, 'в избранном в DOM не больше окна: ' + favDom);
+    const prevHtml = g.document.getElementById('favorites-grid').innerHTML;
+    g.renderFavorites();
+    assert.equal(g.document.getElementById('favorites-grid').innerHTML, prevHtml, 'повторный рендер избранного на том же скролле сохраняет окно');
+    g.state.favorites = [];
     g.setPageSize(10);
   });
 

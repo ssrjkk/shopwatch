@@ -149,7 +149,7 @@ describe('сервер: код TG-XXXX уникален, суммы целые',
   const order = (idem, items, promo) => realFetch(`${BASE}/api/order`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': idem },
-    body: JSON.stringify({ items: items || [{ id: 1, qty: 1 }], customer: { fio: 'Тест', phone: '+7 000 000-00-00' }, ...(promo ? { promo } : {}) }),
+    body: JSON.stringify({ items: items || [{ id: 1, qty: 1 }], customer: { fio: 'Иван Тест', phone: '+7 000 000-00-00' }, ...(promo ? { promo } : {}) }),
   }).then((r) => r.json());
 
   it('пять заказов подряд получают разные коды TG-XXXX', async () => {

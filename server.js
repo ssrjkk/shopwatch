@@ -329,18 +329,14 @@ db.exec(`
 
 const defaultSettings = {
   hero_title: 'Магазин оригинальной продукции Garmin и смарт-часов — поможем выбрать под ваши задачи',
-  phone: '+7 (000) 000-00-00',
-  email: 'info@example.invalid',
+  phone: '+7 (473) 300-40-95',
+  email: 'watchopp@gmail.com',
   address: 'Доставка по всей России — СДЭК, Почта России, Boxberry',
-  tg_link: '',
-  max_link: '',
+  tg_link: 'https://t.me/wwwatchshop_bot',
+  max_link: 'https://max.ru/watchop',
   legal_name: 'ИП Жукова Татьяна Юрьевна',
-  legal_inn: '0000000000',
+  legal_inn: '362703988401',
   legal_ogrnip: '304362725400110',
-  legal_account: '',
-  legal_bank: '',
-  legal_bik: '',
-  legal_corr: '',
   delivery_methods: 'СДЭК,Почта России,Boxberry',
   extra_categories: '',
   payment_details: 'СБП / Т-Банк / Сбер: +7 (900) 000-00-00 (Татьяна Ю.)\nВ комментарии к переводу укажите номер заказа.',
@@ -363,7 +359,7 @@ const getSetting = (k) => db.prepare('SELECT value FROM settings WHERE key = ?')
 const setSetting = (k, v) => db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(k, String(v));
 
 // Миграция старой ссылки менеджера на рабочего бота + колонка хитов для существующих БД
-if (getSetting('tg_link') === 'https://t.me/watchop_manager') setSetting('tg_link', '');
+if (getSetting('tg_link') === 'https://t.me/watchop_manager') setSetting('tg_link', 'https://t.me/wwwatchshop_bot');
 if (getSetting('hero_title').includes('Воронеже')) setSetting('hero_title', 'Магазин оригинальной продукции Garmin и смарт-часов — поможем выбрать под ваши задачи');
 if (getSetting('address').includes('Воронеж') || getSetting('address').includes('Пушкинская')) setSetting('address', 'Доставка по всей России — СДЭК, Почта России, Boxberry');
 try { db.exec('ALTER TABLE products ADD COLUMN is_hit INTEGER DEFAULT 0'); } catch (e) {}
@@ -1935,7 +1931,7 @@ async function handleApiOrder(req, res) {
   const clientTag = tgUser ? `\nКлиент TG: @${tgUser.username || tgUser.first_name} (id ${tgUser.id})` : '';
   const custLine = `\n👤 ${customer.fio}\n📞 ${customer.phone}${customer.email ? `\n✉️ ${customer.email}` : ''}\n📍 ${customer.address || '—'}\n🚚 ${customer.delivery}`;
   const payLineRaw = String(getSetting('payment_details') || '').trim();
-  const payLine = payLineRaw ? `Реквизиты:\n${payLineRaw}` : 'Оплата — после подтверждения заказа менеджером.';
+  const payLine = payLineRaw ? `Реквизиты:\n${payLineRaw}` : 'Реквизиты уточняйте у менеджера.';
   const notifyMsg = `НОВАЯ ЗАЯВКА ${orderCode}\n\nСостав:\n${itemsText}\n\n${totalLine}${promoLine}${clientTag}${custLine}\n${payLine}`;
 
   notifyTgAdmins(notifyMsg, {
@@ -2194,9 +2190,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       [Markup.button.callback('Адрес', 'tg_cfg_address')],
       [Markup.button.callback('Доставка', 'tg_cfg_delivery_methods'), Markup.button.callback('Категории', 'tg_cfg_extra_categories')],
       [Markup.button.callback('Ссылка ТГ', 'tg_cfg_tg_link'), Markup.button.callback('Ссылка MAX', 'tg_cfg_max_link')],
-      [Markup.button.callback('ИП ФИО', 'tg_cfg_legal_name'), Markup.button.callback('ИНН', 'tg_cfg_legal_inn'), Markup.button.callback('ОГРНИП', 'tg_cfg_legal_ogrnip')],
-      [Markup.button.callback('Р/с', 'tg_cfg_legal_account'), Markup.button.callback('Банк', 'tg_cfg_legal_bank')],
-      [Markup.button.callback('БИК', 'tg_cfg_legal_bik'), Markup.button.callback('К/с', 'tg_cfg_legal_corr')]
+      [Markup.button.callback('ИП ФИО', 'tg_cfg_legal_name'), Markup.button.callback('ИНН', 'tg_cfg_legal_inn'), Markup.button.callback('ОГРНИП', 'tg_cfg_legal_ogrnip')]
     ]));
   });
   tgBot.action(/^tg_cfg_(.+)$/, (ctx) => {
@@ -2419,7 +2413,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       if (m) return handleClientOrderLookupTg(ctx, m[0].toUpperCase());
       const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
       notifyTgAdmins(`Сообщение от клиента (${tag}, ID ${ctx.from.id}):\n${txt}`);
-      return ctx.reply('Спасибо! Передали сообщение менеджеру, ответим здесь.');
+      return ctx.reply('Спасибо! Менеджер получил сообщение и скоро ответит.');
     }
     const s = ctx.session || {};
     if (txt === 'Отмена') { ctx.session = {}; return ctx.reply('Отменено. Выберите действие:', tgAdminMenuKb()); }
@@ -2607,7 +2601,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       notifyTgAdmins(
         `⚠️ ЗАКАЗ ${code} НЕ СОЗДАН: каталог на витрине расходится с базой\n👤 ${clientTag} (ID: ${ctx.from.id})\n${detail}\nНужно обновить файл: кнопка «Экспорт каталога» в админке, затем коммит products-data.js.`
       );
-      return ctx.reply(`Каталог витрины сейчас расходится с базой, поэтому заявку по этим позициям не создали.`);
+      return ctx.reply(`Каталог на сайте сейчас расходится с нашей базой, поэтому заявку по этим позициям не создали, чтобы не перепутать товар. Напишите менеджеру — подтвердим наличие и цену вручную.`);
     }
     // Одинаковый номер у двух покупателей статической витрины — не их вина: счётчик
     // живёт в их браузере. Совпал состав — показываем существующую заявку,
@@ -2649,8 +2643,8 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
       }
     }
     if (!order) {
-      if (parsed.unknown.length) return ctx.reply(`Не нашёл в каталоге позиции: ${parsed.unknown.join(', ')}. Отправьте заказ заново.`);
-      return ctx.reply('Не удалось распознать состав заказа. Отправьте номер (например, TG-1176).');
+      if (parsed.unknown.length) return ctx.reply(`Не нашёл в каталоге позиции: ${parsed.unknown.join(', ')}. Отправьте заказ заново или напишите менеджеру.`);
+      return ctx.reply('Не удалось распознать состав заказа. Отправьте номер (например, TG-1176) или напишите менеджеру.');
     }
     try { recordBotOpened(db, String(ctx.from.id), order.order_code); } catch (e) {}
     return handleClientOrderLookupTg(ctx, order.order_code);
@@ -2674,7 +2668,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const items = JSON.parse(order.items_json || '[]');
     const list = items.map((i) => `• ${i.name} (${Number(i.price).toLocaleString('ru-RU')} ₽)`).join('\n');
     const payRaw = String(getSetting('payment_details') || '').trim();
-    ctx.reply(`Ваш заказ ${code} найден!\n\n${list}\nИтого: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\n${payRaw ? `Реквизиты:\n${payRaw}` : 'Оплата — после подтверждения заказа менеджером.'}`);
+    ctx.reply(`Ваш заказ ${code} найден!\n\n${list}\nИтого: ${Number(order.total).toLocaleString('ru-RU')} ₽\n\nРеквизиты:\n${getSetting('payment_details')}`);
     const tag = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
     notifyTgAdmins(`Клиент ${tag} обратился по заказу ${code}`);
   }
@@ -2701,7 +2695,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     }
     if (pend.tries >= 3) {
       pendingOrderAuth.delete(requester);
-      return ctx.reply('Трижды мимо — проверка сброшена. Напишите номер заявки заново.');
+      return ctx.reply('Трижды мимо — проверка сброшена. Напишите номер заявки заново или обратитесь к менеджеру.');
     }
     return ctx.reply('Не совпало с телефоном из заказа. Осталось попыток: ' + (3 - pend.tries) + '.');
   }
@@ -2712,7 +2706,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const admin = tgAdminIdList().includes(requester);
     if (admin || String(order.owner_tg || '') === requester) return showOrderToRequester(ctx, order);
     if (order.owner_tg && String(order.owner_tg) !== requester) {
-      return ctx.reply(`Заказ ${code} оформлен другим покупателем.`);
+      return ctx.reply(`Заказ ${code} оформлен другим покупателем. Состав и реквизиты пришлёт менеджер — напишите, если нужна помощь.`);
     }
     if (!orderPhoneLast4(order)) {
       bindOrderOwner(order.order_code, requester);
@@ -3169,7 +3163,7 @@ async function maxClientOrderView(senderId, senderName, rawCode, text) {
     return true;
   }
   if (order.owner_max && String(order.owner_max) !== String(senderId)) {
-    await sendMaxMessage(senderId, 'Заказ ' + code + ' оформлен другим покупателем.');
+    await sendMaxMessage(senderId, 'Заказ ' + code + ' оформлен другим покупателем. Состав и реквизиты пришлёт менеджер.');
     return true;
   }
   if (!maxOrderPhoneLast4(order)) {
@@ -3189,7 +3183,7 @@ async function maxShowClientOrder(senderId, senderName, code) {
   const items = JSON.parse((db.prepare('SELECT items_json FROM orders WHERE order_code = ?').get(code) || {}).items_json || '[]');
   const row = db.prepare('SELECT total FROM orders WHERE order_code = ?').get(code) || { total: 0 };
   const list = items.map((i) => '• ' + i.name + ' (' + Number(i.price).toLocaleString('ru-RU') + ' ₽)').join('\n');
-  await sendMaxMessage(senderId, 'Заказ ' + code + ' принят!\n\n' + list + '\nИтого: ' + Number(row.total).toLocaleString('ru-RU') + ' ₽\n\nОплата — после подтверждения заказа менеджером.');
+  await sendMaxMessage(senderId, 'Заказ ' + code + ' принят!\n\n' + list + '\nК оплате: ' + Number(row.total).toLocaleString('ru-RU') + ' ₽\n\nРеквизиты:\n' + getSetting('payment_details'));
 }
 async function answerMaxOrderAuth(senderId, senderName, digits) {
   const pend = pendingMaxOrderAuth.get(String(senderId));
@@ -3210,7 +3204,7 @@ async function answerMaxOrderAuth(senderId, senderName, digits) {
   }
   if (pend.tries >= 3) {
     pendingMaxOrderAuth.delete(String(senderId));
-    await sendMaxMessage(senderId, 'Трижды мимо — проверка сброшена. Напишите номер заявки заново.', MAX_MENU);
+    await sendMaxMessage(senderId, 'Трижды мимо — проверка сброшена. Напишите номер заявки заново или обратитесь к менеджеру.', MAX_MENU);
     return true;
   }
   await sendMaxMessage(senderId, 'Не совпало с телефоном из заказа. Осталось попыток: ' + (3 - pend.tries) + '.');
@@ -3219,8 +3213,7 @@ async function answerMaxOrderAuth(senderId, senderName, digits) {
 const MAX_CFG_BUTTONS = {
   'Баннер': 'hero_title', 'Телефон': 'phone', 'Email': 'email', 'Адрес': 'address',
   'Доставка': 'delivery_methods', 'Категории': 'extra_categories',
-  'Ссылка ТГ': 'tg_link', 'Ссылка MAX': 'max_link', 'ИП': 'legal_name', 'ИНН': 'legal_inn', 'ОГРНИП': 'legal_ogrnip',
-  'Р/с': 'legal_account', 'Банк': 'legal_bank', 'БИК': 'legal_bik', 'К/с': 'legal_corr'
+  'Ссылка ТГ': 'tg_link', 'Ссылка MAX': 'max_link', 'ИП': 'legal_name', 'ИНН': 'legal_inn', 'ОГРНИП': 'legal_ogrnip'
 };
 async function handleMaxUpdate(upd) {
   if (upd.update_type === 'message_callback' && upd.callback) {
@@ -3649,7 +3642,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     return sendMaxMessage(senderId, `Показ реквизитов: ${next === '1' ? 'Включен' : 'Выключен'}`, MAX_MENU);
   }
   if (text === 'Тексты и контакты') {
-    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес', 'Доставка'], ['Категории'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН', 'ОГРНИП'], ['Р/с', 'Банк'], ['БИК', 'К/с', 'Отмена']]);
+    return sendMaxMessage(senderId, 'Что меняем на сайте?', [['Баннер'], ['Телефон', 'Email'], ['Адрес', 'Доставка'], ['Категории'], ['Ссылка ТГ', 'Ссылка MAX'], ['ИП', 'ИНН'], ['ОГРНИП', 'Отмена']]);
   }
   if (MAX_CFG_BUTTONS[text]) {
     const key = MAX_CFG_BUTTONS[text];

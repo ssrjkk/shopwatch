@@ -138,11 +138,37 @@ function applySeed(db, rows) {
     : db.prepare('INSERT INTO products (id, brand, series, category, name, price, old_price, image, specs, is_hit, seed_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   const empty = db.prepare('SELECT COUNT(*) AS c FROM products').get().c === 0;
   let added = 0;
+  const findById = gallery
+    ? db.prepare('SELECT id, image, gallery FROM products WHERE id = ?')
+    : db.prepare('SELECT id, image FROM products WHERE id = ?');
+  const findByKey = gallery
+    ? db.prepare('SELECT id, image, gallery FROM products WHERE seed_key = ?')
+    : db.prepare('SELECT id, image FROM products WHERE seed_key = ?');
+  const updMedia = gallery
+    ? db.prepare('UPDATE products SET image = ?, gallery = ? WHERE id = ?')
+    : db.prepare('UPDATE products SET image = ? WHERE id = ?');
+  let repaired = 0;
   db.exec("SAVEPOINT apply_seed");
   try {
     for (const x of rows) {
       const key = seedKey(x);
-      if (!empty && marked.has(key)) continue;
+      if (!empty && marked.has(key)) {
+        const cur = (Number(x.id) > 0 && findById.get(Number(x.id))) || findByKey.get(key);
+        if (cur && x.image) {
+          const curImg = String(cur.image || '');
+          const curGal = gallery ? String(cur.gallery || '[]') : '[]';
+          const targetImg = String(x.image || '');
+          const targetGal = gallery ? gal(x) : '[]';
+          const isDemoOrCatalog = !curImg || curImg.startsWith('uploads/demo/') || curGal.includes('uploads/demo/') ||
+            (curImg.startsWith('uploads/catalog/') && targetImg.startsWith('uploads/catalog/') && (curImg !== targetImg || (gallery && curGal !== targetGal)));
+          if (isDemoOrCatalog && (curImg !== targetImg || (gallery && curGal !== targetGal))) {
+            if (gallery) updMedia.run(targetImg, targetGal, cur.id);
+            else updMedia.run(targetImg, cur.id);
+            repaired++;
+          }
+        }
+        continue;
+      }
       const hit = Number(x.hit || x.is_hit) > 0 ? 1 : 0;
       const oldPrice = Math.trunc(Number(x.old_price)) || 0;
       if (gallery) {
@@ -159,7 +185,7 @@ function applySeed(db, rows) {
     try { db.exec("ROLLBACK TO SAVEPOINT apply_seed"); db.exec("RELEASE SAVEPOINT apply_seed"); } catch (_) {}
     throw e;
   }
-  return { added, empty, seeded: rows.length };
+  return { added, repaired, empty, seeded: rows.length };
 }
 
 // Записывает файл во все цели атомарно: сначала временная копия и проверка,

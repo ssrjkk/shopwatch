@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /**
- * VIBE-CLEAN — Плагин-нормализатор вайб-кодинга для витрины Watchop
- * Превращает «кашу» из наслоившихся тем, дублей шапки и битых картинок
- * в чистый, светлый, адаптивный продакшн-сайт (Zero-CLS) и синхронизирует метрики README.
+ * VIBE-CLEAN — Плагин-нормализатор вайб-кодинга для витрины OneWatch
+ * Синхронизирует чистый светлый адаптивный продакшн-сайт (Zero-CLS) и метрики сжатия в README.
  *
  * Запуск: node vibe-clean.js [--check]
  */
@@ -14,20 +13,15 @@ const ROOT = __dirname;
 const FILES_TO_SYNC = [
   path.join(ROOT, 'index.html'),
   path.join(ROOT, 'public', 'index.html'),
-  path.join(ROOT, 'public', 'index-classic.html'),
-  path.join(ROOT, 'public', 'index-stealth.html'),
 ];
 
 function normalizeHtml(html) {
   let out = html;
-  // 1. Удаление сырых неинтерполированных шаблонных строк (${...}) вне <script>
   const parts = out.split(/(<script[\s\S]*?<\/script>)/gi);
   for (let i = 0; i < parts.length; i += 2) {
     parts[i] = parts[i].replace(/\$\{[^}]+\}/g, '#');
   }
   out = parts.join('');
-
-  // 2. Принудительная установка светлого theme-color и фиксация scrollbar-gutter
   out = out.replace(/<meta name="theme-color" content="#0B0F17"\s*\/>/g, '<meta name="theme-color" content="#141619" />');
   return out;
 }
@@ -65,16 +59,11 @@ function main() {
   const srcPath = path.join(ROOT, 'public', 'index.html');
   const raw = fs.readFileSync(srcPath, 'utf8');
   const cleaned = normalizeHtml(raw);
-  for (const dst of [path.join(ROOT, 'index.html'), path.join(ROOT, 'public', 'index.html'), path.join(ROOT, 'public', 'index-classic.html')]) {
+  for (const dst of FILES_TO_SYNC) {
     fs.writeFileSync(dst, cleaned, 'utf8');
   }
-  const stealthHtml = cleaned
-    .replace('selection:text-[#07090E] classic-edition">', 'selection:text-[#07090E] stealth-edition">')
-    .replace("heroPaused:false,designEdition:'classic'", "heroPaused:false,designEdition:'stealth'")
-    .replace('<span id="design-switch-label">Дизайн: Светлый</span>', '<span id="design-switch-label">Дизайн: Stealth 3D</span>');
-  fs.writeFileSync(path.join(ROOT, 'public', 'index-stealth.html'), stealthHtml, 'utf8');
   const metrics = syncReadmeCompressionMetrics();
-  console.log('[vibe-clean] Normalized HTML synced across index.html & public/*.html');
+  console.log('[vibe-clean] Normalized HTML synced across index.html & public/index.html');
   console.log('[vibe-clean] Compression metrics updated:', JSON.stringify(metrics));
 }
 

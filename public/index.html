@@ -81,7 +81,8 @@ h1, h2, .font-display {
 }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35 !important; max-height: 1.35em !important; }
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35 !important; max-height: 2.7em !important; }
 button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
 /* Строгая геометрия карточек без прыжков (Zero-CLS) на любых экранах */
@@ -89,8 +90,8 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent
   content-visibility: visible;
   contain: layout style paint;
   background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  box-shadow: 0 4px 16px -6px rgba(15, 23, 42, 0.05);
+  border: 1.5px solid #CBD5E1;
+  box-shadow: 0 4px 16px -6px rgba(15, 23, 42, 0.06);
   transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
 }
 .watch-card:hover {
@@ -99,8 +100,8 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent
 }
 .watch-stage {
   aspect-ratio: 1 / 1;
-  background: #F8FAFC;
-  border: 1px solid #EEF2F6;
+  background: #FFFFFF !important;
+  border: 1.5px solid #CBD5E1 !important;
 }
 /* Жёсткая квадратная геометрия сцены: padding-hack вместо aspect-ratio,
    который схлопывается в пустом состоянии и дёргает ленту при скролле */
@@ -111,12 +112,16 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent
 }
 .watch-stage img.watch-bg-photo {
   aspect-ratio: 1 / 1;
-  background: #F8FAFC;
+  background: #FFFFFF !important;
   object-fit: contain;
-  padding: 10px;
+  padding: 6px;
 }
 .watch-card h3 {
-  min-height: 38px;
+  line-height: 1.35 !important;
+  height: 2.7em !important;
+  min-height: 2.7em !important;
+  max-height: 2.7em !important;
+  overflow: hidden !important;
 }
 img { -webkit-user-drag: none; }
 .img-skeleton {
@@ -416,13 +421,17 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 <noscript>
   <div style="max-width:960px;margin:0 auto;padding:16px;font-family:sans-serif;background:#fff;color:#141619">
     <h2>OneWatch — каталог 391 оригинальных часов Garmin, Apple Watch, Samsung и навигаторов</h2>
-    <p>Официальная гарантия 12 месяцев, бесплатная доставка СДЭК с проверкой перед оплатой. Телефон: <a href="tel:+70000000000">+7 (000) 000-00-00</a>, заказ в Telegram: <a href="#contacts">@wwwatchshop_bot</a>.</p>
+    <p>Официальная гарантия 12 месяцев, бесплатная доставка СДЭК с проверкой перед оплатой. Телефон: <a href="tel:+74733004095">+7 (473) 300-40-95</a>, заказ в Telegram: <a href="https://t.me/wwwatchshop_bot">@wwwatchshop_bot</a>.</p>
     <ul>
-      <li><a href="#/c/sport-watches">Спортивные часы Garmin Fenix 8, Forerunner, Instinct, Venu, MARQ (194 модели)</a></li>
+      <li><a href="#/c/sport-watches">Спортивные часы Garmin Fenix 8, Forerunner, Instinct, Venu, MARQ, Apple Watch, Samsung, Suunto, Coros, Huawei, Amazfit, Casio (227 моделей)</a></li>
       <li><a href="#/c/fishfinders">Эхолоты и картплоттеры Garmin Striker и ECHOMAP (35 моделей)</a></li>
-      <li><a href="#/c/bike-computers">Велокомпьютеры и радары Garmin Edge (29 моделей)</a></li>
-      <li><a href="#/c/gps-navigators">Туристические GPS навигаторы Garmin GPSMAP и eTrex (25 моделей)</a></li>
-      <li><a href="#/c/dive-computers">Дайвинг компьютеры Garmin Descent Mk3i (15 моделей)</a></li>
+      <li><a href="#/c/bike-computers">Велокомпьютеры и радары Garmin Edge (35 моделей)</a></li>
+      <li><a href="#/c/gps-navigators">Туристические GPS навигаторы Garmin GPSMAP, Montana, eTrex и inReach (27 моделей)</a></li>
+      <li><a href="#/c/fitness-trackers">Фитнес-трекеры и смарт-браслеты Garmin vivoactive, Lily и vivosmart (25 моделей)</a></li>
+      <li><a href="#/c/dive-computers">Дайвинг компьютеры Garmin Descent Mk3i, X50i и G1 (15 моделей)</a></li>
+      <li><a href="#/c/accessories">Оригинальные ремешки QuickFit, датчики и аксессуары Garmin (14 моделей)</a></li>
+      <li><a href="#/c/dog-tracking">Системы охоты и дрессировки Garmin Alpha и ошейники TT25/T20 (9 моделей)</a></li>
+      <li><a href="#/c/heart-rate">Нагрудные пульсометры Garmin HRM-Pro Plus, HRM-Fit и HRM-Dual (4 модели)</a></li>
     </ul>
   </div>
 </noscript>
@@ -518,17 +527,20 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 
   <div class="border-t border-gray-100 pt-4 space-y-2 text-xs text-gray-500">
     <div class="font-bold text-gray-900">Горячая линия и Telegram</div>
-    <a id="drawer-phone" href="tel:+70000000000" class="block font-semibold text-gray-900">+7 (000) 000-00-00</a>
+    <a id="drawer-phone" href="tel:+74733004095" class="block font-semibold text-gray-900">+7 (473) 300-40-95</a>
     <a id="drawer-tg-btn" href="#contacts" target="_blank" class="block w-full text-center bg-[#2AABEE] text-white font-bold py-2.5 rounded-xl hover:opacity-95 transition-opacity mt-1" style="color:#FFFFFF !important">Открыть Telegram-бот</a>
   </div>
 </aside>
 
 <!-- ГЛАВНАЯ ТОРГОВАЯ ШАПКА В СТИЛЕ СТИЛЬ ВИТРИНЫ -->
-<header class="sticky top-0 z-30 bg-white/98 backdrop-blur-md border-b border-gray-200 px-3 sm:px-4 py-2.5 shadow-2xs">
+<header class="relative z-30 bg-white border-b border-gray-300 px-3 sm:px-4 py-2.5 shadow-2xs">
   <div class="max-w-6xl mx-auto">
     <div class="flex items-center justify-between gap-2.5 sm:gap-4">
-      <!-- Логотип + фирменная кнопка «Каталог» вариант витрины -->
+      <!-- Кнопка меню в углу + логотип и название магазина правее -->
       <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <button onclick="toggleDrawer(true)" aria-label="Открыть меню" title="Меню" class="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-900 transition-colors shrink-0">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
         <div onclick="switchTab('catalog')" class="flex items-center gap-2 cursor-pointer group shrink-0">
           <div class="w-9 h-9 rounded-xl bg-[#141619] text-white font-extrabold flex items-center justify-center text-base tracking-tighter shrink-0" style="color:#FFFFFF !important">W</div>
           <div>
@@ -536,9 +548,6 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
             <span class="text-[9px] text-brand font-extrabold uppercase tracking-wider hidden sm:inline">Оригинальные часы</span>
           </div>
         </div>
-        <button onclick="toggleDrawer(true)" aria-label="Открыть меню" title="Меню" class="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-900 transition-colors shrink-0">
-          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </button>
       </div>
 
       <!-- Широкая центральная строка поиска в стиле стиль витрины -->
@@ -550,7 +559,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
       <!-- Правая панель иконок с подписями в стиле стиль витрины -->
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
         
-        <button onclick="openQuizModal()" class="hidden lg:flex flex-col items-center justify-center px-2.5 py-1 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors" title="Подбор часов за 30 секунд">
+        <button onclick="openQuizModal()" class="hidden flex-col items-center justify-center px-2.5 py-1 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors" title="Подбор часов за 30 секунд">
           <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span class="text-[10px] font-semibold mt-0.5">Подбор</span>
         </button>
@@ -626,6 +635,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
         <div class="flex flex-wrap items-center gap-2.5 pt-1">
           <button onclick="scrollToCatalog()" class="btn-luxury-gold font-extrabold text-xs px-5 py-3 rounded-xl">Смотреть каталог (391)</button>
           <a id="ui-consult-btn" href="#contacts" target="_blank" class="bg-[#0369A1] hover:bg-[#0284C7] text-white font-bold text-xs px-5 py-3 rounded-xl transition-colors" style="color:#FFFFFF !important">Написать в Telegram</a>
+        
         </div>
         <div class="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200 max-w-md text-[11px]">
           <div><div class="font-mono font-extrabold text-sm text-gray-900">391</div><div class="text-soft">Моделей в каталоге</div></div>
@@ -633,7 +643,6 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
           <div><div class="font-mono font-extrabold text-sm text-gray-900">0 ₽</div><div class="text-soft">Доставка от 15 000 ₽</div></div>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -868,7 +877,6 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 <section id="view-about" class="hidden space-y-4">
   <div class="bg-[#0E121B] rounded-3xl p-6 space-y-4 text-sm leading-relaxed text-slate-300 border border-white/10">
     <h2 class="font-display text-xl font-extrabold text-white">О часовом бутике OneWatch</h2>
-    <img src="uploads/catalog/prod-1-1.jpg" alt="OneWatch" class="w-full h-56 object-cover rounded-2xl" loading="lazy" />
     <p>OneWatch — специализированный бутик оригинальной продукции Garmin, швейцарской и японской часовой механики. С 2018 года мы поставляем проверенные хронометры и приборы с застрахованной доставкой по всей России.</p>
   </div>
 </section>
@@ -909,7 +917,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
       <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10"><div class="text-xs text-slate-400">Электронная почта</div><a id="ui-email" href="mailto:info@example.invalid" class="font-bold text-xs text-white mt-1 block">info@example.invalid</a></div>
       <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10"><div class="text-xs text-slate-400">Официальный Telegram-бот</div><a href="#contacts" target="_blank" class="font-extrabold text-xs text-[#E2E8F0] mt-1 block">@wwwatchshop_bot</a></div>
     </div>
-    <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10 text-xs text-slate-400"><div class="font-bold text-white mb-1">Юридическая информация</div><div id="ui-legal-name">«OneWatch»</div><div>ИНН <span id="ui-legal-inn">по запросу</span> · ОГРНИП <span id="ui-legal-ogrnip">304362725400110</span></div><div id="ui-legal-account-row" style="display:none">Р/с <span id="ui-legal-account"></span></div><div id="ui-legal-bank-row" style="display:none">Банк: <span id="ui-legal-bank"></span></div><div id="ui-legal-bik-row" style="display:none">БИК <span id="ui-legal-bik"></span></div><div id="ui-legal-corr-row" style="display:none">К/с <span id="ui-legal-corr"></span></div></div>
+    <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10 text-xs text-slate-400"><div class="font-bold text-white mb-1">Юридическая информация</div><div id="ui-legal-name">«OneWatch»</div><div>ИНН <span id="ui-legal-inn">по запросу</span> · ОГРНИП <span id="ui-legal-ogrnip">304362725400110</span></div></div>
   </div>
 </section>
 
@@ -966,7 +974,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
     </div>
     <div class="text-[11px] text-soft border-t border-white/[0.07] pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
       <div>
-        <span id="ft-legal-name" class="font-bold text-slate-300">«OneWatch»</span> · ИНН <span id="ft-legal-inn">по запросу</span> · ОГРНИП <span id="ft-legal-ogrnip">304362725400110</span><span id="ft-legal-account-row" style="display:none"> · Р/с <span id="ft-legal-account"></span></span><span id="ft-legal-bank-row" style="display:none"> · <span id="ft-legal-bank"></span></span><span id="ft-legal-bik-row" style="display:none"> · БИК <span id="ft-legal-bik"></span></span><span id="ft-legal-corr-row" style="display:none"> · К/с <span id="ft-legal-corr"></span></span>
+        <span id="ft-legal-name" class="font-bold text-slate-300">«OneWatch»</span> · ИНН <span id="ft-legal-inn">по запросу</span> · ОГРНИП <span id="ft-legal-ogrnip">304362725400110</span>
       </div>
       <div>© OneWatch, 2018–2026. Все права защищены. <span class="text-soft font-mono">Сборка 392f</span></div>
     </div>
@@ -979,7 +987,12 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 </div>
 <div class="hidden"><a id="ui-float-tg" href="#contacts"></a><a id="ui-float-max" href="#contacts" class="hidden"></a></div>
 
-
+<!-- ПАНЕЛЬ СРАВНЕНИЯ МОДЕЛЕЙ -->
+<div id="compare-bar" class="hidden fixed bottom-5 left-5 z-30 items-center gap-2 bg-white border border-gray-200 shadow-xl rounded-2xl pl-4 pr-2 py-2">
+  <span class="text-xs font-extrabold text-gray-900">К сравнению: <span id="compare-count" class="font-mono text-brand">0</span></span>
+  <button onclick="openCompareModal()" class="px-4 py-2 rounded-xl btn-luxury-gold text-xs font-extrabold whitespace-nowrap">Сравнить</button>
+  <button onclick="clearCompare()" class="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold" title="Очистить сравнение">✕</button>
+</div>
 
 <!-- КВИЗ-ПОДБОР -->
 <div id="quiz-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
@@ -1010,7 +1023,20 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </div>
 
-
+<!-- МОДАЛКА СРАВНЕНИЯ -->
+<div id="compare-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/60" onclick="closeCompareModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[86vh] flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div class="text-sm font-extrabold text-gray-900">Сравнение моделей <span class="text-[11px] font-bold text-soft">до 4 штук</span></div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleCompareDiffOnly()" class="text-[11px] font-bold text-brand hover:underline">Только различия</button>
+        <button onclick="closeCompareModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold">✕</button>
+      </div>
+    </div>
+    <div id="compare-table-box" class="overflow-auto p-2"></div>
+  </div>
+</div>
 
 <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0E121B] text-[#E2E8F0] text-xs font-bold px-5 py-3 rounded-full shadow-2xl border border-[#38BDF8]/40"></div>
 
@@ -1126,6 +1152,8 @@ function syncCatalogFp(){
       localStorage.setItem('watchop_cart','[]');
       localStorage.setItem('watchop_favs','[]');
       localStorage.setItem('watchop_recent','[]');
+      try{localStorage.setItem('watchop_compare','[]');}catch(_){}
+      state.compare=[];
       localStorage.setItem('watchop_catfp',fp);
       return true;
     }
@@ -1266,6 +1294,22 @@ function initRevealObserver(){
     els.forEach(el=>obs.observe(el));
   }catch(e){}
 }
+function copyCompareShareLink() {
+  const ids = (state.compare || state.compareList || []).slice(0, 4);
+  if (!ids.length) return '';
+  const hash = `#/compare?ids=${ids.join(',')}`;
+  const full = `${location.origin || 'https://ssrjkk.github.io'}${location.pathname || '/shopwatch/'}${hash}`;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full);
+  } catch (e) {}
+  showToast('Ссылка на сравнение скопирована');
+  return hash;
+}
+function toggleCompareDiffOnly(){
+  state.compareDiffOnly = !state.compareDiffOnly;
+  if(typeof openCompareModal === 'function') openCompareModal();
+  return state.compareDiffOnly;
+}
 function getCompatibleAccessories(p){
   const s = String((p&&p.name)||'')+' '+String((p&&p.specs)||'');
   const is51 = /51\s*мм/i.test(s);
@@ -1359,13 +1403,6 @@ function applySettingsToUI(){
   setTxt('ft-legal-name',s.legal_name);
   setTxt('ft-legal-inn',s.legal_inn);
   setTxt('ft-legal-ogrnip',s.legal_ogrnip);
-  const setReq=(rowId,valId,v)=>{const r=document.getElementById(rowId),el=document.getElementById(valId);const str=String(v||'').trim();if(el&&v!=null)el.textContent=str;if(r)r.style.display=str?'':'none';};
-  for (const pfx of ['ui','ft']) {
-    setReq(pfx+'-legal-account-row',pfx+'-legal-account',s.legal_account);
-    setReq(pfx+'-legal-bank-row',pfx+'-legal-bank',s.legal_bank);
-    setReq(pfx+'-legal-bik-row',pfx+'-legal-bik',s.legal_bik);
-    setReq(pfx+'-legal-corr-row',pfx+'-legal-corr',s.legal_corr);
-  }
   setHref('ui-consult-btn',s.tg_link);
   setHref('ui-float-tg',s.tg_link);
   setHref('ui-float-max',s.max_link);
@@ -1425,6 +1462,13 @@ function route(){
     const parts=pathPart.split('/').filter(Boolean).map(s=>{try{return decodeURIComponent(s);}catch(e){return s;}});
     const r0=(parts[0]||'catalog').toLowerCase();
     if(r0!=='p'&&r0!=='product'&&typeof setProductJsonLd==='function'){setProductJsonLd(null);}
+    if(r0==='compare'&&qsPart){
+      try{
+        const sp=new URLSearchParams(qsPart);
+        const ids=(sp.get('ids')||'').split(/[_,]/).map(Number).filter(n=>n>0&&state.products.some(x=>x.id===n));
+        if(ids.length){state.compare=ids.slice(0,4);state.compareList=state.compare;if(typeof updateCompareBar==='function')updateCompareBar();if(typeof openCompareModal==='function')openCompareModal();return;}
+      }catch(e){}
+    }
     if(qsPart){
       try{
         const sp=new URLSearchParams(qsPart);
@@ -1513,14 +1557,28 @@ function route(){
 }
 try{if(typeof window!=='undefined'&&'onhashchange' in window)window.onhashchange=route;}catch(e){}
 
+// ---------- Unified Presets, Price Intersection, Lightbox, Recent, Schema.org & Compare Matrix ----------
 const WINDOW_CARDS = 60;
 
+function copyCompareShareLink() {
+  const ids = (state.compare || state.compareList || []).slice(0, 4);
+  if (!ids.length) return '';
+  const hash = `#/compare?ids=${ids.join(',')}`;
+  const full = `${location.origin || 'https://ssrjkk.github.io'}${location.pathname || '/shopwatch/'}${hash}`;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full);
+  } catch (e) {}
+  showToast('Ссылка на сравнение скопирована');
+  return hash;
+}
 
+// ---------- Unified Presets, Price Intersection, Lightbox, Recent, Schema.org & Compare Matrix ----------
 const PRESETS=[{key:'hits',label:'Хиты'},{key:'premium',label:'Премиум от 60 000',min:60000},{key:'value',label:'До 35 000',max:35000}];
 const RECENT_MAX=12;
 const RECENT_SHOWN=6;
 state.preset = state.preset || '';
 state.recent = state.recentIds || [];
+state.compareDiffOnly = false;
 
 function isHit(p){return Number(p&&(p.hit!=null?p.hit:p.is_hit))>0;}
 function presetOf(k){for(const p of PRESETS){if(p.key===k)return p;}return null;}
@@ -1620,22 +1678,36 @@ function productJsonLd(p){
   const id=Number(p.id)||0;
   const sku='REF-'+String(id).padStart(4,'0');
   const page=absoluteUrl('#/p/'+id);
-  const img=absoluteUrl(imgUrl(p.image,700));
+  const imgs=productImages(p).map(u=>absoluteUrl(imgUrl(u,900))).filter(Boolean);
+  const img=imgs[0]||absoluteUrl(imgUrl(p.image,700));
   const data={'@context':'https://schema.org','@type':'Product',sku,name:String(p.name||''),brand:{'@type':'Brand',name:String(p.brand||'')},category:String(p.category||''),description:String(p.specs||'')};
-  if(img)data.image=img;
-  if(page){data.url=page;data.offers={'@type':'Offer',price:Number(p.price)||0,priceCurrency:'RUB',url:page};}
+  if(imgs.length>1)data.image=imgs;else if(img)data.image=img;
+  if(page){data.url=page;data.offers={'@type':'Offer',price:Number(p.price)||0,priceCurrency:'RUB',availability:'https://schema.org/InStock',itemCondition:'https://schema.org/NewCondition',url:page};}
   return data;
 }
 function updateSeoTitle(p){
   try{
     if(typeof document==='undefined')return;
+    let title='OneWatch — купить оригинальные часы Garmin, Apple Watch, Samsung и эхолоты с доставкой по России';
+    let desc=`Каталог из ${state.products.length||391} оригинальных моделей часов Garmin, Apple Watch, Samsung, Suunto, Coros, Huawei, Amazfit, Casio, эхолотов и GPS-навигаторов. Доставка СДЭК по всей России, гарантия 12 месяцев.`;
+    let img=absoluteUrl('uploads/catalog/prod-1-1.jpg');
     if(p&&p.name){
-      document.title=`${p.name} — купить за ${Number(p.price||0).toLocaleString('ru-RU')} ₽ | OneWatch`;
+      title=`${p.name} — купить за ${Number(p.price||0).toLocaleString('ru-RU')} ₽ | OneWatch`;
+      desc=`${p.name} (${p.brand||'OneWatch'}, арт. REF-${String(p.id).padStart(4,'0')}) — ${p.specs||'оригинальная поставка с гарантией 12 мес.'} Цена: ${Number(p.price||0).toLocaleString('ru-RU')} ₽.`;
+      if(p.image)img=absoluteUrl(imgUrl(p.image,900));
     }else if(state.activeCategory&&state.activeCategory!=='Все товары'){
-      document.title=`${state.activeCategory} — каталог | OneWatch`;
-    }else{
-      document.title='OneWatch — купить оригинальные часы Garmin, Apple Watch, Samsung и эхолоты с доставкой по России';
+      title=`${state.activeCategory} — каталог | OneWatch`;
+      desc=`${state.activeCategory} в магазине OneWatch: оригинальные модели с официальной гарантией 12 месяцев и быстрой доставкой СДЭК по России.`;
     }
+    document.title=title;
+    const setMeta=(sel,val)=>{const m=document.querySelector(sel);if(m&&val)m.setAttribute('content',val);};
+    setMeta('meta[name="description"]',desc);
+    setMeta('meta[property="og:title"]',title);
+    setMeta('meta[property="og:description"]',desc);
+    setMeta('meta[property="og:image"]',img);
+    setMeta('meta[name="twitter:title"]',title);
+    setMeta('meta[name="twitter:description"]',desc);
+    setMeta('meta[name="twitter:image"]',img);
   }catch(e){}
 }
 function setProductJsonLd(p){
@@ -1652,6 +1724,11 @@ function applyHashFilters(hp){
     document.getElementById('price-min').value=(hp&&hp.min)?String(hp.min):'';
     document.getElementById('price-max').value=(hp&&hp.max)?String(hp.max):'';
   }catch(e){}
+}
+function toggleCompareDiffOnly(){
+  state.compareDiffOnly = !state.compareDiffOnly;
+  if(typeof openCompareModal === 'function') openCompareModal();
+  return state.compareDiffOnly;
 }
 function getCompatibleAccessories(p){
   const s = String((p&&p.name)||'')+' '+String((p&&p.specs)||'');
@@ -2062,12 +2139,15 @@ function handleImgError(imgEl,brand,cat){
   // Этап 1: эталонное фото своей категории в том же студийном стиле — карточка не пустеет.
   const c = String(cat || imgEl.dataset.cat || '');
   const pool = {
-    'Эхолоты': 'uploads/catalog/prod-1-1.jpg',
-    'Велокомпьютеры': 'uploads/catalog/prod-1-1.jpg',
-    'GPS навигаторы': 'uploads/catalog/prod-1-1.jpg',
-    'Охота и дрессировка': 'uploads/catalog/prod-1-1.jpg',
-    'Пульсометры': 'uploads/catalog/prod-1-1.jpg',
-    'Аксессуары': 'uploads/catalog/prod-1-1.jpg',
+    'Спортивные часы': 'uploads/catalog/prod-1-1.jpg',
+    'Дайвинг компьютеры': 'uploads/catalog/prod-8-1.jpg',
+    'Фитнес-трекеры': 'uploads/catalog/prod-15-1.jpg',
+    'Эхолоты': 'uploads/catalog/prod-199-1.jpg',
+    'Велокомпьютеры': 'uploads/catalog/prod-234-1.jpg',
+    'GPS навигаторы': 'uploads/catalog/prod-263-1.jpg',
+    'Охота и дрессировка': 'uploads/catalog/prod-320-1.jpg',
+    'Пульсометры': 'uploads/catalog/prod-329-1.jpg',
+    'Аксессуары': 'uploads/catalog/prod-333-1.jpg',
   };
   const fb = pool[c];
   if (fb && imgEl.src !== fb) { imgEl.dataset.fallbackApplied = '1'; imgEl.src = fb; return; }
@@ -2106,6 +2186,7 @@ function oldPriceHTML(p,cls){const o=Math.trunc(Number(p&&(p.old_price||p.oldPri
 const CART_TROLLEY_SVG = `<svg class="w-4 h-4 shrink-0 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>`;
 function productCardHTML(p){
   const isFav=state.favorites.includes(p.id);
+  const inCmp=(state.compare||[]).includes(p.id);
   const inCart=state.cart.some(x=>x.id===p.id);
   const stk=getStockInfo(p);
   const pal=getWatchPalette(p);
@@ -2120,8 +2201,8 @@ function productCardHTML(p){
   const saleHl=String((state.settings||{}).promo_highlight)==='1';
   const discBadge=hasDisc?`<span class="px-1.5 py-0.5 rounded-md ${saleHl?'bg-[#E11D48]':'bg-[#141619]'} text-white text-[10px] font-extrabold tracking-tight" style="color:#FFFFFF !important">−${discPct}%</span>`:'';
   const hitBadge=(!hasDisc&&isHit(p))?`<span class="px-1.5 py-0.5 rounded-md bg-[#047857] text-white text-[10px] font-extrabold uppercase tracking-wide" style="color:#FFFFFF !important">ХИТ</span>`:'';
-  return `<div class="watch-card group rounded-2xl p-2.5 sm:p-3.5 flex flex-col justify-between relative overflow-hidden bg-white border border-gray-200 h-full min-w-0">
-    <div class="relative overflow-hidden rounded-xl watch-stage aspect-square mb-2.5 bg-[#FFFFFF] border border-gray-100">
+  return `<div class="watch-card group rounded-2xl p-2.5 sm:p-3.5 flex flex-col justify-between relative overflow-hidden bg-white border border-slate-300 h-full min-w-0">
+    <div class="relative overflow-hidden rounded-xl watch-stage aspect-square mb-2.5 bg-white border border-slate-300">
       <a href="#/p/${p.id}" class="absolute inset-0 block cursor-pointer" aria-label="${esc(p.name)}"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" width="600" height="600" decoding="async" fetchpriority="low" draggable="false" referrerpolicy="no-referrer" loading="lazy" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')" class="watch-bg-photo absolute inset-0 w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105 img-skeleton" onload="this.classList.remove('img-skeleton')" /></a>
 
       <div class="absolute top-2 left-2 z-10 flex items-center pointer-events-none">
@@ -2143,12 +2224,11 @@ function productCardHTML(p){
         <span class="text-[10px] font-extrabold uppercase tracking-wider text-brand truncate">${esc(p.brand)}</span>
         <span data-stock-badge="${p.id}" class="inline-flex items-center gap-1 text-[10px] font-semibold text-gray-600 shrink-0"><span class="w-1.5 h-1.5 rounded-full ${stk.dotClass}"></span><span>${stk.code==='in'?'В наличии':stk.code==='low'?'Мало':'Под заказ'}</span></span>
       </div>
-      <h3 class="text-[12px] sm:text-[13px] font-bold text-gray-900 group-hover:text-[#E11D48] transition-colors line-clamp-2 leading-snug min-h-[34px]">${esc(p.name)}</h3>
-      <div class="text-[10.5px] text-gray-500 line-clamp-1 mt-1 mb-2">${esc(p.specs||'')}</div>
+      <h3 class="text-[12px] sm:text-[13px] font-bold text-gray-900 group-hover:text-[#E11D48] transition-colors line-clamp-2">${esc(p.name)}</h3>
+      <div class="text-[10.5px] text-gray-500 line-clamp-1 mt-1 mb-2">${esc(p.specs||'')}<span class="sr-only"> Арт. REF-${String(p.id).padStart(4,'0')}</span></div>
     </a>
 
     <div class="pt-2 border-t border-gray-100 mt-auto">
-      <div class="flex items-center justify-between gap-2 text-[10px] text-gray-500 mb-1.5"><span>Долями 4 × ${splitPrice} ₽ · 0%</span><span class="font-mono text-soft">Арт. REF-${String(p.id).padStart(4,'0')}</span></div>
       <button data-cart-btn="${p.id}" onclick="addToCart(event,${p.id})" class="w-full h-9 sm:h-10 ${inCart?'btn-luxury-added':'btn-luxury-gold'} transition-colors text-xs font-extrabold px-3 rounded-xl inline-flex items-center justify-center gap-1.5 whitespace-nowrap">${CART_TROLLEY_SVG}<span>${inCart?'Добавлено ✓':'В корзину'}</span></button>
     </div>
   </div>`;
@@ -2175,7 +2255,7 @@ function openProduct(id){
   const compatList=typeof getCompatibleAccessories==='function'?getCompatibleAccessories(p):[];
   const acc=compatList[0]||state.products.find(x=>x.category==='Аксессуары'||x.category==='Пульсометры')||{id:310,name:'Ремешок Garmin QuickFit 22 мм',price:4990};
   const bundlePrice=p.price+Math.round(acc.price*0.85);
-  const bundleHTML=`<div class="mt-6 p-4 rounded-2xl bg-white border border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-2xs"><div class="flex items-center gap-3"><div class="flex items-center gap-1.5 shrink-0"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" class="w-12 h-12 rounded-xl bg-[#FAFAFC] border border-gray-200 object-contain p-1" loading="lazy" /><span class="font-extrabold text-soft">+</span><img src="${esc(imgSrc(acc.image||'uploads/catalog/prod-1-1.jpg'))}" alt="${esc(acc.name)}" class="w-12 h-12 rounded-xl bg-[#FAFAFC] border border-gray-200 object-contain p-1" loading="lazy" /></div><div><div class="font-extrabold text-brand uppercase tracking-wider text-[10px]">Выгодный комплект (−15% на аксессуар)</div><div class="text-gray-800 mt-0.5">${esc(p.name)} + <b>${esc(acc.name)}</b> за <b class="text-gray-900">${bundlePrice.toLocaleString('ru-RU')} ₽</b></div></div></div><button onclick="addBundleToCart(${p.id},${acc.id})" class="btn-luxury-gold font-extrabold px-4 py-2.5 rounded-xl whitespace-nowrap">Купить комплектом</button></div>`;
+  const bundleHTML=`<div class="mt-6 p-4 rounded-2xl bg-white border border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-2xs"><div class="flex items-center gap-3"><div class="flex items-center gap-1.5 shrink-0"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" class="w-12 h-12 rounded-xl bg-white border border-slate-300 object-contain p-1" loading="lazy" /><span class="font-extrabold text-soft">+</span><img src="${esc(imgSrc(acc.image||'uploads/catalog/prod-1-1.jpg'))}" alt="${esc(acc.name)}" class="w-12 h-12 rounded-xl bg-white border border-slate-300 object-contain p-1" loading="lazy" /></div><div><div class="font-extrabold text-brand uppercase tracking-wider text-[10px]">Выгодный комплект (−15% на аксессуар)</div><div class="text-gray-800 mt-0.5">${esc(p.name)} + <b>${esc(acc.name)}</b> за <b class="text-gray-900">${bundlePrice.toLocaleString('ru-RU')} ₽</b></div></div></div><button onclick="addBundleToCart(${p.id},${acc.id})" class="btn-luxury-gold font-extrabold px-4 py-2.5 rounded-xl whitespace-nowrap">Купить комплектом</button></div>`;
   const stockBannerHTML=`<div class="mb-4 p-3 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between text-xs font-bold text-slate-200"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${stk.dotClass}"></span><span>${esc(stk.label)}</span></div><span class="text-[11px] text-[#E2E8F0] font-mono">${esc(getDispatchCountdown())}</span></div>`;
   const relHTML=bundleHTML+(related.length?`<div class="mt-8 pt-6 border-t border-white/10"><h3 class="text-sm font-extrabold text-white uppercase tracking-wider mb-4">Модели из коллекции ${esc(p.series)}</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">${related.map(r=>productCardHTML(r)).join('')}</div></div>`:'');
   const pdpGal=productGallery(p);
@@ -2297,7 +2377,7 @@ function renderCart(){
   if(!lines.length){
     box.innerHTML=`<div class="bg-[#0E121B] rounded-3xl p-8 text-center text-xs text-slate-400 border border-white/10 space-y-3"><div class="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-[#38BDF8]">${CART_TROLLEY_SVG}</div><div>Корзина пуста. Выберите модель в каталоге и нажмите «В корзину».</div><button onclick="goCatalogHome()" class="btn-luxury-gold text-xs font-extrabold px-5 py-2.5 rounded-xl">Перейти в каталог</button></div>`;
   }else{
-    box.innerHTML=lines.map(({l,p})=>`<div class="bg-[#0E121B] rounded-2xl p-3.5 border border-white/10 flex gap-3.5 items-center"><div class="w-16 h-16 rounded-2xl watch-stage p-1.5 shrink-0 flex items-center justify-center bg-[#F8FAFC] border border-gray-200 overflow-hidden"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" class="w-full h-full object-contain" loading="lazy" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category||'')}')" /></div><div class="flex-1 min-w-0"><div class="text-[10px] font-extrabold uppercase tracking-wider text-[#38BDF8]">${esc(p.brand)} • ${esc(p.series)}</div><div class="text-xs font-bold text-white line-clamp-2 mt-0.5">${esc(p.name)}</div><div class="text-sm font-extrabold text-[#E2E8F0] mt-1 tabular-nums">${Number(p.price).toLocaleString('ru-RU')} ₽</div></div><div class="flex flex-col items-end gap-2"><button onclick="removeFromCart(${p.id})" class="text-soft hover:text-rose-400 text-sm leading-none">✕</button><div class="flex items-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl px-2 py-1"><button onclick="changeQty(${p.id},-1)" class="w-6 h-6 font-bold text-slate-300 hover:text-white">−</button><span class="text-xs font-mono font-bold w-4 text-center text-white">${l.qty}</span><button onclick="changeQty(${p.id},1)" class="w-6 h-6 font-bold text-slate-300 hover:text-white">+</button></div></div></div>`).join('');
+    box.innerHTML=lines.map(({l,p})=>`<div class="bg-[#0E121B] rounded-2xl p-3.5 border border-white/10 flex gap-3.5 items-center"><div class="w-16 h-16 rounded-2xl watch-stage p-1.5 shrink-0 flex items-center justify-center bg-white border border-slate-300 overflow-hidden"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" class="w-full h-full object-contain" loading="lazy" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category||'')}')" /></div><div class="flex-1 min-w-0"><div class="text-[10px] font-extrabold uppercase tracking-wider text-[#38BDF8]">${esc(p.brand)} • ${esc(p.series)} • <span class="font-mono text-slate-400">Арт. REF-${String(p.id).padStart(4,'0')}</span></div><div class="text-xs font-bold text-white line-clamp-2 mt-0.5">${esc(p.name)}</div><div class="flex flex-wrap items-baseline gap-2 mt-1"><span class="text-sm font-extrabold text-[#E2E8F0] tabular-nums">${Number(p.price).toLocaleString('ru-RU')} ₽</span><span class="text-[10px] font-semibold text-emerald-400">Долями 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽ · 0%</span></div></div><div class="flex flex-col items-end gap-2"><button onclick="removeFromCart(${p.id})" class="text-soft hover:text-rose-400 text-sm leading-none">✕</button><div class="flex items-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl px-2 py-1"><button onclick="changeQty(${p.id},-1)" class="w-6 h-6 font-bold text-slate-300 hover:text-white">−</button><span class="text-xs font-mono font-bold w-4 text-center text-white">${l.qty}</span><button onclick="changeQty(${p.id},1)" class="w-6 h-6 font-bold text-slate-300 hover:text-white">+</button></div></div></div>`).join('');
   }
   const sub=cartTotal();
   const disc=(Number(state.promoDiscountRub)>0)?Number(state.promoDiscountRub):calcPromoDiscount(sub);
@@ -2518,7 +2598,11 @@ function renderFavorites(){
     box.innerHTML=`<div class="col-span-2 sm:col-span-4 bg-white rounded-2xl p-6 text-center text-xs text-gray-500">В избранном пока пусто. Нажмите ♥ на понравившихся часах в каталоге.</div>`;
     return;
   }
-  if(typeof windowState!=='undefined')windowState.favorites={rowH:0,sig:null,from:0,to:0};
+  const favKey=list.map(x=>x.id).join(',');
+  if(typeof windowState!=='undefined'){
+    const prev=windowState.favorites;
+    if(!prev||prev.favKey!==favKey)windowState.favorites={rowH:(prev&&prev.rowH)||0,sig:null,from:0,to:0,favKey};
+  }
   renderWindowed(list,'favorites',{grid:'favorites-grid',top:'favorites-top',bottom:'favorites-bottom',wrap:'favorites-window'});
 }
 
@@ -2566,6 +2650,12 @@ function syncMiniAppNav(tab){
 }
 
 
+state.compare=[];
+try{const _cc=safeParse(localStorage.getItem('watchop_compare'),'[]');if(Array.isArray(_cc))state.compare=_cc.map(Number).filter(x=>x>0).slice(0,4);}catch(e){}
+function saveCompare(){try{localStorage.setItem('watchop_compare',JSON.stringify(state.compare||[]));}catch(e){}}
+state.quizGoal='run';
+state.quizBudget='all';
+state.sugIndex=-1;
 function updateToTop(){
   const btn=document.getElementById('to-top-btn');
   if(!btn||typeof window==='undefined')return;
@@ -2642,7 +2732,7 @@ function applyQuizSelection(){
   }else if(state.quizGoal==='outdoor'){
     state.activeSeries='fēnix';
   }else if(state.quizGoal==='classic'){
-    state.activeSeries='Seiko 5 GMT';
+    state.activeSeries='Venu';
   }else if(state.quizGoal==='dive'){
     state.activeCategory='Дайвинг компьютеры';
   }
@@ -2657,9 +2747,69 @@ function applyQuizSelection(){
   showView('catalog');
   renderFilters();
   renderCatalog();
+  try{const gEl=document.getElementById('products-grid');if(gEl&&gEl.scrollIntoView)gEl.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}
   showToast(`Подобрано моделей: ${state.filtered.length}`);
 }
 
+// Сравнение моделей
+function toggleCompare(e,id){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  const idx=state.compare.indexOf(id);
+  if(idx===-1){
+    if(state.compare.length>=4){
+      showToast('В сравнении максимум 4 модели');
+      return;
+    }
+    state.compare.push(id);
+    saveCompare();
+    showToast('Модель добавлена к сравнению');
+  }else{
+    state.compare.splice(idx,1);
+    saveCompare();
+  }
+  updateCompareBar();
+}
+function updateCompareBar(){
+  const bar=document.getElementById('compare-bar');
+  const cnt=document.getElementById('compare-count');
+  if(!bar||!cnt)return;
+  cnt.textContent=String(state.compare.length);
+  if(state.compare.length>0){bar.classList.remove('hidden');bar.classList.add('flex');}
+  else{bar.classList.add('hidden');bar.classList.remove('flex');}
+}
+function clearCompare(){
+  state.compare=[];
+  try{saveCompare();}catch(_){}
+  updateCompareBar();
+  closeCompareModal();
+  renderCatalog();
+}
+function openCompareModal(){
+  const m=document.getElementById('compare-modal');
+  const box=document.getElementById('compare-table-box');
+  if(!m||!box)return;
+  const items=state.compare.map(id=>state.products.find(p=>p.id===id)).filter(Boolean);
+  if(!items.length){
+    box.innerHTML=`<div class="p-8 text-center text-xs text-slate-400">Добавьте модели к сравнению кнопкой весов на карточке товара.</div>`;
+  }else{
+    box.innerHTML=`<table class="w-full text-left border-collapse text-xs">
+      <thead><tr class="border-b border-white/10">${items.map(p=>`<th class="p-3 min-w-[165px] align-top"><div class="w-24 h-24 rounded-2xl watch-stage p-2 mb-2 flex items-center justify-center bg-[#F8FAFC] border border-gray-200 overflow-hidden"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" class="w-full h-full object-contain" loading="lazy" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category||'')}')" /></div><div class="text-[10px] font-extrabold uppercase tracking-wider text-[#38BDF8]">${esc(p.brand)}</div><a href="#/p/${p.id}" class="font-bold text-white line-clamp-2 mt-0.5 hover:text-[#38BDF8] block">${esc(p.name)}</a></div></th>`).join('')}</tr></thead>
+      <tbody class="divide-y divide-white/10">
+        <tr>${items.map(p=>`<td class="p-3 font-extrabold text-sm text-[#E2E8F0] tabular-nums">${Number(p.price).toLocaleString('ru-RU')} ₽</td>`).join('')}</tr>
+        <tr>${items.map(p=>`<td class="p-3 text-slate-300"><b>Линейка:</b> ${esc(p.series)}</td>`).join('')}</tr>
+        <tr>${items.map(p=>`<td class="p-3 text-slate-300"><b>Направление:</b> ${esc(p.category)}</td>`).join('')}</tr>
+        <tr>${items.map(p=>`<td class="p-3 text-slate-400 leading-relaxed">${esc(p.specs||'—')}</td>`).join('')}</tr>
+        <tr>${items.map(p=>`<td class="p-3"><button onclick="addToCart(event,${p.id});closeCompareModal()" class="w-full btn-luxury-gold font-extrabold py-2.5 rounded-xl">В корзину</button></td>`).join('')}</tr>
+      </tbody>
+    </table>`;
+  }
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+function closeCompareModal(){
+  const m=document.getElementById('compare-modal');
+  if(m){m.classList.add('hidden');m.classList.remove('flex');}
+}
 
 
 state.recentIds=safeParse(localStorage.getItem('watchop_recent'),'[]') instanceof Array ? safeParse(localStorage.getItem('watchop_recent'),[]) : [];
@@ -2805,7 +2955,7 @@ function renderWindowed(items,key,dom,scrollPx){
   const grid=document.getElementById(dom.grid);if(!grid)return{from:0,to:0};
   const top=document.getElementById(dom.top);const bottom=document.getElementById(dom.bottom);const total=items.length;
   const effTotal=(key==='cat')?Math.min(total,Math.max(1,state.shownMax||10)):total;
-  if(effTotal<=WINDOW_CARDS){if(top)top.style.height="0px";if(bottom)bottom.style.height="0px";const sig='cap:'+effTotal+':'+total+':'+(items[0]?items[0].id:'x');const st0=windowState[key]||(windowState[key]={rowH:0,sig:null,from:0,to:0});if(st0.sig===sig&&st0.to===effTotal)return{from:st0.from,to:st0.to};st0.sig=sig;st0.from=0;st0.to=effTotal;grid.innerHTML=items.slice(0,effTotal).map((p)=>productCardHTML(p)).join("");return{from:0,to:effTotal};}
+  if(effTotal<=WINDOW_CARDS){if(top)top.style.height="0px";if(bottom)bottom.style.height="0px";const sig='cap:'+effTotal+':'+total+':'+items.slice(0,effTotal).map(p=>p.id+':'+p.price).join(',');const st0=windowState[key]||(windowState[key]={rowH:0,sig:null,from:0,to:0});if(st0.sig===sig&&st0.to===effTotal)return{from:st0.from,to:st0.to};st0.sig=sig;st0.from=0;st0.to=effTotal;grid.innerHTML=items.slice(0,effTotal).map((p)=>productCardHTML(p)).join("");return{from:0,to:effTotal};}
   const cols=gridCols(grid);
   const rowsInWindow=Math.max(1,Math.ceil(WINDOW_CARDS/cols));
   const st=windowState[key]||(windowState[key]={rowH:0,sig:null,from:0,to:0});

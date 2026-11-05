@@ -7,7 +7,7 @@
     "start": "node server.js",
     "sync:pages": "node sync-pages.js",
     "vibe:clean": "node vibe-clean.js",
-    "test": "node --test tests/api.test.js tests/initdata.test.js tests/max.test.js tests/tgdeeplink.test.js tests/virtual.test.js tests/search.test.js tests/catalog-export.test.js tests/cart.test.js tests/photo-audit.test.js tests/e2e-shop.test.js tests/ui.test.js tests/tgadmin.test.js tests/discount.test.js tests/import.test.js tests/admin.test.js tests/publish.test.js tests/encoding.test.js tests/presets.test.js tests/promo.test.js tests/manifest.test.js tests/manual.test.js tests/backup.test.js tests/owner.test.js tests/seo.test.js"
+    "test": "node -r ./sqlite-compat.js --test tests/api.test.js tests/initdata.test.js tests/max.test.js tests/tgdeeplink.test.js tests/virtual.test.js tests/search.test.js tests/catalog-export.test.js tests/cart.test.js tests/photo-audit.test.js tests/e2e-shop.test.js tests/ui.test.js tests/tgadmin.test.js tests/discount.test.js tests/import.test.js tests/admin.test.js tests/publish.test.js tests/encoding.test.js tests/presets.test.js tests/promo.test.js tests/manifest.test.js tests/manual.test.js tests/backup.test.js tests/owner.test.js tests/seo.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

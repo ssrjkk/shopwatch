@@ -225,6 +225,12 @@ describe('витрина-stealth: поиск, фильтры, оформлени
   });
 
   it('разметка: вкладки, корзина, тосты и поддержка', () => {
+    const rawH = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+    const hdrIdx = rawH.indexOf('<header');
+    const hdrChunk = rawH.slice(hdrIdx, hdrIdx + 1800);
+    const menuBtnPos = hdrChunk.indexOf('toggleDrawer(true)');
+    const brandNamePos = hdrChunk.indexOf('ONEWATCH');
+    assert.ok(menuBtnPos > 0 && brandNamePos > menuBtnPos, 'кнопка меню в левом углу, надпись ONEWATCH правее кнопки меню');
     const tabs = HTML.slice(HTML.indexOf('id="tab-btn-catalog"'), HTML.indexOf('</header>'));
     for (const t of ['tab-btn-catalog', 'tab-btn-cart', 'tab-btn-orders', 'tab-btn-about', 'tab-btn-delivery']) {
       assert.ok(tabs.includes(t), `вкладка ${t} на месте`);
@@ -318,31 +324,6 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     assert.equal(Number(m[1]), SEED.length, `витрина обещает ${m && m[1]} моделей, в каталоге ${SEED.length}`);
   });
 
-  it('реквизиты организации показываются в контактах и подвале, пустые скрыты', () => {
-    const keep = { ...g.state.settings };
-    g.state.settings = {
-      ...g.state.settings,
-      legal_name: 'ИП Тест', legal_inn: '123456789012', legal_ogrnip: '304000000000000',
-      legal_account: '40802810000000000001', legal_bank: 'Тест-Банк', legal_bik: '044525000', legal_corr: '30101810000000000000',
-    };
-    g.applySettingsToUI();
-    const doc = g.document;
-    assert.equal(doc.getElementById('ui-legal-account').textContent, '40802810000000000001');
-    assert.equal(doc.getElementById('ui-legal-bank').textContent, 'Тест-Банк');
-    assert.notEqual(doc.getElementById('ui-legal-account-row').style.display, 'none');
-    assert.notEqual(doc.getElementById('ui-legal-bik-row').style.display, 'none');
-    assert.ok(doc.getElementById('ft-legal-account').textContent.includes('40802810000000000001'));
-    assert.notEqual(doc.getElementById('ft-legal-bank-row').style.display, 'none');
-    g.state.settings = { ...g.state.settings, legal_account: '', legal_bank: '', legal_bik: '', legal_corr: '' };
-    g.applySettingsToUI();
-    assert.equal(doc.getElementById('ui-legal-account-row').style.display, 'none');
-    assert.equal(doc.getElementById('ui-legal-corr-row').style.display, 'none');
-    assert.equal(doc.getElementById('ft-legal-account-row').style.display, 'none');
-    assert.equal(doc.getElementById('ft-legal-bank-row').style.display, 'none');
-    g.state.settings = keep;
-    g.applySettingsToUI();
-  });
-
   it('переключателя темы на витрине больше нет', () => {
     for (const f of ['index.html', 'public/index.html']) {
       const html = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
@@ -374,7 +355,7 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     const rows = (Array.isArray(catalog) ? catalog : catalog.products).length;
     const cms = fs.readFileSync(path.join(__dirname, '..', 'cms', 'README-CMS.md'), 'utf8');
     assert.ok(cms.includes(rows + ' позиц'), 'cms/README-CMS.md: нет актуального числа ' + rows);
-    assert.equal(/355/.test(cms), false, 'cms/README-CMS.md: остался счётчик старого каталога');
+    assert.equal(cms.includes(String(rows - 36)), false, 'cms/README-CMS.md: остался старый счётник ' + (rows - 36));
     assert.equal(/\b35\d\b/.test(cms), false, 'cms/README-CMS.md: остался счётчик старого каталога');
   });
 

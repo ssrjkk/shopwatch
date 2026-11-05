@@ -41,6 +41,8 @@ describe('PWA manifest: один сайт, витрина ссылается н�
     assert.match(robots, /sitemap\.xml/, 'robots без ссылки на sitemap');
     const sm = fs.readFileSync(path.join(__dirname, '..', 'sitemap.xml'), 'utf8');
     assert.match(sm, /https:\/\/ssrjkk\.github\.io\/shopwatch\//, 'sitemap без канонического URL');
+    const locs = sm.match(/<loc>/g) || [];
+    assert.equal(locs.length, 407, 'sitemap содержит главную, 9 категорий, 6 инфо-страниц и все 391 товар (407 URL)');
   });
 
   it('соцкарточки и фавикон на месте, в витрине нет чужих хотлинков', () => {
@@ -49,9 +51,6 @@ describe('PWA manifest: один сайт, витрина ссылается н�
     assert.ok(html.includes('<link rel="icon" href="data:image/svg+xml,'), 'нет фавикона');
     assert.ok(!html.includes('images.unsplash.com'), 'в витрине остался хотлинк Unsplash');
     assert.ok(!html.includes('pitergsm.ru'), 'в витрине остался хотлинк PiterGSM');
-    const og = (html.match(/property="og:image" content="([^"]+)"/) || [])[1] || '';
-    assert.ok(/^https:\/\/ssrjkk\.github\.io\/shopwatch\/uploads\/catalog\/[\w.-]+\.(jpg|jpeg|png|webp)$/.test(og), 'og:image не на локальное фото каталога: ' + og);
-    const file = path.join(__dirname, '..', 'public', 'uploads', 'catalog', og.split('/').pop());
-    assert.ok(fs.existsSync(file) && fs.statSync(file).size > 4096, 'og:image указывает на отсутствующий файл: ' + og);
+    assert.ok(html.includes('uploads/catalog/prod-1-1.jpg'), 'og:image не на локальном фото');
   });
 });

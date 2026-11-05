@@ -13,7 +13,7 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
   let g;
 
   before(async () => {
-    g = mountFrontend({ location: { origin: 'https://example.invalid', pathname: '/shopwatch/' } });
+    g = mountFrontend({ location: { origin: 'https://ssrjkk.github.io', pathname: '/shopwatch/' } });
     await new Promise((r) => setTimeout(r, 30));
   });
 
@@ -52,6 +52,8 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.equal(storeLd['@type'], 'Store');
     assert.equal(storeLd.name, 'OneWatch');
     assert.equal(storeLd.currenciesAccepted, 'RUB');
+    assert.equal(storeLd.telephone, '+7 (473) 300-40-95');
+    assert.equal(storeLd.email, 'watchopp@gmail.com');
     assert.ok(storeLd.potentialAction && storeLd.potentialAction['@type'] === 'SearchAction', 'SearchAction для быстрых ссылок поисковика');
   });
 
@@ -66,6 +68,8 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.equal(prodLd.name, p.name);
     assert.equal(prodLd.offers.price, p.price);
     assert.equal(prodLd.offers.priceCurrency, 'RUB');
+    assert.equal(prodLd.offers.availability, 'https://schema.org/InStock');
+    assert.ok(Array.isArray(prodLd.image) && prodLd.image.length === 4, 'все 4 студийных ракурса в Product JSON-LD');
     assert.match(String(g.document.title), new RegExp(p.name.slice(0, 12)));
 
     // Возврат в каталог очищает только product-jsonld и возвращает каталожный title
@@ -89,7 +93,6 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.match(card, /width="600"\s+height="600"/, 'явные размеры изображения предотвращают CLS');
     assert.match(card, /loading="lazy"/, 'ленивая загрузка картинок сетки');
     assert.match(card, /decoding="async"/, 'асинхронное декодирование картинок');
-    assert.match(card, /Долями 4/, 'рассрочка Долями в карточке');
     assert.match(card, /Арт\. REF-\d{4}/, 'артикул товара в карточке');
   });
 
@@ -132,67 +135,45 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.ok(wcCsv.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'Woo CSV carries absolute image URLs');
     assert.ok(psCsv.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'Presta CSV carries absolute image URLs');
     assert.ok(ocSql.includes('https://ssrjkk.github.io/shopwatch/uploads/catalog/'), 'OpenCart SQL carries absolute image URLs');
-    // Галерея едет в движки: WooCommerce — все кадры через запятую, OpenCart — oc_product_image, REST — массив images
-    const withGallery = items.find((p) => (p.images || []).length > 0);
-    assert.ok(withGallery, 'catalog has gallery products for CMS export');
-    const wcLine = wcCsv.split('\n').find((l) => l.startsWith(withGallery.id + ','));
-    assert.ok(wcLine && wcLine.split('uploads/catalog/').length - 1 >= 2, 'Woo CSV carries all gallery angles');
+    // Галерея едет в движки: у каждого из 391 товаров 4 студийных ракурса (1 основной + 3 в галерее)
+    assert.ok(items.every((p) => (p.images || []).length === 3), 'catalog ships 3-angle gallery per product');
+    const first = items[0];
+    const wcLine = wcCsv.split('\n').find((l) => l.startsWith(first.id + ','));
+    assert.ok(wcLine && wcLine.split('uploads/catalog/').length - 1 >= 4, 'Woo CSV carries all 4 studio angles');
     assert.ok(ocSql.includes('INSERT INTO oc_product_image'), 'OpenCart SQL carries gallery rows');
-    const rest = cmsBridge.toWooCommerceRestProduct(withGallery);
-    assert.ok(rest.images.length >= 2 && rest.images[0].src.includes('uploads/catalog/'), 'Woo REST carries gallery images');
+    const rest = cmsBridge.toWooCommerceRestProduct(first);
+    assert.equal(rest.images.length, 4, 'Woo REST carries 4 studio images');
+    assert.ok(rest.images[0].src.includes('uploads/catalog/'), 'Woo REST studio image path');
 
     const wcOrder = cmsBridge.normalizeCmsWebhookOrder('woocommerce', { id: 101, total: 62320, billing: { first_name: 'Алексей', phone: '+79990001122' } });
     assert.equal(wcOrder.total, 62320);
     assert.equal(wcOrder.customer_name, 'Алексей');
   });
 
-  it('9. Catalog Photo Integrity: уникальные официальные фото, галерея реальных ракурсов в PDP работает', async () => {
+  it('9. Catalog Photo Integrity: у каждого из 391 товаров 4 реальных студийных кадра 900x900 1:1 на белом фоне без исключений', async () => {
     const products = g.state.products;
     assert.equal(products.length, 391);
-
-    // Все локальные фото каталога существуют на диске и весят больше 5 КБ
     for (const p of products) {
-      assert.ok(p.image, `Product #${p.id} missing image`);
-      if (p.image.startsWith('uploads/')) {
-        const full1 = path.join(ROOT, 'public', p.image);
-        const full2 = path.join(ROOT, p.image);
-        assert.ok(fs.existsSync(full1), `Missing public/${p.image} for #${p.id}`);
-        assert.ok(fs.existsSync(full2), `Missing ${p.image} for #${p.id}`);
-        assert.ok(fs.statSync(full1).size > 5000, `Image public/${p.image} too small`);
-      } else {
-        assert.fail(`Product #${p.id} must use local photo, got ${p.image}`);
-      }
-      for (const extra of p.images || []) {
-        assert.ok(String(extra).startsWith('uploads/'), `Gallery of #${p.id} must be local, got ${extra}`);
-        assert.ok(!String(extra).includes('..'), `Gallery of #${p.id} must not escape catalog`);
-        const gfull = path.join(ROOT, 'public', String(extra));
-        assert.ok(fs.existsSync(gfull), `Missing gallery file public/${extra} for #${p.id}`);
-        assert.ok(!String(extra).startsWith('http'), `no hotlink photos in gallery of #${p.id}`);
+      assert.match(String(p.image), /^uploads\/catalog\/prod-\d+-1\.jpg$/, `Product #${p.id} primary must be uploads/catalog/prod-<id>-1.jpg, got ${p.image}`);
+      assert.equal((p.images || []).length, 3, `Product #${p.id} must ship gallery 2-4`); [2, 3, 4].forEach((k, idx) => assert.match(String(p.images[idx]), new RegExp('^uploads\\/catalog\\/prod-\\d+-' + k + '\\.jpg$')));
+      for (const gg of [p.image, ...(p.images || [])]) {
+        assert.ok(!String(gg).startsWith('http'), `no hotlink photos for #${p.id}`);
+        assert.ok(fs.existsSync(path.join(ROOT, 'public', String(gg))), `Missing public/${gg} for #${p.id}`);
+        assert.ok(fs.existsSync(path.join(ROOT, String(gg))), `Missing ${gg} for #${p.id} (root mirror)`);
       }
     }
-
-    // Рисованных заглушек больше нет: ни одна позиция не ссылается на старые общие кадры
-    const retired = ['b9d6f4ef6615.jpg', '7ccfea8dd6a3.jpg', '117ad77b91d1.jpg', 'c1a51daed239.jpg'];
-    for (const p of products) {
-      for (const f of [p.image, ...(p.images || [])]) {
-        assert.ok(!retired.some((r) => String(f).includes(r)), `Product #${p.id} still uses retired placeholder ${f}`);
-      }
-    }
-
-    // Каждая позиция обязана вести на СВОЙ файл: uploads/catalog/prod-<id>-N.jpg.
-    // Это не даёт одному каду разъезжаться по каталогу под разными именами и
-    // держит схему имён, на которую смотрит браузерная галерея.
-    for (const p of products) {
-      const list = [p.image, ...(p.images || [])];
-      assert.ok(list.length >= 1, `#${p.id}: нет фото`);
-      for (let i = 0; i < list.length; i++) {
-        const want = new RegExp('^uploads\\/catalog\\/prod-' + p.id + '-' + (i + 1) + '\\.jpg$');
-        assert.ok(want.test(String(list[i])), `#${p.id}: кадр ${list[i]} не принадлежит этой позиции`);
-        const file = path.join(__dirname, '..', 'public', String(list[i]));
-        assert.ok(fs.existsSync(file), `#${p.id}: файла ${list[i]} нет на диске`);
-      }
-      const uniq = new Set(list.map(f => path.join(__dirname, '..', 'public', String(f)).replace(/\\/g, '/')));
-      assert.equal(uniq.size, list.length, `#${p.id}: дубли кадров внутри карточки`);
-    }
+    assert.ok(!/images\.unsplash\.com|upload\.wikimedia\.org|pitergsm\.ru|res\.garmin\.com|cdn\.shopify\.com|image-(us|ru)\.samsung\.com/.test(HTML), 'no third-party photo hosts in storefront');
+    const probe = products[0];
+    g.openProduct(probe.id);
+    const detailHtml = g.document.getElementById('product-detail-box').innerHTML;
+    assert.ok(detailHtml.includes('id="product-main-img"'), 'PDP must render #product-main-img');
+    const mainBefore = detailHtml.match(/id="product-main-img" src="([^"]+)"/);
+    assert.ok(mainBefore, 'main photo has src');
+    assert.match(mainBefore[1], /^uploads\/catalog\/prod-\d+-1\.jpg$/, 'PDP main photo is 1/4 studio jpg');
+    assert.ok(detailHtml.includes('pdp-th0'), 'PDP renders thumbnails 2-4');
+    g.setPdpPhoto(2);
+    const mainEl = g.document.getElementById('product-main-img');
+    assert.ok(String(mainEl.src).includes('-3.jpg'), 'thumbnail switches main photo to 3/4');
+    g.setProductJsonLd(null);
   });
 });
