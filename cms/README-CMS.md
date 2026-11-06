@@ -19,3 +19,20 @@
 - **Каталог для импорта, 391 позиция:** `cms/prestashop/watchop-prestashop-products.csv`
   - В панели PrestaShop откройте **Расширенные параметры → Импорт (Advanced Parameters → Import)**, выберите тип `Товары (Products)`, разделитель полей `;` и загрузите файл.
 - **Модуль синхронизации заказов:** `cms/prestashop/watchopbridge/watchopbridge.php` (хук `actionValidateOrder` → `POST /api/webhooks/prestashop`).
+
+## 4. Безопасность: секреты вебхуков и запуск стека
+
+- **Подпись вебхуков обязательна.** Сервер принимает заказы только с заголовком
+  `X-WATCHOP-SIGNATURE: sha256=<hex>` — HMAC-SHA256 сырого JSON-тела на секрете
+  `CMS_WEBHOOK_SECRET` (можно свой на движок: `CMS_WEBHOOK_SECRET_WOOCOMMERCE`,
+  `CMS_WEBHOOK_SECRET_OPENCART`, `CMS_WEBHOOK_SECRET_PRESTASHOP`). Без секрета
+  приём выключен (сервер отвечает 503), без верной подписи — 401. Тот же секрет
+  задайте в плагине CMS как `WATCHOP_WEBHOOK_SECRET` (env) — подпись ставится сама.
+- **Повторы не плодят заявки.** Пара (движок + внешний ID заказа) уникальна:
+  повторная доставка того же вебхука возвращает исходный код с флагом duplicate.
+- **Пароли только из .env.** В `cms/docker-compose.cms.yml` нет значений по умолчанию:
+  задайте `CMS_DB_ROOT_PASSWORD`, `CMS_DB_USER`, `CMS_DB_PASSWORD`
+  (и при желании `CMS_DB_NAME`, порты `BOT_PORT`/`OPENCART_PORT`/`WOOCOMMERCE_PORT`/`PRESTASHOP_PORT`).
+  Без них compose падает с понятной ошибкой — это защита от запуска с публичными паролями.
+- **Порты только на localhost.** Панели CMS и бот слушают `127.0.0.1`; наружу их
+  открывает обратный прокси (nginx/Caddy) с TLS, а не compose напрямую.

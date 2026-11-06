@@ -15,7 +15,7 @@ describe('HTTP API (real server, temp DB)', () => {
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watchop-test-'));
     child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
       cwd: tmp, // watchop.db тестового запуска создастся здесь, боевая БД не затрагивается
-      env: { ...process.env, PORT: String(PORT), TG_BOT_TOKEN: '', TG_ADMIN_ID: '', MAX_BOT_TOKEN: '', MAX_ADMIN_ID: '', ORDER_COOLDOWN_MS: '300' },
+      env: { ...process.env, PORT: String(PORT), TG_BOT_TOKEN: '', TG_ADMIN_ID: '', MAX_BOT_TOKEN: '', MAX_ADMIN_ID: '', ORDER_COOLDOWN_MS: '300', CMS_WEBHOOK_SECRET: 'test-webhook-secret' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     await new Promise((resolve, reject) => {
@@ -373,5 +373,49 @@ describe('HTTP API (real server, temp DB)', () => {
     assert.equal(r.status, 400);
     assert.match((await r.json()).error, /имя/);
     assert.equal(count(), before, 'на отказе в базе не появилось строк');
+  });
+
+  it('CMS webhook без подписи отвергается (401), мусор с подписью — 400', async () => {
+    const r1 = await fetch(BASE + '/api/webhooks/woocommerce', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: 1, billing: {} }),
+    });
+    assert.equal(r1.status, 401);
+    const { createHmac } = require('node:crypto');
+    const sign = (body) => 'sha256=' + createHmac('sha256', 'test-webhook-secret').update(body).digest('hex');
+    const bad = JSON.stringify({ id: 2, billing: {} });
+    const r2 = await fetch(BASE + '/api/webhooks/woocommerce', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Watchop-Signature': sign(bad) },
+      body: bad,
+    });
+    assert.equal(r2.status, 400, 'пустой заказ без позиций отклоняется');
+  });
+
+  it('CMS webhook с верной подписью создаёт заявку, повтор — дубль без новой строки', async () => {
+    const { createHmac } = require('node:crypto');
+    const { DatabaseSync } = require('node:sqlite');
+    const sign = (body) => 'sha256=' + createHmac('sha256', 'test-webhook-secret').update(body).digest('hex');
+    const payload = { id: 4242, total: 62320, line_items: [{ product_id: 7, name: 'Garmin Test', quantity: 2, price: 31160 }], billing: { first_name: 'Webhook', phone: '+79990001122' } };
+    const body = JSON.stringify(payload);
+    const post = () => fetch(BASE + '/api/webhooks/woocommerce', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Watchop-Signature': sign(body) },
+      body,
+    });
+    const count = () => {
+      const d = new DatabaseSync(path.join(tmp, 'watchop.db'));
+      try { return d.prepare("SELECT COUNT(*) AS n FROM orders WHERE source = 'woocommerce' AND external_id = '4242'").get().n; } finally { d.close(); }
+    };
+    const r1 = await post();
+    assert.equal(r1.status, 200);
+    const d1 = await r1.json();
+    assert.ok(/^TG-\d{4,6}$/.test(d1.code), 'выдан код TG-XXXX');
+    assert.equal(count(), 1);
+    await new Promise((r) => setTimeout(r, 700));
+    const r2 = await post();
+    assert.equal(r2.status, 200);
+    const d2 = await r2.json();
+    assert.equal(d2.duplicate, true, 'повторная доставка распознана');
+    assert.equal(d2.code, d1.code, 'код тот же');
+    assert.equal(count(), 1, 'вторая строка не создана');
   });
 });

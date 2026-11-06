@@ -7,7 +7,10 @@
  */
 
 function csvCell(val, sep = ',') {
-  const s = String(val == null ? '' : val).replace(/\r?\n/g, ' ');
+  let s = String(val == null ? '' : val).replace(/\r?\n/g, ' ');
+  // Нейтрализация формул: ячейка с = + - @ в начале иначе выполняется табличным
+  // редактором как формула (CSV Formula Injection). Апостроф — текстовый маркер Excel.
+  if (/^[=+\-@\t]/.test(s)) s = "'" + s;
   if (s.includes('"') || s.includes(sep) || s.includes('\n')) {
     return '"' + s.replace(/"/g, '""') + '"';
   }
@@ -239,6 +242,18 @@ function toWooCommerceRestProduct(p) {
   };
 }
 
+function normWebhookItem(it, engine) {
+  const src = it && typeof it === 'object' ? it : {};
+  const id = Math.trunc(Number(src.product_id ?? src.id));
+  const qty = Math.trunc(Number(src.quantity ?? src.qty ?? src.product_quantity));
+  const price = Math.trunc(Number(src.price ?? src.total ?? src.unit_price_tax_incl ?? NaN));
+  if (!(id > 0)) throw new Error(engine + ' webhook: item without valid product id');
+  if (!(qty >= 1 && qty <= 99)) throw new Error(engine + ' webhook: item qty out of 1..99');
+  if (!(price >= 0)) throw new Error(engine + ' webhook: item without valid price');
+  const name = String(src.name ?? src.product_name ?? ('Товар ' + engine)).slice(0, 200);
+  return { id, name, price, qty };
+}
+
 function normalizeCmsWebhookOrder(engine, body) {
   const b = body && typeof body === 'object' ? body : {};
   if (engine === 'woocommerce') {
@@ -249,13 +264,11 @@ function normalizeCmsWebhookOrder(engine, body) {
     const email = String(billing.email || b.email || '');
     const address = [shipping.city || billing.city, shipping.address_1 || billing.address_1].filter(Boolean).join(', ');
     const rawItems = Array.isArray(b.line_items) ? b.line_items : (Array.isArray(b.items) ? b.items : []);
-    const items = rawItems.map((it) => ({
-      id: Number(it.product_id || it.id) || 1,
-      name: String(it.name || 'Товар WooCommerce').slice(0, 200),
-      price: Math.trunc(Number(it.price || it.total || 0)) || 0,
-      qty: Math.min(Math.max(Math.trunc(Number(it.quantity || it.qty)) || 1, 1), 99)
-    }));
-    const total = Math.trunc(Number(b.total || items.reduce((s, i) => s + i.price * i.qty, 0))) || 0; return { engine: 'WooCommerce', externalId: String(b.id || b.number || ''), fio, phone, email, address, customer_name: fio, customer_phone: phone, customer_comment: address, total, delivery: String(b.shipping_lines?.[0]?.method_title || 'СДЭК'), items };
+    if (!rawItems.length) throw new Error('WooCommerce webhook: order has no items');
+    const items = rawItems.map((it) => normWebhookItem(it, 'WooCommerce'));
+    const externalId = String(b.id ?? b.number ?? '');
+    if (!externalId) throw new Error('WooCommerce webhook: order without external id');
+    const total = Math.trunc(Number(b.total || items.reduce((s, i) => s + i.price * i.qty, 0))) || 0; return { engine: 'WooCommerce', externalId, fio, phone, email, address, customer_name: fio, customer_phone: phone, customer_comment: address, total, delivery: String(b.shipping_lines?.[0]?.method_title || 'СДЭК'), items };
   }
   if (engine === 'opencart') {
     const fio = `${b.firstname || ''} ${b.lastname || ''}`.trim() || String(b.fio || 'Покупатель OpenCart');
@@ -263,13 +276,11 @@ function normalizeCmsWebhookOrder(engine, body) {
     const email = String(b.email || '');
     const address = [b.shipping_city || b.payment_city, b.shipping_address_1 || b.payment_address_1].filter(Boolean).join(', ');
     const rawItems = Array.isArray(b.products) ? b.products : (Array.isArray(b.items) ? b.items : []);
-    const items = rawItems.map((it) => ({
-      id: Number(it.product_id || it.id) || 1,
-      name: String(it.name || 'Товар OpenCart').slice(0, 200),
-      price: Math.trunc(Number(it.price || 0)) || 0,
-      qty: Math.min(Math.max(Math.trunc(Number(it.quantity || it.qty)) || 1, 1), 99)
-    }));
-    const total = Math.trunc(Number(b.total || items.reduce((s, i) => s + i.price * i.qty, 0))) || 0; return { engine: 'OpenCart', externalId: String(b.order_id || ''), fio, phone, email, address, customer_name: fio, customer_phone: phone, customer_comment: address, total, delivery: String(b.shipping_method || 'СДЭК'), items };
+    if (!rawItems.length) throw new Error('OpenCart webhook: order has no items');
+    const items = rawItems.map((it) => normWebhookItem(it, 'OpenCart'));
+    const externalId = String(b.order_id ?? '');
+    if (!externalId) throw new Error('OpenCart webhook: order without external id');
+    const total = Math.trunc(Number(b.total || items.reduce((s, i) => s + i.price * i.qty, 0))) || 0; return { engine: 'OpenCart', externalId, fio, phone, email, address, customer_name: fio, customer_phone: phone, customer_comment: address, total, delivery: String(b.shipping_method || 'СДЭК'), items };
   }
   // PrestaShop
   const order = b.order || b;
@@ -280,13 +291,11 @@ function normalizeCmsWebhookOrder(engine, body) {
   const email = String(customer.email || order.email || '');
   const address = [addr.city, addr.address1].filter(Boolean).join(', ');
   const rawItems = Array.isArray(order.associations?.order_rows) ? order.associations.order_rows : (Array.isArray(order.items) ? order.items : []);
-  const items = rawItems.map((it) => ({
-    id: Number(it.product_id || it.id) || 1,
-    name: String(it.product_name || it.name || 'Товар PrestaShop').slice(0, 200),
-    price: Math.trunc(Number(it.unit_price_tax_incl || it.price || 0)) || 0,
-    qty: Math.min(Math.max(Math.trunc(Number(it.product_quantity || it.qty)) || 1, 1), 99)
-  }));
-  const total = Math.trunc(Number(order.total_paid_tax_incl || order.total || items.reduce((s, i) => s + i.price * i.qty, 0))) || 0; return { engine: 'PrestaShop', externalId: String(order.id || order.reference || ''), fio, phone, email, address, customer_name: fio, customer_phone: phone, customer_comment: address, total, delivery: String(order.carrier || 'СДЭК'), items };
+  if (!rawItems.length) throw new Error('PrestaShop webhook: order has no items');
+  const items = rawItems.map((it) => normWebhookItem(it, 'PrestaShop'));
+  const externalId = String(order.id ?? order.reference ?? '');
+  if (!externalId) throw new Error('PrestaShop webhook: order without external id');
+  const total = Math.trunc(Number(order.total_paid_tax_incl || order.total || items.reduce((s, i) => s + i.price * i.qty, 0))) || 0; return { engine: 'PrestaShop', externalId, fio, phone, email, address, customer_name: fio, customer_phone: phone, customer_comment: address, total, delivery: String(order.carrier || 'СДЭК'), items };
 }
 
 module.exports = {

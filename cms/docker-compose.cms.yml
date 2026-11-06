@@ -11,7 +11,7 @@ services:
     container_name: watchop-bot
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:${BOT_PORT:-3000}:3000"
     env_file:
       - ../.env
     volumes:
@@ -22,10 +22,10 @@ services:
     container_name: watchop-cms-db
     restart: unless-stopped
     environment:
-      MARIADB_ROOT_PASSWORD: watchop_root_pass
-      MARIADB_DATABASE: watchop_cms
-      MARIADB_USER: watchop
-      MARIADB_PASSWORD: watchop_pass
+      MARIADB_ROOT_PASSWORD: ${CMS_DB_ROOT_PASSWORD:?set CMS_DB_ROOT_PASSWORD in .env (see cms/README-CMS.md)}
+      MARIADB_DATABASE: ${CMS_DB_NAME:-watchop_cms}
+      MARIADB_USER: ${CMS_DB_USER:?set CMS_DB_USER in .env (see cms/README-CMS.md)}
+      MARIADB_PASSWORD: ${CMS_DB_PASSWORD:?set CMS_DB_PASSWORD in .env (see cms/README-CMS.md)}
     volumes:
       - cms_db_data:/var/lib/mysql
 
@@ -38,14 +38,14 @@ services:
       - cms-db
       - watchop-bot
     ports:
-      - "8081:8080"
+      - "127.0.0.1:${OPENCART_PORT:-8081}:8080"
     environment:
-      OPENCART_HOST: localhost:8081
+      OPENCART_HOST: localhost:${OPENCART_PORT:-8081}
       OPENCART_DATABASE_HOST: cms-db
       OPENCART_DATABASE_PORT_NUMBER: 3306
-      OPENCART_DATABASE_USER: watchop
-      OPENCART_DATABASE_PASSWORD: watchop_pass
-      OPENCART_DATABASE_NAME: watchop_cms
+      OPENCART_DATABASE_USER: ${CMS_DB_USER:?set CMS_DB_USER in .env (see cms/README-CMS.md)}
+      OPENCART_DATABASE_PASSWORD: ${CMS_DB_PASSWORD:?set CMS_DB_PASSWORD in .env (see cms/README-CMS.md)}
+      OPENCART_DATABASE_NAME: ${CMS_DB_NAME:-watchop_cms}
       WATCHOP_BOT_WEBHOOK: http://watchop-bot:3000/api/webhooks/opencart
     volumes:
       - ./opencart/upload:/bitnami/opencart_ext
@@ -59,12 +59,12 @@ services:
       - cms-db
       - watchop-bot
     ports:
-      - "8082:80"
+      - "127.0.0.1:${WOOCOMMERCE_PORT:-8082}:80"
     environment:
       WORDPRESS_DB_HOST: cms-db:3306
-      WORDPRESS_DB_USER: watchop
-      WORDPRESS_DB_PASSWORD: watchop_pass
-      WORDPRESS_DB_NAME: watchop_cms
+      WORDPRESS_DB_USER: ${CMS_DB_USER:?set CMS_DB_USER in .env (see cms/README-CMS.md)}
+      WORDPRESS_DB_PASSWORD: ${CMS_DB_PASSWORD:?set CMS_DB_PASSWORD in .env (see cms/README-CMS.md)}
+      WORDPRESS_DB_NAME: ${CMS_DB_NAME:-watchop_cms}
       WATCHOP_BOT_WEBHOOK: http://watchop-bot:3000/api/webhooks/woocommerce
     volumes:
       - ./woocommerce/watchop-tg-max-bridge:/var/www/html/wp-content/plugins/watchop-tg-max-bridge
@@ -78,14 +78,14 @@ services:
       - cms-db
       - watchop-bot
     ports:
-      - "8083:80"
+      - "127.0.0.1:${PRESTASHOP_PORT:-8083}:80"
     environment:
       DB_SERVER: cms-db
-      DB_NAME: watchop_cms
-      DB_USER: watchop
-      DB_PASSWD: watchop_pass
+      DB_NAME: ${CMS_DB_NAME:-watchop_cms}
+      DB_USER: ${CMS_DB_USER:?set CMS_DB_USER in .env (see cms/README-CMS.md)}
+      DB_PASSWD: ${CMS_DB_PASSWORD:?set CMS_DB_PASSWORD in .env (see cms/README-CMS.md)}
       PS_INSTALL_AUTO: 1
-      PS_DOMAIN: localhost:8083
+      PS_DOMAIN: localhost:${PRESTASHOP_PORT:-8083}
       WATCHOP_BOT_WEBHOOK: http://watchop-bot:3000/api/webhooks/prestashop
     volumes:
       - ./prestashop/watchopbridge:/var/www/html/modules/watchopbridge

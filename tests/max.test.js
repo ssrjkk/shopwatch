@@ -461,7 +461,7 @@ ${extractBackupBlock()}
     if (/готов/.test(t)) assert.match(t, /watchop-.*\.db/);
   });
 
-  it('привязка админа по имени: ждёт, привязывает, убирается', async () => {
+  it('привязка админа по имени: заявка, подтверждение админа, отзыв', async () => {
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Админы'));
     assert.ok(JSON.stringify(api.lastTo(999).body.attachments).includes('Добавить по имени'));
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Добавить по имени'));
@@ -469,16 +469,22 @@ ${extractBackupBlock()}
     assert.match(api.lastTo(999).body.text, /2\+ знаков/, 'короткое имя не берут');
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Добавить по имени'));
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Petr Petrov'));
-    assert.match(api.lastTo(999).body.text, /Жду первое сообщение/);
+    assert.match(api.lastTo(999).body.text, /подтверждением/, 'имя уходит в ожидание заявки, а не в админы');
     assert.equal(api.db.prepare("SELECT value FROM settings WHERE key='max_pending_admin_names'").get().value, 'Petr Petrov');
     await api.handleMaxUpdate(api.upd(555, 'Ivan', 'здравствуйте'));
     assert.match(api.lastTo(555).body.text, /Здравствуйте|менеджер/i, 'чужой не привязался');
     await api.handleMaxUpdate(api.upd(556, 'petr petrov', 'я тут'));
-    assert.match(JSON.stringify(api.lastTo(556).body.attachments), /Добавить часы/, 'привязанный получает админ-меню');
+    assert.ok(api.allTo(556).some((m) => /Заявку в администраторы отправил/.test(m.body.text)), 'совпавшее имя даёт только заявку');
+    assert.ok(!JSON.stringify(api.lastTo(556).body.attachments || []).includes('Добавить часы'), 'без подтверждения админ-меню нет');
+    assert.ok(api.allTo(999).some((m) => /Заявка в админы MAX/.test(m.body.text)), 'админ уведомлён о заявке');
     await api.handleMaxUpdate(api.upd(556, 'petr petrov', '/start'));
-    assert.match(api.lastTo(556).body.text, /Админ-панель/, 'имя совпало без учёта регистра');
+    assert.ok(!/Админ-панель/.test(api.lastTo(556).body.text), 'до подтверждения панели нет');
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Да, админ 556'));
+    assert.match(api.lastTo(999).body.text, /Готово/, 'подтверждение принято');
+    await api.handleMaxUpdate(api.upd(556, 'petr petrov', '/start'));
+    assert.match(api.lastTo(556).body.text, /Админ-панель/, 'после подтверждения — админ');
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Админы'));
-    assert.match(api.lastTo(999).body.text, /ID 556/, 'привязанный виден в списке');
+    assert.match(api.lastTo(999).body.text, /ID 556/, 'подтверждённый виден в списке');
     await api.handleMaxUpdate(api.upd(999, 'Admin', 'Убрать имя Petr Petrov'));
     assert.match(api.lastTo(999).body.text, /нет в ожидании|убрано/i);
   });
@@ -509,6 +515,23 @@ ${extractBackupBlock()}
     await api.handleMaxUpdate(api.upd(554, 'Petr', '2222'));
     assert.match(api.lastTo(554).body.text, /Трижды мимо/);
     assert.equal(api.db.prepare('SELECT owner_max FROM orders WHERE order_code=?').get('TG-77800').owner_max, null);
+  });
+
+  it('девять мимо подряд блокируют код: верные цифры после блокировки не проходят', async () => {
+    api.db.prepare("DELETE FROM orders WHERE order_code = 'TG-77820'").run();
+    api.db.prepare("INSERT INTO orders (order_code, items_json, total, status, customer_json) VALUES (?,?,?,?,?)")
+      .run('TG-77820', JSON.stringify([{ name: 'Secret L', price: 10000, qty: 1 }]), 10000, 'Новый', JSON.stringify({ fio: 'M', phone: '+7 900 111-22-33' }));
+    for (let round = 0; round < 3; round++) {
+      await api.handleMaxUpdate(api.upd(561, 'Client', 'TG-77820'));
+      await api.handleMaxUpdate(api.upd(561, 'Client', '0000'));
+      await api.handleMaxUpdate(api.upd(561, 'Client', '0001'));
+      await api.handleMaxUpdate(api.upd(561, 'Client', '0002'));
+      assert.match(api.lastTo(561).body.text, /Трижды мимо/, 'цикл ' + (round + 1) + ' сброшен');
+    }
+    await api.handleMaxUpdate(api.upd(561, 'Client', 'TG-77820'));
+    await api.handleMaxUpdate(api.upd(561, 'Client', '2233'));
+    assert.match(api.lastTo(561).body.text, /временно заблокирована/, 'код заблокирован после 9 мимо');
+    assert.equal(api.db.prepare('SELECT owner_max FROM orders WHERE order_code=?').get('TG-77820').owner_max, null);
   });
 
   it('«Заявка TG-XXXX» в MAX не отдаёт чужую карточку с данными покупателя', async () => {

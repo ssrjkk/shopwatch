@@ -145,7 +145,22 @@ describe('SEO, Schema.org, Accessibility (a11y), CMS и безопасность
     assert.equal(rest.images.length, 4, 'Woo REST carries 4 studio images');
     assert.ok(rest.images[0].src.includes('uploads/catalog/'), 'Woo REST studio image path');
 
-    const wcOrder = cmsBridge.normalizeCmsWebhookOrder('woocommerce', { id: 101, total: 62320, billing: { first_name: 'Алексей', phone: '+79990001122' } });
+    const evil = [{ id: 9001, brand: 'X', series: 'Y', category: 'Z', name: '=cmd|/c calc', price: 100, old_price: 0, image: 'uploads/catalog/prod-1-1.jpg', specs: 's', hit: 0, images: [] }].map((r) => ({ ...r }));
+    const evilWc = cmsBridge.toWooCommerceCsv(evil);
+    const evilOc = cmsBridge.toOpenCartCsv(evil);
+    const evilPs = cmsBridge.toPrestaShopCsv(evil);
+    for (const [label, csv] of [['woo', evilWc], ['oc', evilOc], ['ps', evilPs]]) {
+      const hit = csv.split('\n').find((l) => l.includes('cmd'));
+      assert.ok(hit && hit.includes("'=cmd"), label + ': formula cell must carry Excel text marker, got ' + hit);
+    }
+    const wcOrder = cmsBridge.normalizeCmsWebhookOrder('woocommerce', { id: 101, total: 62320, line_items: [{ product_id: 12, name: 'Garmin Fenix 8', quantity: 2, price: 31160 }], billing: { first_name: 'Алексей', phone: '+79990001122' } });
+    assert.equal(wcOrder.externalId, '101');
+    assert.equal(wcOrder.items.length, 1);
+    assert.equal(wcOrder.items[0].id, 12);
+    assert.throws(() => cmsBridge.normalizeCmsWebhookOrder('woocommerce', { id: 102, total: 10, billing: {} }), /no items/);
+    assert.throws(() => cmsBridge.normalizeCmsWebhookOrder('woocommerce', { line_items: [{ product_id: 1, quantity: 1, price: 10 }], billing: {} }), /external id/);
+    assert.throws(() => cmsBridge.normalizeCmsWebhookOrder('woocommerce', { id: 103, line_items: [{ quantity: 1, price: 10 }], billing: {} }), /product id/);
+    assert.throws(() => cmsBridge.normalizeCmsWebhookOrder('woocommerce', { id: 104, line_items: [{ product_id: 1, quantity: 100, price: 10 }], billing: {} }), /qty/);
     assert.equal(wcOrder.total, 62320);
     assert.equal(wcOrder.customer_name, 'Алексей');
   });

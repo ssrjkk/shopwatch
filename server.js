@@ -5,13 +5,14 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('node:child_process');
+const crypto = require('node:crypto');
 const DatabaseSync = require('node:sqlite').DatabaseSync;
 const { Telegraf, Markup, session } = require('telegraf');
 
 // Не даём токенам ботов попасть в логи: ошибки HTTP-клиентов содержат URL с токеном.
 function redactSecrets(value) {
   let out = String(value == null ? '' : value);
-  for (const key of ['TG_BOT_TOKEN', 'MAX_BOT_TOKEN', 'GITHUB_PUSH_TOKEN']) {
+  for (const key of ['TG_BOT_TOKEN', 'MAX_BOT_TOKEN', 'GITHUB_PUSH_TOKEN', 'CMS_WEBHOOK_SECRET']) {
     const token = process.env[key];
     if (token && token.length >= 8) out = out.split(token).join('***');
   }
@@ -97,6 +98,27 @@ const uploadsDir = path.isAbsolute(process.env.UPLOADS_DIR || '')
   ? process.env.UPLOADS_DIR
   : path.join(publicDir, process.env.UPLOADS_DIR || 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+// ---------- Проверка загружаемых фото (админка TG/MAX) ----------
+// Принимаем только настоящие картинки с разумным размером: magic bytes вместо
+// доверия расширению/заголовкам, жёсткий лимит байтов против переполнения диска.
+const PHOTO_MAX_BYTES = Math.max(1024, Number(process.env.PHOTO_MAX_BYTES) || 8 * 1024 * 1024);
+function imageExtByMagic(buf) {
+  if (!buf || buf.length < 16) return '';
+  if (buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) return '.jpg';
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) return '.png';
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) return '.gif';
+  if (buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return '.webp';
+  return '';
+}
+function checkPhotoBuffer(buf, contentType) {
+  if (!buf || !buf.length) throw new Error('Пустой файл.');
+  if (buf.length > PHOTO_MAX_BYTES) throw new Error(`Фото больше лимита ${(PHOTO_MAX_BYTES / 1048576).toFixed(0)} МБ.`);
+  const ct = String(contentType || '').toLowerCase();
+  if (ct && !ct.startsWith('image/')) throw new Error('Нужен файл-картинка.');
+  const ext = imageExtByMagic(buf);
+  if (!ext) throw new Error('Не похоже на JPEG/PNG/WebP/GIF.');
+  return ext;
+}
 // ---------- Сжатие ответов ----------
 // GitHub Pages жмёт сам, а этот сервер (localhost, VPS, Docker) отдавал HTML и
 // JSON не сжатыми: /api/state — 135 КБ вместо 23 КБ, витрина — 96 КБ вместо
@@ -372,6 +394,9 @@ try { db.exec('ALTER TABLE orders ADD COLUMN owner_tg TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN owner_max TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN promo_code TEXT'); } catch (e) {}
 try { db.exec('ALTER TABLE orders ADD COLUMN discount INTEGER DEFAULT 0'); } catch (e) {}
+try { db.exec('ALTER TABLE orders ADD COLUMN source TEXT'); } catch (e) {}
+try { db.exec('ALTER TABLE orders ADD COLUMN external_id TEXT'); } catch (e) {}
+try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_source_ext ON orders(source, external_id)'); } catch (e) {}
 db.exec('CREATE TABLE IF NOT EXISTS seed_marks (seed_key TEXT PRIMARY KEY, marked_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
 // Защита заказов: повторная отправка формы не плодит дубли, остатки уходят атомарно.
 db.exec('CREATE TABLE IF NOT EXISTS idempotency_keys (key TEXT PRIMARY KEY, order_code TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
@@ -1764,24 +1789,55 @@ app.get('/api/cms/export/:engine', (req, res) => {
   return res.status(400).json({ error: 'Unsupported CMS engine. Use woocommerce, opencart, opencart-sql, or prestashop' });
 });
 
+// CMS-вебхуки: подпись HMAC-SHA256 сырого тела + строгая валидация + дедуп.
+// Секрет общий (CMS_WEBHOOK_SECRET) или свой на движок (CMS_WEBHOOK_SECRET_WOOCOMMERCE
+// и т.д.). Подпись — заголовок X-Watchop-Signature: sha256=<hex>. Без настроенного
+// секрета приём выключен (503): открытый приём заказов равносилен подделке заявок.
+function cmsWebhookSecret(engine) {
+  const per = process.env['CMS_WEBHOOK_SECRET_' + String(engine || '').toUpperCase()];
+  return String(per || process.env.CMS_WEBHOOK_SECRET || '');
+}
+function verifyCmsWebhook(req, engine) {
+  const secret = cmsWebhookSecret(engine);
+  if (!secret) return { ok: false, status: 503, error: 'Webhook secret is not configured (CMS_WEBHOOK_SECRET).' };
+  const raw = req.rawBody && req.rawBody.length ? req.rawBody : Buffer.from(JSON.stringify(req.body || {}));
+  const sig = String(req.headers['x-watchop-signature'] || '').trim();
+  const m = /^sha256=([0-9a-f]{64})$/i.exec(sig);
+  if (!m) return { ok: false, status: 401, error: 'Missing or malformed X-Watchop-Signature (want "sha256=<hex>").' };
+  let digest = null;
+  try { digest = Buffer.from(m[1], 'hex'); } catch (e) { /* fallthrough */ }
+  const expect = crypto.createHmac('sha256', secret).update(raw).digest();
+  if (!digest || digest.length !== expect.length || !crypto.timingSafeEqual(digest, expect)) {
+    return { ok: false, status: 401, error: 'Bad webhook signature.' };
+  }
+  return { ok: true };
+}
 ['woocommerce', 'opencart', 'prestashop'].forEach((engine) => {
   app.post('/api/webhooks/' + engine, (req, res) => {
     const lip = req.ip || req.socket.remoteAddress || 'unknown';
     if (!lookupAllowed(lip, 60)) return res.status(429).json({ error: 'Too many requests' });
     try {
+      const auth = verifyCmsWebhook(req, engine);
+      if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
       if (!cmsBridge) return res.status(500).json({ error: 'cms-bridge unavailable' });
       const norm = cmsBridge.normalizeCmsWebhookOrder(engine, req.body || {});
+      if (!norm.externalId || !Array.isArray(norm.items) || !norm.items.length) {
+        return res.status(400).json({ error: 'Bad webhook payload: external id and non-empty items are required.' });
+      }
+      const dup = db.prepare('SELECT order_code, total FROM orders WHERE source = ? AND external_id = ?').get(engine, norm.externalId);
+      if (dup) return res.json({ ok: true, engine, code: dup.order_code, total: dup.total, duplicate: true });
       const code = norm.code && /^TG-\d{4,6}$/.test(norm.code) ? norm.code : allocateOrderCode();
       const customer = {
         fio: cleanText(norm.customer_name || 'Клиент ' + engine.toUpperCase()).slice(0, 100),
         phone: cleanText(norm.customer_phone || '').slice(0, 30),
         email: '',
         address: cleanText(norm.customer_comment || '').slice(0, 300),
-        delivery: 'СДЭК',
+        delivery: cleanText(norm.delivery || 'СДЭК').slice(0, 60),
       };
-      db.prepare('INSERT OR IGNORE INTO orders (order_code, items_json, total, status, customer_json, owner_tg, promo_code, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-        .run(code, JSON.stringify(norm.items || []), norm.total || 0, 'Новый', JSON.stringify(customer), null, null, 0);
-      res.json({ ok: true, engine, code, total: norm.total });
+      db.prepare('INSERT OR IGNORE INTO orders (order_code, items_json, total, status, customer_json, owner_tg, owner_max, promo_code, discount, source, external_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(code, JSON.stringify(norm.items || []), norm.total || 0, 'Новый', JSON.stringify(customer), null, null, null, 0, engine, norm.externalId);
+      const row = db.prepare('SELECT order_code, total FROM orders WHERE source = ? AND external_id = ?').get(engine, norm.externalId);
+      res.json({ ok: true, engine, code: row ? row.order_code : code, total: row ? row.total : (norm.total || 0) });
     } catch (e) {
       res.status(400).json({ error: e.message });
     }
@@ -2371,7 +2427,8 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const resp = await fetch(link.href);
     if (!resp.ok) throw new Error(`Telegram отдал ${resp.status}`);
     const buf = Buffer.from(await resp.arrayBuffer());
-    const fileName = `watch_${Date.now()}.jpg`;
+    const ext = checkPhotoBuffer(buf, resp.headers.get('content-type'));
+    const fileName = `watch_${Date.now()}${ext}`;
     fs.writeFileSync(path.join(uploadsDir, fileName), buf);
     console.log(`TG photo saved: ${fileName} (${(buf.length / 1024).toFixed(0)} KB)`);
     return `/uploads/${fileName}`;
@@ -2654,6 +2711,27 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
   // и читать чужие составы. Поэтому чужую непривязанную заявку показываем только
   // за последними 4 цифрами телефона из заказа (как в /api/order-status).
   const pendingOrderAuth = new Map();
+  // Долговременный лимит: сброс сессии новой командой «TG-XXXX» не даёт бесконечных
+  // попыток. После 9 неверных вводов код блокируется на 30 минут.
+  const orderAuthFails = new Map();
+  const ORDER_AUTH_MAX_FAILS = 9;
+  const ORDER_AUTH_LOCK_MS = 30 * 60 * 1000;
+  function orderAuthLocked(code) {
+    const st = orderAuthFails.get(String(code).toUpperCase());
+    if (!st) return false;
+    if (st.lockedUntil && Date.now() < st.lockedUntil) return true;
+    if (st.lockedUntil) orderAuthFails.delete(String(code).toUpperCase());
+    return false;
+  }
+  function noteOrderAuthFail(code) {
+    const k = String(code).toUpperCase();
+    const st = orderAuthFails.get(k) || { fails: 0, lockedUntil: 0 };
+    st.fails += 1;
+    if (st.fails >= ORDER_AUTH_MAX_FAILS) st.lockedUntil = Date.now() + ORDER_AUTH_LOCK_MS;
+    orderAuthFails.set(k, st);
+    return st;
+  }
+  function clearOrderAuthFails(code) { orderAuthFails.delete(String(code).toUpperCase()); }
   function orderPhoneLast4(order) {
     try {
       const digits = String((JSON.parse(order.customer_json || '{}').phone) || '').replace(/\D/g, '');
@@ -2678,6 +2756,11 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     const requester = String(ctx.from?.id || '');
     const pend = pendingOrderAuth.get(requester);
     if (!pend) return false;
+    if (orderAuthLocked(pend.code)) {
+      pendingOrderAuth.delete(requester);
+      ctx.reply('Много неверных попыток — проверка по этой заявке временно заблокирована. Напишите менеджеру.');
+      return true;
+    }
     const digits = String(rawDigits || '').trim();
     if (!/^\d{4}$/.test(digits)) {
       ctx.reply('Нужны ровно 4 цифры — последние цифры телефона из заказа. Для отмены напишите «Отмена».');
@@ -2688,6 +2771,7 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     if (!order) { pendingOrderAuth.delete(requester); return ctx.reply('Заявка ' + pend.code + ' не найдена.'); }
     if (digits === orderPhoneLast4(order)) {
       pendingOrderAuth.delete(requester);
+      clearOrderAuthFails(pend.code);
       bindOrderOwner(order.order_code, requester);
       order.owner_tg = requester;
       notifyTgAdmins('Клиент ' + (ctx.from.username ? '@' + ctx.from.username : ctx.from.first_name) + ' подтвердил телефон и привязался к заявке ' + order.order_code);
@@ -2695,8 +2779,10 @@ if (isValidEnv(process.env.TG_BOT_TOKEN)) {
     }
     if (pend.tries >= 3) {
       pendingOrderAuth.delete(requester);
+      noteOrderAuthFail(pend.code);
       return ctx.reply('Трижды мимо — проверка сброшена. Напишите номер заявки заново или обратитесь к менеджеру.');
     }
+    noteOrderAuthFail(pend.code);
     return ctx.reply('Не совпало с телефоном из заказа. Осталось попыток: ' + (3 - pend.tries) + '.');
   }
   function handleClientOrderLookupTg(ctx, code) {
@@ -2934,20 +3020,61 @@ function removeMaxAdminName(raw) {
   }
   return 'none';
 }
-// Возвращает имя, по которому привязали, или null. Вызывать до админской проверки.
-function bindMaxAdminByName(senderId, senderName) {
+// Заявки на админку по имени (без немедленных прав): MAX отдаёт только отображаемое
+// имя, поэтому мгновенная привязка позволяла impersonation. Заявка уходит действующим
+// админам, права выдаёт только их подтверждение «Да, админ <id>». Заявки живут сутки.
+const MAX_ADMIN_CLAIM_TTL_MS = 24 * 60 * 60 * 1000;
+function loadMaxAdminClaims() {
+  try {
+    const arr = JSON.parse(getSetting('max_pending_admin_claims') || '[]');
+    return Array.isArray(arr) ? arr.filter((c) => c && /^\d{3,20}$/.test(String(c.id))) : [];
+  } catch (e) { return []; }
+}
+function saveMaxAdminClaims(arr) {
+  try { setSetting('max_pending_admin_claims', JSON.stringify(arr || [])); } catch (e) {}
+}
+function pruneMaxAdminClaims(arr) {
+  const now = Date.now();
+  return (arr || []).filter((c) => now - Number(c.at || 0) < MAX_ADMIN_CLAIM_TTL_MS);
+}
+// Возвращает { status: 'bound'|'pending', name } или null. Вызывать до админской проверки.
+function claimMaxAdminByName(senderId, senderName) {
   if (isMaxAdminId(senderId) || !maxPendingAdminNames.size) return null;
   const name = String(senderName || '').trim();
   if (!name) return null;
-  for (const n of maxPendingAdminNames) {
-    if (n.toLowerCase() === name.toLowerCase()) {
-      maxExtraAdminIds.add(String(senderId));
-      maxPendingAdminNames.delete(n);
-      saveMaxAdminExtras();
-      return n;
-    }
+  const want = [...maxPendingAdminNames].find((n) => n.toLowerCase() === name.toLowerCase());
+  if (!want) return null;
+  if (!maxAdminIdList().length) {
+    // Админов нет вообще (первый запуск): подтверждать некому — выдаём сразу.
+    maxExtraAdminIds.add(String(senderId));
+    maxPendingAdminNames.delete(want);
+    saveMaxAdminExtras();
+    return { status: 'bound', name: want };
   }
-  return null;
+  const claims = pruneMaxAdminClaims(loadMaxAdminClaims());
+  const known = claims.some((c) => String(c.id) === String(senderId));
+  if (!known) {
+    claims.push({ id: String(senderId), name: want, at: Date.now() });
+    saveMaxAdminClaims(claims);
+    return { status: 'pending', name: want, fresh: true };
+  }
+  return { status: 'pending', name: want, fresh: false };
+}
+// Подтверждение заявки действующим админом. Возвращает 'ok' | 'bad' | 'none'.
+function confirmMaxAdminClaim(claimantId) {
+  const id = String(claimantId || '').trim();
+  if (!/^\d{3,20}$/.test(id)) return 'bad';
+  const claims = pruneMaxAdminClaims(loadMaxAdminClaims());
+  const ix = claims.findIndex((c) => String(c.id) === id);
+  if (ix < 0) return 'none';
+  const [claim] = claims.splice(ix, 1);
+  saveMaxAdminClaims(claims);
+  for (const n of [...maxPendingAdminNames]) {
+    if (String(n).toLowerCase() === String(claim.name || '').toLowerCase()) maxPendingAdminNames.delete(n);
+  }
+  maxExtraAdminIds.add(id);
+  saveMaxAdminExtras();
+  return 'ok';
 }
 function maxAdminEnvIds() {
   return String(process.env.MAX_ADMIN_ID || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -2980,8 +3107,9 @@ function maxAdminsText(selfId) {
   const rows = [];
   for (const id of maxAdminEnvIds()) rows.push(`• ID ${id} — из .env, убрать можно только правкой .env${id === me ? ' (это ты)' : ''}`);
   for (const id of maxExtraAdminIds) rows.push(`• ID ${id} — добавлен через бота${id === me ? ' (это ты)' : ''}`);
-  for (const n of maxPendingAdminNames) rows.push(`• имя «${n}» — ждёт первого сообщения`);
-  return `Админы MAX (${rows.length}):\n${rows.join('\n') || '— пока никого —'}\n\nАдмин видит админ-меню и получает уведомления о заявках. Свой ID клиент узнаёт командой /id. Имя привязывается к первому написавшему с таким именем.`;
+  for (const n of maxPendingAdminNames) rows.push(`• имя «${n}» — ждёт заявку (права только после «Да, админ <id>»)`);
+  for (const c of pruneMaxAdminClaims(loadMaxAdminClaims())) rows.push(`• заявка: ID ${c.id} — представился «${c.name}», подтвердить: Да, админ ${c.id}`);
+  return `Админы MAX (${rows.length}):\n${rows.join('\n') || '— пока никого —'}\n\nАдмин видит админ-меню и получает уведомления о заявках. Свой ID клиент узнаёт командой /id. Имя само по себе прав не даёт.`;
 }
 function maxAdminsKb() {
   const removable = [...maxExtraAdminIds];
@@ -3017,6 +3145,7 @@ function maxIsMenuCommand(text) {
     || /^Заявки [←→]$/.test(t)
     || /^(?:В хиты|Снять с хитов|Скидка|Удалить|Да, удалить) #\d+$/i.test(t)
     || /^(?:Удалить|Да, удалить) TG-\d+$/i.test(t)
+    || /^Да, админ \d{3,20}$/i.test(t)
     || /^(?:В сборку|Оплачен|Отменить|Новый|Trade-In) TG-\d+$/i.test(t)
     || new RegExp(`^(${Object.values(PRODUCT_FIELD_LABELS).join('|')}) #\\d+$`, 'i').test(t);
 }
@@ -3143,6 +3272,27 @@ async function maxAdminMenu(userId, title) {
 // с данными покупателя). Поэтому чужую непривязанную заявку показываем только
 // за последними 4 цифрами телефона из заказа.
 const pendingMaxOrderAuth = new Map();
+// Долговременный лимит: сброс сессии новой командой «TG-XXXX» не даёт бесконечных
+// попыток. После 9 неверных вводов код блокируется на 30 минут.
+const maxOrderAuthFails = new Map();
+const MAX_ORDER_AUTH_MAX_FAILS = 9;
+const MAX_ORDER_AUTH_LOCK_MS = 30 * 60 * 1000;
+function maxOrderAuthLocked(code) {
+  const st = maxOrderAuthFails.get(String(code).toUpperCase());
+  if (!st) return false;
+  if (st.lockedUntil && Date.now() < st.lockedUntil) return true;
+  if (st.lockedUntil) maxOrderAuthFails.delete(String(code).toUpperCase());
+  return false;
+}
+function noteMaxOrderAuthFail(code) {
+  const k = String(code).toUpperCase();
+  const st = maxOrderAuthFails.get(k) || { fails: 0, lockedUntil: 0 };
+  st.fails += 1;
+  if (st.fails >= MAX_ORDER_AUTH_MAX_FAILS) st.lockedUntil = Date.now() + MAX_ORDER_AUTH_LOCK_MS;
+  maxOrderAuthFails.set(k, st);
+  return st;
+}
+function clearMaxOrderAuthFails(code) { maxOrderAuthFails.delete(String(code).toUpperCase()); }
 function maxOrderPhoneLast4(order) {
   try {
     const digits = String((JSON.parse(order.customer_json || '{}').phone) || '').replace(/\D/g, '');
@@ -3185,9 +3335,21 @@ async function maxShowClientOrder(senderId, senderName, code) {
   const list = items.map((i) => '• ' + i.name + ' (' + Number(i.price).toLocaleString('ru-RU') + ' ₽)').join('\n');
   await sendMaxMessage(senderId, 'Заказ ' + code + ' принят!\n\n' + list + '\nК оплате: ' + Number(row.total).toLocaleString('ru-RU') + ' ₽\n\nРеквизиты:\n' + getSetting('payment_details'));
 }
+async function maxShowClientOrder(senderId, senderName, code) {
+
+  const items = JSON.parse((db.prepare('SELECT items_json FROM orders WHERE order_code = ?').get(code) || {}).items_json || '[]');
+  const row = db.prepare('SELECT total FROM orders WHERE order_code = ?').get(code) || { total: 0 };
+  const list = items.map((i) => '• ' + i.name + ' (' + Number(i.price).toLocaleString('ru-RU') + ' ₽)').join('\n');
+  await sendMaxMessage(senderId, 'Заказ ' + code + ' принят!\n\n' + list + '\nК оплате: ' + Number(row.total).toLocaleString('ru-RU') + ' ₽\n\nРеквизиты:\n' + getSetting('payment_details'));
+}
 async function answerMaxOrderAuth(senderId, senderName, digits) {
   const pend = pendingMaxOrderAuth.get(String(senderId));
   if (!pend) return false;
+  if (maxOrderAuthLocked(pend.code)) {
+    pendingMaxOrderAuth.delete(String(senderId));
+    await sendMaxMessage(senderId, 'Много неверных попыток — проверка по этой заявке временно заблокирована. Напишите менеджеру.', MAX_MENU);
+    return true;
+  }
   if (!/^\d{4}$/.test(String(digits || '').trim())) {
     await sendMaxMessage(senderId, 'Нужны ровно 4 цифры — последние цифры телефона из заказа. Для отмены напишите «Отмена».');
     return true;
@@ -3197,6 +3359,7 @@ async function answerMaxOrderAuth(senderId, senderName, digits) {
   if (!order) { pendingMaxOrderAuth.delete(String(senderId)); await sendMaxMessage(senderId, 'Заявка ' + pend.code + ' не найдена.', MAX_MENU); return true; }
   if (String(digits).trim() === maxOrderPhoneLast4(order)) {
     pendingMaxOrderAuth.delete(String(senderId));
+    clearMaxOrderAuthFails(pend.code);
     maxBindOrderOwner(order.order_code, senderId);
     await maxNotifyAdmin('Клиент ' + senderName + ' (' + senderId + ') подтвердил телефон и привязался к заявке ' + order.order_code + ' в MAX');
     await maxShowClientOrder(senderId, senderName, order.order_code);
@@ -3204,9 +3367,11 @@ async function answerMaxOrderAuth(senderId, senderName, digits) {
   }
   if (pend.tries >= 3) {
     pendingMaxOrderAuth.delete(String(senderId));
+    noteMaxOrderAuthFail(pend.code);
     await sendMaxMessage(senderId, 'Трижды мимо — проверка сброшена. Напишите номер заявки заново или обратитесь к менеджеру.', MAX_MENU);
     return true;
   }
+  noteMaxOrderAuthFail(pend.code);
   await sendMaxMessage(senderId, 'Не совпало с телефоном из заказа. Осталось попыток: ' + (3 - pend.tries) + '.');
   return true;
 }
@@ -3243,7 +3408,8 @@ async function handleMaxUpdate(upd) {
       const resp = await fetch(photoUrl);
       if (!resp.ok) throw new Error(`MAX отдал ${resp.status}`);
       const buf = Buffer.from(await resp.arrayBuffer());
-      const fileName = `watch_${Date.now()}.jpg`;
+      const ext = checkPhotoBuffer(buf, resp.headers.get('content-type'));
+      const fileName = `watch_${Date.now()}${ext}`;
       fs.writeFileSync(path.join(uploadsDir, fileName), buf);
       const saved = `/uploads/${fileName}`;
       maxSessions.delete(senderId);
@@ -3289,10 +3455,16 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
     }
   }
 
-  // Привязка админа по имени — до любых проверок: первое сообщение человека
-  // с ожидаемым именем делает его админом и уходит из списка ожидания.
-  const boundName = bindMaxAdminByName(senderId, senderName);
-  if (boundName) { isMaxAdmin = true; await maxNotifyAdmin(`Новый админ MAX: ${senderName} (${senderId}) — привязан по имени «${boundName}».`); }
+  // Привязка админа по имени — только заявка: права выдаёт подтверждение админа,
+  // мгновенной выдачи прав нет (защита от impersonation по отображаемому имени).
+  const adminClaim = claimMaxAdminByName(senderId, senderName);
+  if (adminClaim && adminClaim.status === 'bound') {
+    isMaxAdmin = true;
+    await maxNotifyAdmin(`Новый админ MAX: ${senderName} (${senderId}) — первый запуск, админов не было, привязан по имени «${adminClaim.name}».`);
+  } else if (adminClaim && adminClaim.fresh) {
+    await maxNotifyAdmin(`Заявка в админы MAX: ${senderName} (${senderId}) — представился «${adminClaim.name}». Если это свой — ответь: Да, админ ${senderId}`);
+    await sendMaxMessage(senderId, 'Заявку в администраторы отправил. Действующий админ проверит и подтвердит.', MAX_CANCEL);
+  }
 
   const stMatch = text.match(/^(В сборку|Оплачен|Отменить|Новый|Trade-In)\s+(TG-\d+)$/i);
   if (stMatch) {
@@ -3340,6 +3512,16 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
   if (!isMaxAdmin) {
     await maxNotifyAdmin(`Сообщение в MAX от ${senderName} (${senderId}):\n${text || '(без текста)'}`);
     return sendMaxMessage(senderId, 'Здравствуйте! Магазин OneWatch. Напишите номер заказа (например, TG-1176).');
+  }
+
+  const claimYesMatch = text.match(/^Да, админ (\d{3,20})$/i);
+  if (claimYesMatch) {
+    const res = confirmMaxAdminClaim(claimYesMatch[1]);
+    if (res === 'bad') return sendMaxMessage(senderId, 'ID — число из 3–20 цифр.', MAX_MENU);
+    if (res === 'none') return sendMaxMessage(senderId, 'Такой заявки нет (возможно, истекла — заявки живут сутки).', MAX_MENU);
+    await maxNotifyAdmin(`Админ ${senderName} (${senderId}) подтвердил заявку: ${claimYesMatch[1]} теперь админ MAX.`);
+    try { await sendMaxMessage(claimYesMatch[1], 'Тебя подтвердили: теперь ты админ MAX. Команда /start покажет меню.', MAX_MENU); } catch (e) {}
+    return sendMaxMessage(senderId, `Готово: ${claimYesMatch[1]} — админ MAX.\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
   }
 
   if (text === 'Статистика' || text === '/stats') {
@@ -3394,7 +3576,7 @@ async function handleMaxMessage(senderId, senderName, text, upd) {
       const r = addMaxAdminName(cleanText(text));
       maxSessions.delete(senderId);
       if (r === 'bad') return sendMaxMessage(senderId, 'Нужно имя из 2+ знаков — так, как оно показано в MAX у человека.', MAX_MENU);
-      return sendMaxMessage(senderId, `Жду первое сообщение от «${cleanText(text)}» — он станет админом.\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
+      return sendMaxMessage(senderId, `Жду первое сообщение от «${cleanText(text)}»: человек оставит заявку, права дам подтверждением «Да, админ <id>».\n\n${maxAdminsText(senderId)}`, maxAdminsKb());
     }
     if (sess.step === 'max_promo_add') {
       const r = upsertPromoRule(getSetting('promo_codes'), cleanText(text));

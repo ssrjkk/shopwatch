@@ -49,7 +49,6 @@ body{background-color:var(--bg);color:var(--text);}
 .collection-chip{color:var(--ink);}
 .collection-chip .chip-arrow{background-color:#f3f4f6 !important;border-color:#e5e7eb !important;color:#374151 !important;}
 .hero-badge{background-color:#ecfdf5 !important;border-color:#a7f3d0 !important;}
-}
 html {
   scrollbar-gutter: stable;
   overflow-x: hidden;
@@ -436,7 +435,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </noscript>
 
-<!-- ГЛОБАЛЬНЫЕ МЕТАЛЛИЧЕСКИЕ ШЕЙДЕРЫ ДЛЯ 3D-РЕНДЕРОВ ЧАСОВ -->
+
 <svg width="0" height="0" class="absolute pointer-events-none" aria-hidden="true">
   <defs>
     <linearGradient id="st-titanium" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -472,7 +471,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </defs>
 </svg>
 
-<!-- ВЕРХНЯЯ СЕРВИСНАЯ ПАНЕЛЬ В СТИЛЕ СТИЛЬ ВИТРИНЫ -->
+
 <div class="bg-[#F8F9FB] text-gray-600 text-[11px] border-b border-gray-200 px-3 sm:px-4 py-1.5">
   <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
     <div class="flex items-center gap-3 min-w-0 truncate">
@@ -490,7 +489,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </div>
 
-<!-- БОКОВАЯ НАВИГАЦИОННАЯ ПАНЕЛЬ (DRAWER) -->
+
 <div id="drawer-backdrop" onclick="toggleDrawer(false)" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-40"></div>
 <aside id="drawer" class="fixed top-0 left-0 bottom-0 w-80 max-w-[86vw] bg-white z-50 -translate-x-full flex flex-col justify-between p-5 overflow-y-auto border-r border-gray-200 shadow-2xl">
   <div class="space-y-5">
@@ -532,11 +531,11 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </aside>
 
-<!-- ГЛАВНАЯ ТОРГОВАЯ ШАПКА В СТИЛЕ СТИЛЬ ВИТРИНЫ -->
+
 <header class="relative z-30 bg-white border-b border-gray-300 px-3 sm:px-4 py-2.5 shadow-2xs">
   <div class="max-w-6xl mx-auto">
     <div class="flex items-center justify-between gap-2.5 sm:gap-4">
-      <!-- Кнопка меню в углу + логотип и название магазина правее -->
+      
       <div class="flex items-center gap-2 sm:gap-3 shrink-0">
         <button onclick="toggleDrawer(true)" aria-label="Открыть меню" title="Меню" class="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-900 transition-colors shrink-0">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -550,13 +549,13 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
         </div>
       </div>
 
-      <!-- Широкая центральная строка поиска в стиле стиль витрины -->
+      
       <div class="relative flex-1 max-w-xl hidden md:block">
         <input id="search-input-desktop" type="text" autocomplete="off" oninput="document.getElementById('search-input').value=this.value;onSearchInput()" onfocus="openSearchDropdown(true)" onkeydown="onSearchKeyDown(event)" placeholder="Поиск по 391 моделям: Garmin Fenix 8, Apple Watch Ultra 2, Casio, до 35000..." class="w-full bg-[#F3F4F6] hover:bg-gray-200/70 focus:bg-white text-gray-900 placeholder-gray-500 text-xs rounded-xl pl-4 pr-10 py-2.5 outline-none border border-gray-200 focus:border-[#E11D48] transition-colors" />
         <svg class="w-4 h-4 text-gray-500 absolute right-3.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M16.65 10.825a5.825 5.825 0 11-11.65 0 5.825 5.825 0 0111.65 0z"/></svg>
       </div>
 
-      <!-- Правая панель иконок с подписями в стиле стиль витрины -->
+      
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
         
         <button onclick="openQuizModal()" class="hidden flex-col items-center justify-center px-2.5 py-1 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors" title="Подбор часов за 30 секунд">
@@ -579,7 +578,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
       </div>
     </div>
 
-    <!-- Мобильный поиск + Выпадающий список живых подсказок -->
+    
     <div class="relative mt-2 md:mt-0">
       <input id="search-input" type="text" autocomplete="off" oninput="const d=document.getElementById('search-input-desktop');if(d)d.value=this.value;onSearchInput()" onfocus="openSearchDropdown(true)" onkeydown="onSearchKeyDown(event)" placeholder="Поиск по моделям и цене: Fenix 8, Apple Watch Ultra 2, до 35000..." class="md:hidden w-full bg-[#F3F4F6] focus:bg-white text-gray-900 placeholder-gray-500 text-xs rounded-xl pl-9 pr-14 py-2.5 outline-none border border-gray-200 focus:border-[#E11D48]" />
       <svg class="md:hidden w-4 h-4 text-soft absolute left-3 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M16.65 10.825a5.825 5.825 0 11-11.65 0 5.825 5.825 0 0111.65 0z"/></svg>
@@ -604,7 +603,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
       </div>
     </div>
 
-    <!-- Нижняя торговая навигационная полоса (стиль витрины) -->
+    
     <nav aria-label="Разделы магазина" class="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-gray-100 overflow-x-auto no-scrollbar">
       <a href="#/catalog" id="tab-btn-catalog" class="px-3.5 py-1.5 rounded-xl text-xs font-bold btn-luxury-gold whitespace-nowrap">Каталог (391)</a>
       <a href="#/cart" id="tab-btn-cart" class="hidden"><svg class="w-3.5 h-3.5 shrink-0 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg><span>Корзина</span></a>
@@ -619,10 +618,10 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 
 <main class="max-w-6xl mx-auto w-full px-4 pt-5 flex-1">
 
-<!-- ГЛАВНАЯ ВИТРИНА БУТИКА -->
+
 <section id="view-catalog" class="space-y-7">
 
-  <!-- СВЕТЛЫЙ HERO-БЛОК С ОРИГИНАЛЬНЫМИ ФОТО КАТАЛОГА И ЖИВЫМ ХРОНОМЕТРОМ -->
+  
   <div id="hero-slider" onmouseenter="pauseHeroAuto(true)" onmouseleave="pauseHeroAuto(false)" class="relative rounded-3xl overflow-hidden hero-obsidian border border-gray-200">
     <div id="hero-slide-0" class="hero-slide relative w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-center p-5 sm:p-8 lg:p-10">
       <div class="lg:col-span-12 space-y-4">
@@ -646,7 +645,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
     </div>
   </div>
 
-  <!-- ФЛАГМАНСКАЯ ГАЛЕРЕЯ ХИТОВ -->
+  
   <div id="hits-section">
     <div class="flex items-end justify-between mb-4">
       <div>
@@ -658,7 +657,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
     <div id="hits-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
   </div>
 
-  <!-- ЕДИНАЯ КОНСОЛЬ НАВИГАЦИИ ПО КАТЕГОРИЯМ И КАЛИБРАМ (БЕЗ СВАЛКИ КНОПОК) -->
+  
   <div id="catalog-anchor" class="scroll-mt-32 space-y-4 bg-[#0C1018] rounded-[28px] p-5 border border-white/[0.08] shadow-xl">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -675,15 +674,15 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
       </div>
     </div>
 
-    <!-- Горизонтальная лента категорий -->
+    
     <div id="category-pills" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
 
-    <!-- Горизонтальная лента серий в одну аккуратную строку -->
+    
     <div class="pt-2 border-t border-white/[0.06] flex items-center gap-2">
       <span class="text-[9.5px] font-extrabold uppercase tracking-[0.16em] text-soft shrink-0">Линейки:</span>
       <div id="series-pills" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5"></div>
     </div>
-    <!-- Быстрые чипы материалов и калибров -->
+    
     <div class="pt-2 border-t border-white/[0.06] flex items-center gap-2">
       <span class="text-[9.5px] font-extrabold uppercase tracking-[0.16em] text-[#38BDF8] shrink-0">Калибр:</span>
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
@@ -698,7 +697,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
     </div>
   </div>
 
-  <!-- СЧЕТЧИК И СОРТИРОВКА -->
+  
   <div class="flex items-center justify-between px-1">
     <div class="flex items-center gap-3">
       <span id="found-count" class="text-xs text-slate-300 font-extrabold tracking-wide">Найдено: 0</span>
@@ -711,7 +710,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
     </select>
   </div>
 
-  <!-- КЛАССИЧЕСКАЯ 2-КОЛОНОЧНАЯ СЕТКА МАГАЗИНА (OPENCART / WOOCOMMERCE SIDEBAR + ВИТРИНА) -->
+  
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
     <aside id="cms-catalog-sidebar" class="hidden lg:block lg:col-span-3 bg-white rounded-2xl border border-gray-200 p-4 space-y-4 sticky top-28">
       <div>
@@ -762,7 +761,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
     </aside>
 
     <div class="lg:col-span-9 min-w-0">
-      <!-- ВИРТУАЛИЗИРОВАННАЯ СЕТКА ТОВАРОВ -->
+      
       <div id="grid-window"><div id="grid-top" style="height:0px"></div><div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4"></div><div id="grid-bottom" style="height:0px"></div></div>
       <div id="grid-sentinel" class="h-2"></div>
       <div id="grid-status" class="text-center text-xs font-mono text-soft"></div>
@@ -770,7 +769,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
     </div>
   </div>
 
-  <!-- НЕДАВНО ПРОСМОТРЕННЫЕ МОДЕЛИ -->
+  
   <div id="recent-viewed-section" class="hidden pt-6 border-t border-white/10 space-y-3.5">
     <div class="flex items-center justify-between">
       <h3 class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#38BDF8]">Вы недавно смотрели</h3>
@@ -780,13 +779,13 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </section>
 
-<!-- СТРАНИЦА КАРТОЧКИ ТОВАРА -->
+
 <section id="view-product" class="hidden">
   <a href="#/catalog" class="inline-flex items-center gap-2 mb-4 text-xs font-bold text-slate-200 bg-white/[0.04] px-4 py-2.5 rounded-full border border-white/10 hover:border-[#38BDF8]/50">← Назад в коллекцию</a>
   <div id="product-detail-box" class="bg-[#0E121B] rounded-3xl p-5 sm:p-8 border border-white/10 shadow-2xl"></div>
 </section>
 
-<!-- КОРЗИНА -->
+
 <section id="view-cart" class="hidden space-y-4">
   <div class="flex flex-wrap items-center justify-between gap-2">
     <h2 class="font-display text-xl font-extrabold text-white inline-flex items-center gap-2"><svg class="w-5 h-5 text-[#38BDF8]" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg><span>Корзина</span></h2>
@@ -804,7 +803,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </section>
 
-<!-- ОФОРМЛЕНИЕ ЗАКАЗА -->
+
 <section id="view-checkout" class="hidden space-y-4">
   <h2 class="font-display text-xl font-extrabold text-white">Оформление заказа</h2>
   <a href="#/cart" class="inline-block mb-1 text-xs font-bold text-slate-300 bg-white/[0.04] px-4 py-2 rounded-full border border-white/10">← Назад в корзину</a>
@@ -832,7 +831,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </section>
 
-<!-- ЗАКАЗ ПРИНЯТ -->
+
 <section id="view-order-success" class="hidden">
   <div class="bg-[#0E121B] rounded-3xl p-7 text-center border border-[#38BDF8]/35 mt-2 shadow-2xl max-w-lg mx-auto">
     <div class="w-14 h-14 rounded-2xl bg-[#38BDF8]/15 text-[#E2E8F0] border border-[#38BDF8]/40 flex items-center justify-center mx-auto mb-3.5 text-2xl font-bold">✓</div>
@@ -849,13 +848,13 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </section>
 
-<!-- ИЗБРАННОЕ -->
+
 <section id="view-favorites" class="hidden space-y-4">
   <h2 class="font-display text-xl font-extrabold text-white">Избранные модели</h2>
   <div id="favorites-window"><div id="favorites-top" style="height:0px"></div><div id="favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div><div id="favorites-bottom" style="height:0px"></div></div>
 </section>
 
-<!-- МОИ ЗАКАЗЫ -->
+
 <section id="view-orders" class="hidden space-y-4">
   <div class="flex items-center justify-between">
     <h2 class="font-display text-xl font-extrabold text-white">Мои заказы и статус доставки</h2>
@@ -873,7 +872,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   <div id="my-orders-list" class="space-y-3"></div>
 </section>
 
-<!-- О МАГАЗИНЕ -->
+
 <section id="view-about" class="hidden space-y-4">
   <div class="bg-[#0E121B] rounded-3xl p-6 space-y-4 text-sm leading-relaxed text-slate-300 border border-white/10">
     <h2 class="font-display text-xl font-extrabold text-white">О часовом бутике OneWatch</h2>
@@ -881,7 +880,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </section>
 
-<!-- ОПЛАТА И ДОСТАВКА -->
+
 <section id="view-delivery" class="hidden space-y-4">
   <div class="bg-[#0E121B] rounded-3xl p-6 space-y-3.5 text-sm leading-relaxed text-slate-300 border border-white/10">
     <h2 class="font-display text-xl font-extrabold text-white">Оплата и спецдоставка</h2>
@@ -894,7 +893,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </section>
 
-<!-- ГАРАНТИЯ И ОТЗЫВЫ -->
+
 <section id="view-warranty" class="hidden space-y-4">
   <div class="bg-[#0E121B] rounded-3xl p-6 space-y-4 text-sm leading-relaxed text-slate-300 border border-white/10">
     <h2 class="font-display text-xl font-extrabold text-white">Официальная гарантия 12 месяцев</h2>
@@ -907,7 +906,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </section>
 
-<!-- КОНТАКТЫ -->
+
 <section id="view-contacts" class="hidden space-y-4">
   <div class="bg-[#0E121B] rounded-3xl p-6 space-y-4 text-sm border border-white/10">
     <h2 class="font-display text-xl font-extrabold text-white">Контакты и реквизиты</h2>
@@ -921,7 +920,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </section>
 
-<!-- ОФЕРТА -->
+
 <section id="view-offer" class="hidden space-y-4">
   <div class="bg-[#0E121B] rounded-3xl p-6 space-y-3 text-xs leading-relaxed text-slate-300 border border-white/10">
     <h2 class="font-display text-lg font-extrabold text-white">Публичная оферта</h2>
@@ -929,7 +928,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </section>
 
-<!-- КОНФИДЕНЦИАЛЬНОСТЬ -->
+
 <section id="view-privacy" class="hidden space-y-4">
   <div class="bg-[#0E121B] rounded-3xl p-6 space-y-3 text-xs leading-relaxed text-slate-300 border border-white/10">
     <h2 class="font-display text-lg font-extrabold text-white">Политика конфиденциальности</h2>
@@ -939,7 +938,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 
 </main>
 
-<!-- АРХИТЕКТУРНЫЙ ФУТЕР БУТИКА -->
+
 <footer class="max-w-6xl mx-auto w-full px-4 mt-12 space-y-4">
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     <div class="bg-[#0C1018] rounded-3xl p-5 border border-white/[0.07]">
@@ -981,20 +980,20 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </footer>
 
-<!-- КНОПКА НАВЕРХ -->
+
 <div class="fixed bottom-4 right-4 z-30 flex flex-col items-end gap-2">
   <button id="to-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Наверх" class="hidden w-9 h-9 rounded-full bg-white/95 shadow-md border border-gray-200 text-gray-800 font-bold hover:border-gray-400 transition-all">↑</button>
 </div>
 <div class="hidden"><a id="ui-float-tg" href="#contacts"></a><a id="ui-float-max" href="#contacts" class="hidden"></a></div>
 
-<!-- ПАНЕЛЬ СРАВНЕНИЯ МОДЕЛЕЙ -->
+
 <div id="compare-bar" class="hidden fixed bottom-5 left-5 z-30 items-center gap-2 bg-white border border-gray-200 shadow-xl rounded-2xl pl-4 pr-2 py-2">
   <span class="text-xs font-extrabold text-gray-900">К сравнению: <span id="compare-count" class="font-mono text-brand">0</span></span>
   <button onclick="openCompareModal()" class="px-4 py-2 rounded-xl btn-luxury-gold text-xs font-extrabold whitespace-nowrap">Сравнить</button>
   <button onclick="clearCompare()" class="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold" title="Очистить сравнение">✕</button>
 </div>
 
-<!-- КВИЗ-ПОДБОР -->
+
 <div id="quiz-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
   <div class="absolute inset-0 bg-black/60" onclick="closeQuizModal()"></div>
   <div class="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4">
@@ -1023,7 +1022,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </div>
 
-<!-- МОДАЛКА СРАВНЕНИЯ -->
+
 <div id="compare-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
   <div class="absolute inset-0 bg-black/60" onclick="closeCompareModal()"></div>
   <div class="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[86vh] flex flex-col overflow-hidden">

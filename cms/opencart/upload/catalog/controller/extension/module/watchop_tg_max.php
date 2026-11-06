@@ -37,10 +37,13 @@ class WatchopTgMax extends \Opencart\System\Engine\Controller {
         ], JSON_UNESCAPED_UNICODE);
 
         $webhook = getenv('WATCHOP_BOT_WEBHOOK') ?: 'http://localhost:3000/api/webhooks/opencart';
+        $secret = getenv('WATCHOP_WEBHOOK_SECRET') ?: '';
+        $headers = ['Content-Type: application/json'];
+        if ($secret !== '') $headers[] = 'X-Watchop-Signature: sha256=' . hash_hmac('sha256', $payload, $secret);
         $ch = curl_init($webhook);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_exec($ch);

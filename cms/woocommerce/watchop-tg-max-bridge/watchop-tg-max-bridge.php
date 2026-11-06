@@ -9,6 +9,9 @@ if (!defined('ABSPATH')) exit;
 
 define('WATCHOP_BOT_WEBHOOK', getenv('WATCHOP_BOT_WEBHOOK') ?: 'http://localhost:3000/api/webhooks/woocommerce');
 define('WATCHOP_TG_BOT_URL', getenv('WATCHOP_TG_BOT_URL') ?: 'https://t.me/wwwatchshop_bot');
+// Секрет подписи вебхуков: тот же CMS_WEBHOOK_SECRET, что в .env сервера watchop.
+// Без него сервер отвечает 503 и заказ не создаётся (защита от подделки заявок).
+define('WATCHOP_WEBHOOK_SECRET', getenv('WATCHOP_WEBHOOK_SECRET') ?: '');
 
 add_action('woocommerce_checkout_order_processed', function ($order_id) {
     $order = wc_get_order($order_id);
@@ -45,9 +48,14 @@ add_action('woocommerce_checkout_order_processed', function ($order_id) {
         'line_items' => $items,
     ];
 
+    $body = wp_json_encode($payload);
+    $headers = ['Content-Type' => 'application/json; charset=utf-8'];
+    if (WATCHOP_WEBHOOK_SECRET !== '') {
+        $headers['X-Watchop-Signature'] = 'sha256=' . hash_hmac('sha256', $body, WATCHOP_WEBHOOK_SECRET);
+    }
     wp_remote_post(WATCHOP_BOT_WEBHOOK, [
-        'headers' => ['Content-Type' => 'application/json; charset=utf-8'],
-        'body'    => wp_json_encode($payload),
+        'headers' => $headers,
+        'body'    => $body,
         'timeout' => 8,
         'blocking'=> false,
     ]);
