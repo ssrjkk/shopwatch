@@ -220,7 +220,7 @@ neither corrupt the working file nor overwrite the backup.
 
 Measured against the working catalog of 391 products, not eyeballed:
 
-- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 193 152 B → 40 380 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 157 256 B → 13 645 B. Images and responses under 155 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
+- **Compression.** The server serves HTML/JS/JSON as brotli when the client accepts it, otherwise gzip (`zlib`, no new dependencies), measured live: `index.html` 193 414 B → 40 377 B, `/api/state` 135 347 B → 17 906 B, `products-data.js` 157 256 B → 13 645 B. Images and responses under 155 KB are left alone, `Vary: Accept-Encoding` is set, ETag and 304 keep working. GitHub Pages compresses by itself, so the saving shows on a local run and on a VPS.
 - **Windowed catalog grid.** Never more than 60 cards in the DOM, however far you scroll: spacers above and below hold the height of what is hidden, so the scrollbar does not jump. Before this the grid only ever grew — after scrolling to the end it held 391 cards and 3910 nodes instead of 60 and 600. The numeric check is in `tests/virtual.test.js`.
 - **Images sized to their slot.** The database baked in `w=600` although a card in the `max-w-md` layout is 181 px and a cart thumbnail is 64 px. The storefront now asks for `w=400` on a card, `w=700` on the product page and `w=160`/`w=140` for thumbnails. Unsplash URLs also get `fm=webp`, verified by fact — `Content-Type: image/webp`, a `RIFF…WEBP` signature, 7 786 B instead of 10 882 B per card (−28%). Other hosts (Wikimedia) are left as they are: they do not understand the width parameter.
 - **Photo cache.** `/uploads/...` is served with `Cache-Control: public, max-age=31536000, immutable` — the file name is unique per upload, so it cannot go stale. The storefront HTML itself cannot be cached forever (`max-age=0`), otherwise a price change would not appear until the visitor cleared the cache.
@@ -259,7 +259,8 @@ younger than 24 hours, otherwise `403`).
 - Order contents and requisites are shown only to its owner (whoever opened the link first) or to an admin; knowing the order number is not access
 - Order statuses (`В сборку` / `Оплачен` / `Отменить`) are changed by admins only — in Telegram and in MAX
 - The `Заказ принят` screen reached without an order in this session returns to the catalog; an order made in this session survives a reload (sessionStorage)
-- MAX links stay hidden until the MAX bot is configured (`MAX_BOT_TOKEN`) — a buyer is never sent into a 404
+- MAX links stay hidden until the MAX bot is configured (`MAX_BOT_TOKEN`) — a buyer is never sent into a 404; `max_link` is empty by default in the storefront's baked settings too: GitHub Pages has no server to hide a placeholder, so the MAX buttons hide themselves, and a gate in `tests/ui.test.js` keeps the dead `max.ru/watchop` stub from coming back
+- A photo attached in MAX is fetched only from a public http(s) URL (`isPublicHttpUrl`: no localhost, private ranges, link-local or bare IPs) — the path is admin-only, but the SSRF guard trusts no one; the 8 MB limit and magic-bytes check sit further down the stack
 - Mini App signature: HMAC plus `auth_date` freshness under 24 hours, otherwise `403`
 - Validation: up to 50 line items, quantity 1–99, phone from 10 digits, unknown product → `400`; body limit `100kb` (`413`); an error thrown in an async handler does not hang the request
 - All product text is escaped on render (protection against stored XSS coming through the bot); a corrupted `localStorage` is reset instead of killing the storefront
@@ -272,7 +273,7 @@ younger than 24 hours, otherwise `403`).
 
 ## Tests
 
-`npm test` — 280 tests in 35 suites, the built-in Node runner (nothing to install):
+`npm test` — 284 tests in 35 suites, the built-in Node runner (nothing to install):
 
 - `tests/api.test.js` — a live server on a temporary port with an empty database: state (300+ products), order `TG-XXXX`, anti-spam `429`, `400`/`403`, price recalculation, customer data, `healthz`, static files, compression and `immutable` caching of uploads, promo codes: `/api/promo-check` answers with the server's own arithmetic, an order carries the discounted total, an unknown code is refused, a callback request gets a real order number and is findable in the cabinet
 - `tests/promo.test.js` — the promo engine as pure functions: rules parse and serialize back without loss, garbage and out-of-range percents never become a discount, a brand code counts only that brand's lines in a mixed cart, the minimum cart is inclusive, a code that does not apply leaves the full sum and a readable reason, prices come from the lookup and not from the request, the discount is capped at the cart total, and the admin list prints code, percent and conditions

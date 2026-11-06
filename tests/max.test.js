@@ -57,7 +57,7 @@ ${extractBackupBlock()}
 `;
     const driver = `
 ;return { handleMaxUpdate, maxNotifyAdmin, maxSessions, db, sent,
-  loadMaxAdminExtras, maxAdminIdList, MAX_CFG_BUTTONS, EDITABLE_SETTINGS,
+  loadMaxAdminExtras, maxAdminIdList, MAX_CFG_BUTTONS, EDITABLE_SETTINGS, isPublicHttpUrl,
   allTo: (id) => sent.filter((s) => s.url.includes('user_id=' + id)),
   lastTo: (id) => [...sent].reverse().find((s) => s.url.includes('user_id=' + id)),
   upd: (uid, name, text) => ({ update_type: 'message_created', message: { sender: { user_id: uid, name }, body: { text } } }) };
@@ -82,6 +82,31 @@ ${extractBackupBlock()}
     const p = api.db.prepare("SELECT * FROM products WHERE name='Fenix 9'").get();
     assert.ok(p && p.price === 65000 && p.image === 'http://img/x.jpg');
     assert.ok(api.lastTo(999).body.text.includes('добавлены'));
+  });
+
+  it('isPublicHttpUrl: публичные http(s) пропускает, localhost/приватные/голые IP и мусор — нет', () => {
+    const ok = ['https://cdn.max.ru/u/abc/photo.jpg', 'http://example.com/a.png', 'https://max.example.com/x.JPG'];
+    for (const u of ok) assert.equal(api.isPublicHttpUrl(u), true, u);
+    const bad = [
+      '', 'не url', 'ftp://cdn.max.ru/a.jpg', 'javascript:alert(1)', 'file:///etc/passwd',
+      'http://localhost/a.jpg', 'http://api.localhost/a.jpg', 'http://svc.internal/a.jpg', 'http://box.local/a.jpg',
+      'http://127.0.0.1:3000/', 'http://10.0.0.5/', 'http://192.168.1.10/', 'http://172.16.0.1/', 'http://172.31.255.255/',
+      'http://169.254.169.254/latest/meta-data', 'http://0.0.0.0/', 'http://[::1]/', 'http://metadata.ipv6-literal.net/',
+    ];
+    for (const u of bad) assert.equal(api.isPublicHttpUrl(u), false, u);
+  });
+
+  it('фото из MAX-вложения не качается с внутреннего адреса, публичный — уходит в fetch', async () => {
+    await api.handleMaxUpdate(api.upd(999, 'Admin', 'Добавить часы'));
+    for (const t of ['GARMIN', 'fēnix', 'Спортивные часы', 'Fenix SSRF', '50000', 'desc']) {
+      await api.handleMaxUpdate(api.upd(999, 'Admin', t));
+    }
+    const updPhoto = (url) => ({ update_type: 'message_created', message: { sender: { user_id: 999, name: 'Admin' }, body: { text: '', attachments: [{ payload: { url } }] } } });
+    await api.handleMaxUpdate(updPhoto('http://169.254.169.254/latest/meta-data'));
+    assert.ok(!api.sent.some((s) => s.url === 'http://169.254.169.254/latest/meta-data'), 'внутренний адрес не доходит до fetch');
+    assert.match(api.lastTo(999).body.text, /Не удалось сохранить фото/);
+    await api.handleMaxUpdate(updPhoto('https://cdn.max.ru/u/abc/photo.jpg'));
+    assert.ok(api.sent.some((s) => s.url === 'https://cdn.max.ru/u/abc/photo.jpg'), 'публичный адрес качается');
   });
 
   it('catalog browser: shelves -> page -> card -> field edit, delete asks confirm', async () => {

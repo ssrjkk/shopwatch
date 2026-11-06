@@ -412,7 +412,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 <span id="filter-summary" class="hidden"></span>
 <script id="product-jsonld" type="application/ld+json"></script>
 <script id="schema-jsonld" type="application/ld+json">
-{"@context":"https://schema.org","@type":"Store","name":"OneWatch","description":"Магазин оригинальной продукции Garmin, Apple Watch, Samsung, Suunto и эхолотов с доставкой по всей России","url":"https://ssrjkk.github.io/shopwatch/","image":"https://ssrjkk.github.io/shopwatch/uploads/catalog/prod-1-1.jpg","telephone":"+7 (473) 300-40-95","email":"watchopp@gmail.com","sameAs":["https://t.me/wwwatchshop_bot","https://max.ru/watchop"],"priceRange":"₽₽–₽₽₽","currenciesAccepted":"RUB","paymentAccepted":"Банковская карта, СБП, Наличные при получении, Долями, Сплит","areaServed":{"@type":"Country","name":"RU"},"address":{"@type":"PostalAddress","addressCountry":"RU","addressLocality":"Воронеж"},"potentialAction":{"@type":"SearchAction","target":"https://ssrjkk.github.io/shopwatch/#/catalog?q={search_term_string}","query-input":"required name=search_term_string"}}
+{"@context":"https://schema.org","@type":"Store","name":"OneWatch","description":"Магазин оригинальной продукции Garmin, Apple Watch, Samsung, Suunto и эхолотов с доставкой по всей России","url":"https://ssrjkk.github.io/shopwatch/","image":"https://ssrjkk.github.io/shopwatch/uploads/catalog/prod-1-1.jpg","telephone":"+7 (473) 300-40-95","email":"watchopp@gmail.com","sameAs":["https://t.me/wwwatchshop_bot"],"priceRange":"₽₽–₽₽₽","currenciesAccepted":"RUB","paymentAccepted":"Банковская карта, СБП, Наличные при получении, Долями, Сплит","areaServed":{"@type":"Country","name":"RU"},"address":{"@type":"PostalAddress","addressCountry":"RU","addressLocality":"Воронеж"},"potentialAction":{"@type":"SearchAction","target":"https://ssrjkk.github.io/shopwatch/#/catalog?q={search_term_string}","query-input":"required name=search_term_string"}}
 </script>
 </head>
 <div id="tw-preseed" class="hidden stage-lume-active stage-redshift-active btn-luxury-added btn-luxury-gold text-red-500 text-soft flex"></div>
@@ -1057,7 +1057,7 @@ let state={
     email:'watchopp@gmail.com',
     address:'Доставка по всей России — СДЭК, Почта России, Boxberry',
     tg_link:'https://t.me/wwwatchshop_bot',
-    max_link:'https://max.ru/watchop',
+    max_link:'',
     legal_name:'ИП Жукова Татьяна Юрьевна',
     legal_inn:'362703988401',
     legal_ogrnip:'304362725400110',
@@ -2276,6 +2276,7 @@ function quickOrder(e,id){
   document.getElementById('order-item-summary').textContent=`${p.name} × 1 — ${Number(p.price).toLocaleString('ru-RU')} ₽`;
   document.getElementById('order-tg-btn').href=tgOrderLink(orderCode,items);
   document.getElementById('order-max-btn').href=state.settings.max_link;
+  document.getElementById('order-max-btn').classList.toggle('hidden',!state.settings.max_link);
   recordMyOrder(orderCode,items,p.price,'Новый (Быстрый заказ)');
   saveSessionOrder({orderCode,summary:`${p.name} × 1 — ${Number(p.price).toLocaleString('ru-RU')} ₽`,tgHref:tgOrderLink(orderCode,items),maxHref:state.settings.max_link});
   switchTab('order-success');
@@ -2526,6 +2527,7 @@ async function submitOrder(){
   document.getElementById('order-item-summary').textContent=items.map(i=>`${i.name} × ${i.qty}`).join('; ')+` — ${total.toLocaleString('ru-RU')} ₽`;
   document.getElementById('order-tg-btn').href=tgOrderLink(orderCode,items);
   document.getElementById('order-max-btn').href=state.settings.max_link;
+  document.getElementById('order-max-btn').classList.toggle('hidden',!state.settings.max_link);
   recordMyOrder(orderCode,items,total,'Новый');
   saveSessionOrder({orderCode,summary:document.getElementById('order-item-summary').textContent,tgHref:tgOrderLink(orderCode,items),maxHref:state.settings.max_link});
   state.submitInFlight=false;
@@ -2831,6 +2833,7 @@ function loadSessionOrder(){
           document.getElementById('order-item-summary').textContent=d.summary||'';
           document.getElementById('order-tg-btn').href=d.tgHref||'#contacts';
           document.getElementById('order-max-btn').href=d.maxHref||state.settings.max_link;
+          document.getElementById('order-max-btn').classList.toggle('hidden',!(d.maxHref||state.settings.max_link));
           return true;
         }
       }

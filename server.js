@@ -355,7 +355,9 @@ const defaultSettings = {
   email: 'watchopp@gmail.com',
   address: 'Доставка по всей России — СДЭК, Почта России, Boxberry',
   tg_link: 'https://t.me/wwwatchshop_bot',
-  max_link: 'https://max.ru/watchop',
+  // Пусто по умолчанию: заглушка вида max.ru/watchop на витрине без бота — это
+  // мёртвая ссылка, а Pages спрятать её некому (кнопка скрывается сама, см. 1280).
+  max_link: '',
   legal_name: 'ИП Жукова Татьяна Юрьевна',
   legal_inn: '362703988401',
   legal_ogrnip: '304362725400110',
@@ -3405,6 +3407,7 @@ async function handleMaxUpdate(upd) {
   const editingImage = sess?.step === 'max_field' && sess.field === 'image';
   if (photoUrl && isMaxAdminId(senderId) && (sess?.step === 'add_img' || editingImage)) {
     try {
+      if (!isPublicHttpUrl(photoUrl)) throw new Error('MAX прислал непубличный адрес картинки');
       const resp = await fetch(photoUrl);
       if (!resp.ok) throw new Error(`MAX отдал ${resp.status}`);
       const buf = Buffer.from(await resp.arrayBuffer());
@@ -3434,6 +3437,28 @@ function findMaxPhotoUrl(attachments) {
     if (url && typeof url === 'string' && url.startsWith('http')) return url;
   }
   return null;
+}
+
+// Ссылку из вложения сервер скачивает сам — это единственное место, где адрес
+// приходит извне и уходит в исходящий fetch. Гвард на уровне хоста: без localhost,
+// приватных подсетей, link-local и голых IP, чтобы админский путь нельзя было
+// развернуть в запрос к внутренним сервисам сервера. Это не защита от DNS-rebinding,
+// а честный барьер против очевидного SSRF; лимит размера и magic bytes ниже по стеку.
+function isPublicHttpUrl(raw) {
+  let url;
+  try {
+    url = new URL(String(raw || ''));
+  } catch (e) {
+    return false;
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+  const h = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (!h) return false;
+  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal')) return false;
+  if (h === '::1' || h.endsWith('.ipv6-literal.net')) return false;
+  if (/^(10|127|0|169\.254|192\.168)\./.test(h)) return false;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return false;
+  return true;
 }
 
 function finishAddingProductMax(d, imageUrl) {

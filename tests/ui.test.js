@@ -183,9 +183,14 @@ describe('витрина-stealth: поиск, фильтры, оформлени
     g2.state.settings = { ...g2.state.settings, max_link: '' };
     g2.applySettingsToUI();
     assert.equal(g2.document.getElementById('ui-float-max').classList.contains('hidden'), true, 'без бота ссылка не светится');
-    g2.state.settings = { ...g2.state.settings, max_link: 'https://max.ru/watchop' };
+    g2.state.settings = { ...g2.state.settings, max_link: 'https://max.ru/bridge-bot' };
     g2.applySettingsToUI();
     assert.equal(g2.document.getElementById('ui-float-max').classList.contains('hidden'), false, 'с настроенным MAX ботом ссылка возвращается');
+  });
+
+  it('витрина не вшивает мёртвую MAX-заглушку: на Pages дефолт пустой и кнопки скрыты сами', () => {
+    assert.ok(!HTML.includes('max.ru/watchop'), 'заглушка max.ru/watchop не имеет права возвращаться в витрину (Pages прятать её некому)');
+    assert.ok(/max_link:''/.test(HTML), 'дефолт max_link пуст — кнопки MAX скрываются собственной логикой');
   });
 
   it('пересборка каталога сбрасывает корзину и избранное, совпадение — оставляет', () => {
