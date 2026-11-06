@@ -1817,7 +1817,6 @@ function highlightSidebarFilters(){
       const active=btn.getAttribute('data-sidebar-cat')===state.activeCategory;
       btn.classList.toggle('bg-emerald-50',active);
       btn.classList.toggle('text-brand',active);
-      btn.classList.toggle('font-bold',active);
     });
     document.querySelectorAll('[data-sidebar-brand]').forEach(btn=>{
       const active=btn.getAttribute('data-sidebar-brand')===state.activeBrand;
