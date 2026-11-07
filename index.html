@@ -37,18 +37,16 @@
   --text-muted: #64748B;
   --brand: #0E9F6E;
   --brand-light: #10B981;
-  --tg: #2AABEE;
   --border: #E2E8F0;
   --transition: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 body{background-color:var(--bg);color:var(--text);}
-:root{--brand-green:#047857;--ink:#141619;--wrist-ok:#047857;--wrist-info:#0284C7;--wrist-warn:#B45309;}
+:root{--brand-green:#047857;--ink:#141619;--wrist-ok:#047857;--wrist-info:#0E9F6E;--wrist-warn:#B45309;}
 .text-brand{color:var(--brand-green);}
 .text-soft{color:var(--app-muted);}
 .text-ink{color:var(--ink);}
 .collection-chip{color:var(--ink);}
 .collection-chip .chip-arrow{background-color:#f3f4f6 !important;border-color:#e5e7eb !important;color:#374151 !important;}
-.hero-badge{background-color:#ecfdf5 !important;border-color:#a7f3d0 !important;}
 html {
   scrollbar-gutter: stable;
   overflow-x: hidden;
@@ -160,8 +158,8 @@ img { -webkit-user-drag: none; }
 }
 .pdp-thumb-active {
   opacity: 1;
-  border-color: #38BDF8;
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, .35);
+  border-color: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, .35);
 }
 
 /* Кнопки в светлом фирменном стиле (#141619 и #0E9F6E) */
@@ -308,7 +306,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-slate-400,
 body:not(.stealth-edition):not(.dark-theme) .text-slate-300\/90{
   color: #475569 !important;
 }
-body:not(.stealth-edition):not(.dark-theme) .text-\[\#38BDF8\]{
+body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\]{
   color: var(--brand-green,#047857) !important;
 }
 body:not(.stealth-edition):not(.dark-theme) .border-white\/5,
@@ -335,7 +333,6 @@ body:not(.stealth-edition):not(.dark-theme) .watch-card-icon-btn{
   border-color: #E2E8F0 !important;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08) !important;
 }
-.bg-\[\#2AABEE\] { background-color: #0E6BA8 !important; }
 
 /* Автономный базовый слой утилит на случай блокировки cdn.tailwindcss.com */
 .hidden { display: none !important; }
@@ -416,7 +413,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 </script>
 </head>
 <div id="tw-preseed" class="hidden stage-lume-active stage-redshift-active btn-luxury-added btn-luxury-gold text-red-500 text-soft flex"></div>
-<body class="min-h-screen flex flex-col pb-24 selection:bg-[#38BDF8] selection:text-[#07090E]">
+<body class="min-h-screen flex flex-col pb-24 selection:bg-[#10B981] selection:text-[#07090E]">
 <noscript>
   <div style="max-width:960px;margin:0 auto;padding:16px;font-family:sans-serif;background:#fff;color:#141619">
     <h2>OneWatch — каталог 391 оригинальных часов Garmin, Apple Watch, Samsung и навигаторов</h2>
@@ -465,7 +462,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
     </linearGradient>
     <linearGradient id="st-glare" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.18"/>
-      <stop offset="45%" stop-color="#38BDF8" stop-opacity="0.04"/>
+      <stop offset="45%" stop-color="#10B981" stop-opacity="0.04"/>
       <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
   </defs>
@@ -495,7 +492,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   <div class="space-y-5">
     <div class="flex items-center justify-between border-b border-gray-100 pb-3.5">
       <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-lg bg-[#E11D48] text-white font-extrabold flex items-center justify-center text-sm" style="color:#FFFFFF !important">W</div>
+        <div class="w-8 h-8 rounded-lg bg-[#141619] text-white font-extrabold flex items-center justify-center text-sm" style="color:#FFFFFF !important">W</div>
         <div>
           <span class="font-display font-extrabold text-sm tracking-tight block leading-none text-gray-900">ONEWATCH</span>
           <span class="text-[9px] text-gray-500 uppercase tracking-widest">Каталог часов и приборов</span>
@@ -527,7 +524,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   <div class="border-t border-gray-100 pt-4 space-y-2 text-xs text-gray-500">
     <div class="font-bold text-gray-900">Горячая линия и Telegram</div>
     <a id="drawer-phone" href="tel:+74733004095" class="block font-semibold text-gray-900">+7 (473) 300-40-95</a>
-    <a id="drawer-tg-btn" href="#contacts" target="_blank" class="block w-full text-center bg-[#2AABEE] text-white font-bold py-2.5 rounded-xl hover:opacity-95 transition-opacity mt-1" style="color:#FFFFFF !important">Открыть Telegram-бот</a>
+    <a id="drawer-tg-btn" href="https://t.me/wwwatchshop_bot" target="_blank" rel="noopener" class="block w-full text-center btn-luxury-gold font-extrabold py-2.5 rounded-xl mt-1" style="color:#FFFFFF !important">Открыть Telegram-бот</a>
   </div>
 </aside>
 
@@ -562,7 +559,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
           <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span class="text-[10px] font-semibold mt-0.5">Подбор</span>
         </button>
-        <a href="#contacts" target="_blank" rel="noopener" class="px-2.5 py-2 rounded-xl bg-[#0369A1]/10 hover:bg-[#0369A1]/20 border border-[#0369A1]/40 text-[#0369A1] text-xs font-bold inline-flex items-center gap-1.5 transition-colors shrink-0" title="Официальный Telegram-бот @wwwatchshop_bot" aria-label="Написать в Telegram">
+        <a id="header-tg-btn" href="https://t.me/wwwatchshop_bot" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 sm:px-3.5 h-9 rounded-xl btn-luxury-gold font-extrabold text-xs shrink-0" title="Официальный Telegram-бот @wwwatchshop_bot" aria-label="Написать в Telegram">
           <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
           <span class="hidden sm:inline">Telegram</span>
         </a>
@@ -625,16 +622,11 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   <div id="hero-slider" onmouseenter="pauseHeroAuto(true)" onmouseleave="pauseHeroAuto(false)" class="relative rounded-3xl overflow-hidden hero-obsidian border border-gray-200">
     <div id="hero-slide-0" class="hero-slide relative w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-center p-5 sm:p-8 lg:p-10">
       <div class="lg:col-span-12 space-y-4">
-        <div class="hero-badge inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-brand text-[11px] font-bold">
-          <span class="w-2 h-2 rounded-full bg-[#10B981]"></span>
-          <span id="hero-dispatch-badge">Оригинальная продукция • Отправка СДЭК в день заказа</span>
-        </div>
         <h1 id="ui-hero-title" class="font-display text-xl sm:text-3xl lg:text-[32px] font-extrabold leading-[1.18] tracking-tight text-gray-900">Часовой магазин «OneWatch» — часы, эхолоты и навигаторы с гарантией и доставкой по России</h1>
         <p class="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-xl">Оригинальные спортивные и смарт-часы Garmin (fēnix 8, Forerunner, Instinct, Venu, MARQ), Apple Watch Ultra 2 / Series 11, Samsung Galaxy Watch Ultra и Huawei Watch GT 5 Pro с гарантией 12 месяцев.</p>
-        <div class="flex flex-wrap items-center gap-2.5 pt-1">
-          <button onclick="scrollToCatalog()" class="btn-luxury-gold font-extrabold text-xs px-5 py-3 rounded-xl">Смотреть каталог (391)</button>
-          <a id="ui-consult-btn" href="#contacts" target="_blank" class="bg-[#0369A1] hover:bg-[#0284C7] text-white font-bold text-xs px-5 py-3 rounded-xl transition-colors" style="color:#FFFFFF !important">Написать в Telegram</a>
-        
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2.5 pt-1">
+          <button onclick="scrollToCatalog()" class="btn-luxury-gold font-extrabold text-xs px-5 py-3 rounded-xl w-full sm:w-52 inline-flex items-center justify-center">Смотреть каталог (391)</button>
+          <a id="ui-consult-btn" href="https://t.me/wwwatchshop_bot" target="_blank" rel="noopener" class="bg-[#0E9F6E] hover:bg-[#047857] text-white font-extrabold text-xs px-5 py-3 rounded-xl transition-colors w-full sm:w-52 inline-flex items-center justify-center gap-1.5" style="color:#FFFFFF !important"><svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>Связаться</a>
         </div>
         <div class="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200 max-w-md text-[11px]">
           <div><div class="font-mono font-extrabold text-sm text-gray-900">391</div><div class="text-soft">Моделей в каталоге</div></div>
@@ -649,7 +641,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   <div id="hits-section">
     <div class="flex items-end justify-between mb-4">
       <div>
-        <span class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#38BDF8] block">Экспозиция бутика</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#10B981] block">Экспозиция бутика</span>
         <h2 class="font-display text-xl sm:text-2xl font-extrabold text-white mt-0.5">Избранные флагманы в наличии</h2>
       </div>
       <button onclick="resetAllFilters();scrollToCatalog()" class="text-xs text-[#E2E8F0] hover:underline font-bold">Вся коллекция →</button>
@@ -661,7 +653,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   <div id="catalog-anchor" class="scroll-mt-32 space-y-4 bg-[#0C1018] rounded-[28px] p-5 border border-white/[0.08] shadow-xl">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <span class="text-[9.5px] font-extrabold uppercase tracking-[0.2em] text-[#38BDF8] block">Полный каталог мануфактур</span>
+        <span class="text-[9.5px] font-extrabold uppercase tracking-[0.2em] text-[#10B981] block">Полный каталог мануфактур</span>
         <h2 id="catalog-heading" class="font-display text-lg sm:text-xl font-extrabold text-white mt-0.5">Часы, навигация и приборы</h2>
       </div>
       <div class="flex items-center gap-2">
@@ -684,15 +676,15 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
     </div>
     
     <div class="pt-2 border-t border-white/[0.06] flex items-center gap-2">
-      <span class="text-[9.5px] font-extrabold uppercase tracking-[0.16em] text-[#38BDF8] shrink-0">Калибр:</span>
+      <span class="text-[9.5px] font-extrabold uppercase tracking-[0.16em] text-[#10B981] shrink-0">Калибр:</span>
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-        <button data-spec-chip="amoled" onclick="toggleSpecFilter('amoled')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#38BDF8]/45 whitespace-nowrap transition-all">AMOLED</button>
-        <button data-spec-chip="solar" onclick="toggleSpecFilter('solar')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#38BDF8]/45 whitespace-nowrap transition-all">Solar / Eco-Drive</button>
-        <button data-spec-chip="sapphire" onclick="toggleSpecFilter('sapphire')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#38BDF8]/45 whitespace-nowrap transition-all">Сапфировое стекло</button>
-        <button data-spec-chip="titanium" onclick="toggleSpecFilter('titanium')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#38BDF8]/45 whitespace-nowrap transition-all">Титан Grade-5</button>
-        <button data-spec-chip="size_s" onclick="toggleSpecFilter('size_s')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#38BDF8]/45 whitespace-nowrap transition-all">38–43 мм</button>
-        <button data-spec-chip="size_m" onclick="toggleSpecFilter('size_m')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#38BDF8]/45 whitespace-nowrap transition-all">45–47 мм</button>
-        <button data-spec-chip="size_l" onclick="toggleSpecFilter('size_l')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#38BDF8]/45 whitespace-nowrap transition-all">50–51 мм</button>
+        <button data-spec-chip="amoled" onclick="toggleSpecFilter('amoled')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#10B981]/45 whitespace-nowrap transition-all">AMOLED</button>
+        <button data-spec-chip="solar" onclick="toggleSpecFilter('solar')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#10B981]/45 whitespace-nowrap transition-all">Solar / Eco-Drive</button>
+        <button data-spec-chip="sapphire" onclick="toggleSpecFilter('sapphire')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#10B981]/45 whitespace-nowrap transition-all">Сапфировое стекло</button>
+        <button data-spec-chip="titanium" onclick="toggleSpecFilter('titanium')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#10B981]/45 whitespace-nowrap transition-all">Титан Grade-5</button>
+        <button data-spec-chip="size_s" onclick="toggleSpecFilter('size_s')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#10B981]/45 whitespace-nowrap transition-all">38–43 мм</button>
+        <button data-spec-chip="size_m" onclick="toggleSpecFilter('size_m')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#10B981]/45 whitespace-nowrap transition-all">45–47 мм</button>
+        <button data-spec-chip="size_l" onclick="toggleSpecFilter('size_l')" class="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#10B981]/45 whitespace-nowrap transition-all">50–51 мм</button>
       </div>
     </div>
   </div>
@@ -703,7 +695,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
       <span id="found-count" class="text-xs text-slate-300 font-extrabold tracking-wide">Найдено: 0</span>
       <button id="reset-filters-inline" onclick="resetAllFilters()" class="hidden text-xs text-[#E2E8F0] font-bold hover:underline">Сбросить фильтры ✕</button>
     </div>
-    <select id="sort-select" onchange="renderCatalog()" class="text-xs bg-[#0E121B] border border-white/10 rounded-full px-4 py-2 font-bold text-slate-200 outline-none focus:border-[#38BDF8]">
+    <select id="sort-select" onchange="renderCatalog()" class="text-xs bg-[#0E121B] border border-white/10 rounded-full px-4 py-2 font-bold text-slate-200 outline-none focus:border-[#10B981]">
       <option value="popular">По популярности</option>
       <option value="asc">Сначала доступнее</option>
       <option value="desc">Сначала флагманы</option>
@@ -772,7 +764,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   
   <div id="recent-viewed-section" class="hidden pt-6 border-t border-white/10 space-y-3.5">
     <div class="flex items-center justify-between">
-      <h3 class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#38BDF8]">Вы недавно смотрели</h3>
+      <h3 class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#10B981]">Вы недавно смотрели</h3>
       <button onclick="clearRecentViewed()" class="text-xs text-slate-400 hover:text-white font-semibold">Очистить</button>
     </div>
     <div id="recent-viewed-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
@@ -781,19 +773,19 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 
 
 <section id="view-product" class="hidden">
-  <a href="#/catalog" class="inline-flex items-center gap-2 mb-4 text-xs font-bold text-slate-200 bg-white/[0.04] px-4 py-2.5 rounded-full border border-white/10 hover:border-[#38BDF8]/50">← Назад в коллекцию</a>
+  <a href="#/catalog" class="inline-flex items-center gap-2 mb-4 text-xs font-bold text-slate-200 bg-white/[0.04] px-4 py-2.5 rounded-full border border-white/10 hover:border-[#10B981]/50">← Назад в коллекцию</a>
   <div id="product-detail-box" class="bg-[#0E121B] rounded-3xl p-5 sm:p-8 border border-white/10 shadow-2xl"></div>
 </section>
 
 
 <section id="view-cart" class="hidden space-y-4">
   <div class="flex flex-wrap items-center justify-between gap-2">
-    <h2 class="font-display text-xl font-extrabold text-white inline-flex items-center gap-2"><svg class="w-5 h-5 text-[#38BDF8]" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg><span>Корзина</span></h2>
+    <h2 class="font-display text-xl font-extrabold text-white inline-flex items-center gap-2"><svg class="w-5 h-5 text-[#10B981]" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg><span>Корзина</span></h2>
     <div class="flex items-center gap-2"><button onclick="clearCart()" class="text-xs font-bold text-rose-300 bg-white/[0.04] px-3 py-1.5 rounded-xl border border-rose-400/30">Очистить</button><a href="#/catalog" class="text-xs font-bold text-[#E2E8F0] px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">← В каталог</a></div>
   </div>
   <div id="cart-list" class="space-y-2.5"></div>
   <div class="bg-[#0E121B] rounded-3xl p-6 border border-white/10 space-y-4 shadow-xl">
-    <div id="cart-discount-row" class="hidden items-center justify-between text-xs text-[#E2E8F0] bg-[#38BDF8]/10 border border-[#38BDF8]/30 px-3.5 py-2.5 rounded-xl"><span id="cart-discount-label">Скидка по промокоду:</span><span id="cart-discount-value" class="font-bold">0 ₽</span></div>
+    <div id="cart-discount-row" class="hidden items-center justify-between text-xs text-[#E2E8F0] bg-[#10B981]/10 border border-[#10B981]/30 px-3.5 py-2.5 rounded-xl"><span id="cart-discount-label">Скидка по промокоду:</span><span id="cart-discount-value" class="font-bold">0 ₽</span></div>
     <div class="flex items-center justify-between pt-1">
       <span class="text-sm font-medium text-slate-400">Итого к оплате:</span>
       <span id="cart-total" class="text-2xl font-extrabold text-white tabular-nums">0 ₽</span>
@@ -807,19 +799,19 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 <section id="view-checkout" class="hidden space-y-4">
   <h2 class="font-display text-xl font-extrabold text-white">Оформление заказа</h2>
   <a href="#/cart" class="inline-block mb-1 text-xs font-bold text-slate-300 bg-white/[0.04] px-4 py-2 rounded-full border border-white/10">← Назад в корзину</a>
-  <div class="text-[11px] font-extrabold uppercase tracking-wider text-[#38BDF8]">Состав вашего резерва</div>
+  <div class="text-[11px] font-extrabold uppercase tracking-wider text-[#10B981]">Состав вашего резерва</div>
   <div id="checkout-list" class="space-y-2"></div>
   <div class="bg-[#0E121B] rounded-3xl p-6 border border-white/10 space-y-3.5 shadow-xl">
     <div class="flex items-center justify-between">
       <span class="text-sm text-slate-400">Итого к оплате:</span>
       <span id="checkout-total" class="text-2xl font-extrabold text-white tabular-nums">0 ₽</span>
     </div>
-    <div class="text-[11px] font-extrabold uppercase tracking-wider text-[#38BDF8] pt-1">Контактные данные получателя</div>
-    <input id="f-fio" type="text" placeholder="ФИО получателя *" autocomplete="name" class="w-full bg-white/[0.04] border border-white/10 text-sm text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#38BDF8]" />
-    <input id="f-phone" type="tel" placeholder="Номер телефона *" autocomplete="tel" class="w-full bg-white/[0.04] border border-white/10 text-sm text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#38BDF8]" />
-    <input id="f-email" type="email" placeholder="Электронная почта (для чека и трека)" autocomplete="email" class="w-full bg-white/[0.04] border border-white/10 text-sm text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#38BDF8]" />
-    <input id="f-address" type="text" placeholder="Город и адрес пункта выдачи или доставки" autocomplete="street-address" class="w-full bg-white/[0.04] border border-white/10 text-sm text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#38BDF8]" />
-    <select id="f-delivery" class="w-full bg-[#141926] border border-white/10 text-sm text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#38BDF8]">
+    <div class="text-[11px] font-extrabold uppercase tracking-wider text-[#10B981] pt-1">Контактные данные получателя</div>
+    <input id="f-fio" type="text" placeholder="ФИО получателя *" autocomplete="name" class="w-full bg-white/[0.04] border border-white/10 text-sm text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#10B981]" />
+    <input id="f-phone" type="tel" placeholder="Номер телефона *" autocomplete="tel" class="w-full bg-white/[0.04] border border-white/10 text-sm text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#10B981]" />
+    <input id="f-email" type="email" placeholder="Электронная почта (для чека и трека)" autocomplete="email" class="w-full bg-white/[0.04] border border-white/10 text-sm text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#10B981]" />
+    <input id="f-address" type="text" placeholder="Город и адрес пункта выдачи или доставки" autocomplete="street-address" class="w-full bg-white/[0.04] border border-white/10 text-sm text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#10B981]" />
+    <select id="f-delivery" class="w-full bg-[#141926] border border-white/10 text-sm text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#10B981]">
       <option value="СДЭК">СДЭК — экспресс до ПВЗ или курьером</option>
       <option value="Почта России">Почта России (1 класс со страховкой)</option>
       <option value="Boxberry">Boxberry — пункт выдачи</option>
@@ -833,15 +825,15 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 
 
 <section id="view-order-success" class="hidden">
-  <div class="bg-[#0E121B] rounded-3xl p-7 text-center border border-[#38BDF8]/35 mt-2 shadow-2xl max-w-lg mx-auto">
-    <div class="w-14 h-14 rounded-2xl bg-[#38BDF8]/15 text-[#E2E8F0] border border-[#38BDF8]/40 flex items-center justify-center mx-auto mb-3.5 text-2xl font-bold">✓</div>
+  <div class="bg-[#0E121B] rounded-3xl p-7 text-center border border-[#10B981]/35 mt-2 shadow-2xl max-w-lg mx-auto">
+    <div class="w-14 h-14 rounded-2xl bg-[#10B981]/15 text-[#E2E8F0] border border-[#10B981]/40 flex items-center justify-center mx-auto mb-3.5 text-2xl font-bold">✓</div>
     <h2 class="font-display text-xl font-extrabold text-white mb-1">Модель зарезервирована</h2>
     <p class="text-xs text-slate-400 mb-2">Индивидуальный номер вашей заявки:</p>
-    <div id="order-code-badge" class="inline-block bg-black/60 border border-[#38BDF8]/40 text-[#E2E8F0] font-mono font-extrabold text-base px-5 py-2 rounded-xl mb-3">TG-1176</div>
+    <div id="order-code-badge" class="inline-block bg-black/60 border border-[#10B981]/40 text-[#E2E8F0] font-mono font-extrabold text-base px-5 py-2 rounded-xl mb-3">TG-1176</div>
     <p id="order-item-summary" class="text-xs font-bold text-slate-200 mb-3"></p>
     <p class="text-xs text-slate-400 mb-5 leading-relaxed">Часовой мастер проверит серийный номер на складе и пришлёт реквизиты в Telegram. Нажмите кнопку ниже — бот автоматически откроет вашу заявку.</p>
     <div class="space-y-2.5">
-      <a id="order-tg-btn" href="#contacts" target="_blank" class="block w-full btn-luxury-gold font-extrabold text-sm py-3.5 rounded-2xl">Открыть заказ в Telegram</a>
+      <a id="order-tg-btn" href="https://t.me/wwwatchshop_bot" target="_blank" rel="noopener" class="block w-full btn-luxury-gold font-extrabold text-sm py-3.5 rounded-2xl">Открыть заказ в Telegram</a>
       <a id="order-max-btn" href="#contacts" target="_blank" class="block w-full bg-white/[0.05] border border-white/15 text-white font-bold text-sm py-3 rounded-2xl">Написать в MAX</a>
       <a href="#/catalog" class="block w-full text-xs text-[#E2E8F0] font-bold py-2 text-center">Вернуться в коллекцию</a>
     </div>
@@ -863,10 +855,10 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   <div class="bg-[#0E121B] rounded-3xl p-6 border border-white/10 space-y-3">
     <div class="text-xs font-bold text-slate-200">Проверка статуса заявки по коду TG-XXXX</div>
     <div class="flex gap-2">
-      <input id="track-order-input" type="text" placeholder="Например: TG-20451" class="flex-1 bg-white/[0.04] border border-white/10 text-xs text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#38BDF8] uppercase font-mono font-bold" />
+      <input id="track-order-input" type="text" placeholder="Например: TG-20451" class="flex-1 bg-white/[0.04] border border-white/10 text-xs text-white rounded-xl px-3.5 py-2.5 outline-none focus:border-[#10B981] uppercase font-mono font-bold" />
       <button onclick="checkOrderStatusUI()" class="btn-luxury-gold text-xs font-extrabold px-5 py-2.5 rounded-xl">Проверить</button>
     </div>
-    <div id="track-order-result" class="hidden p-3.5 rounded-xl bg-white/[0.04] border border-[#38BDF8]/40 text-xs text-slate-200"></div>
+    <div id="track-order-result" class="hidden p-3.5 rounded-xl bg-white/[0.04] border border-[#10B981]/40 text-xs text-slate-200"></div>
   </div>
   <div id="orders-list" class="space-y-2 hidden"></div>
   <div id="my-orders-list" class="space-y-3"></div>
@@ -914,7 +906,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
       <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10"><div class="text-xs text-slate-400">География доставки</div><div id="ui-address" class="font-bold text-xs text-white mt-1">Доставка по всей России</div></div>
       <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10"><div class="text-xs text-slate-400">Телефон горячей линии</div><a id="ui-phone" href="tel:+70000000000" class="font-extrabold text-xs text-[#E2E8F0] mt-1 block">+7 (000) 000-00-00</a></div>
       <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10"><div class="text-xs text-slate-400">Электронная почта</div><a id="ui-email" href="mailto:info@example.invalid" class="font-bold text-xs text-white mt-1 block">info@example.invalid</a></div>
-      <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10"><div class="text-xs text-slate-400">Официальный Telegram-бот</div><a href="#contacts" target="_blank" class="font-extrabold text-xs text-[#E2E8F0] mt-1 block">@wwwatchshop_bot</a></div>
+      <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10"><div class="text-xs text-slate-400">Официальный Telegram-бот</div><a href="https://t.me/wwwatchshop_bot" target="_blank" rel="noopener" class="font-extrabold text-xs text-[#E2E8F0] mt-1 block">@wwwatchshop_bot</a></div>
     </div>
     <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/10 text-xs text-slate-400"><div class="font-bold text-white mb-1">Юридическая информация</div><div id="ui-legal-name">«OneWatch»</div><div>ИНН <span id="ui-legal-inn">по запросу</span> · ОГРНИП <span id="ui-legal-ogrnip">304362725400110</span></div></div>
   </div>
@@ -942,17 +934,17 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 <footer class="max-w-6xl mx-auto w-full px-4 mt-12 space-y-4">
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     <div class="bg-[#0C1018] rounded-3xl p-5 border border-white/[0.07]">
-      <div class="w-8 h-0.5 bg-[#38BDF8] mb-3"></div>
+      <div class="w-8 h-0.5 bg-[#10B981] mb-3"></div>
       <div class="font-extrabold text-xs text-white uppercase tracking-[0.14em]">100% Оригинал</div>
       <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">Официальная гарантия 12 месяцев, проверка серийных номеров и предпродажное обновление ПО.</p>
     </div>
     <div class="bg-[#0C1018] rounded-3xl p-5 border border-white/[0.07]">
-      <div class="w-8 h-0.5 bg-[#38BDF8] mb-3"></div>
+      <div class="w-8 h-0.5 bg-[#10B981] mb-3"></div>
       <div class="font-extrabold text-xs text-white uppercase tracking-[0.14em]">Страховая экспресс-логистика</div>
       <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">Отправка в день оплаты СДЭК, Почтой России и Boxberry. Бесплатно при заказе от 15 000 ₽.</p>
     </div>
     <div class="bg-[#0C1018] rounded-3xl p-5 border border-white/[0.07]">
-      <div class="w-8 h-0.5 bg-[#38BDF8] mb-3"></div>
+      <div class="w-8 h-0.5 bg-[#10B981] mb-3"></div>
       <div class="font-extrabold text-xs text-white uppercase tracking-[0.14em]">Синхронизация с Telegram &amp; MAX</div>
       <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">Мгновенный резерв по коду TG-XXXX, оценка Trade-In и прямая связь с часовым экспертом.</p>
     </div>
@@ -968,7 +960,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
       <a href="#/privacy" class="hover:text-[#E2E8F0]">Конфиденциальность</a>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <a id="ft-tg-btn" href="#contacts" target="_blank" class="block text-center btn-luxury-gold font-extrabold py-3 rounded-2xl">Открыть Telegram-бот</a>
+      <a id="ft-tg-btn" href="https://t.me/wwwatchshop_bot" target="_blank" rel="noopener" class="block text-center btn-luxury-gold font-extrabold py-3 rounded-2xl">Открыть Telegram-бот</a>
       <a id="ft-max-btn" href="#contacts" target="_blank" class="block text-center bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white font-bold py-3 rounded-2xl">Написать в MAX</a>
     </div>
     <div class="text-[11px] text-soft border-t border-white/[0.07] pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -984,7 +976,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
 <div class="fixed bottom-4 right-4 z-30 flex flex-col items-end gap-2">
   <button id="to-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Наверх" class="hidden w-9 h-9 rounded-full bg-white/95 shadow-md border border-gray-200 text-gray-800 font-bold hover:border-gray-400 transition-all">↑</button>
 </div>
-<div class="hidden"><a id="ui-float-tg" href="#contacts"></a><a id="ui-float-max" href="#contacts" class="hidden"></a></div>
+<div class="hidden"><a id="ui-float-tg" href="https://t.me/wwwatchshop_bot"></a><a id="ui-float-max" href="#contacts" class="hidden"></a></div>
 
 
 <div id="compare-bar" class="hidden fixed bottom-5 left-5 z-30 items-center gap-2 bg-white border border-gray-200 shadow-xl rounded-2xl pl-4 pr-2 py-2">
@@ -1037,7 +1029,7 @@ body:not(.stealth-edition):not(.dark-theme) .text-\[\#10B981\] { color: #047857 
   </div>
 </div>
 
-<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0E121B] text-[#E2E8F0] text-xs font-bold px-5 py-3 rounded-full shadow-2xl border border-[#38BDF8]/40"></div>
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0E121B] text-[#E2E8F0] text-xs font-bold px-5 py-3 rounded-full shadow-2xl border border-[#10B981]/40"></div>
 
 <script src="products-data.js?v=392f"></script>
 <script>
@@ -1259,7 +1251,7 @@ function heroGoTo(idx){
     }
     if(dot){
       dot.className=i===state.heroIndex
-        ?'w-7 h-1.5 rounded-full bg-[#38BDF8] transition-all'
+        ?'w-7 h-1.5 rounded-full bg-[#10B981] transition-all'
         :'w-2 h-1.5 rounded-full bg-white/30 transition-all';
     }
   }
@@ -1403,13 +1395,14 @@ function applySettingsToUI(){
   setTxt('ft-legal-inn',s.legal_inn);
   setTxt('ft-legal-ogrnip',s.legal_ogrnip);
   setHref('ui-consult-btn',s.tg_link);
+  setHref('header-tg-btn',s.tg_link);
   setHref('ui-float-tg',s.tg_link);
   setHref('ui-float-max',s.max_link);
   try{const fmax=document.getElementById('ui-float-max');if(fmax)fmax.classList.toggle('hidden',!s.max_link);}catch(e){}
   try{const ftmax=document.getElementById('ft-max-btn');if(ftmax)ftmax.classList.toggle('hidden',!s.max_link);}catch(e){}
   setHref('ft-tg-btn',s.tg_link);
   setHref('ft-max-btn',s.max_link);
-  setHref('drawer-tg-link',s.tg_link);
+  setHref('drawer-tg-btn',s.tg_link);
   // Красные промо-метки витрины: по умолчанию нейтральные, красный вид
   // возвращает только кнопка «Красные ценники» в админке TG/MAX (promo_highlight=1).
   try{
@@ -1791,20 +1784,20 @@ function renderFilters(){
     catBox.innerHTML=allCategories().filter(c=>c==='Все товары'||getCategoryCount(c)>0).map(c=>{
       const active=state.activeCategory===c;
       const cnt=getCategoryCount(c);
-      return `<a href="#/c/${catSlug(c)}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${active?'btn-luxury-gold shadow-md':'bg-white/[0.04] text-slate-300 border border-white/10 hover:border-[#38BDF8]/50 hover:text-white'}"><span>${c}</span><span class="text-[10px] font-mono ${active?'text-black/80':'text-[#38BDF8]'} font-bold">${cnt}</span></a>`;
+      return `<a href="#/c/${catSlug(c)}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${active?'btn-luxury-gold shadow-md':'bg-white/[0.04] text-slate-300 border border-white/10 hover:border-[#10B981]/50 hover:text-white'}"><span>${c}</span><span class="text-[10px] font-mono ${active?'text-black/80':'text-[#10B981]'} font-bold">${cnt}</span></a>`;
     }).join('');
   }
   const serBox=document.getElementById('series-pills');
   if(serBox){
     serBox.innerHTML=allSeries().map(s=>{
       const active=state.activeSeries===s;
-      return `<a href="#/s/${serSlug(s)}" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${active?'bg-[#38BDF8] text-[#07090E] shadow-xs':'bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#38BDF8]/45 hover:text-white'}">${s}</a>`;
+      return `<a href="#/s/${serSlug(s)}" class="px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${active?'bg-[#10B981] text-[#07090E] shadow-xs':'bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#10B981]/45 hover:text-white'}">${s}</a>`;
     }).join('');
   }
   const brandBox=document.getElementById('filter-brand-pills');
   if(brandBox){
     brandBox.innerHTML=allBrands().map(b=>
-      `<button onclick="setBrandFilter('${esc(b)}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${state.activeBrand===b?'bg-[#38BDF8] text-[#07090E] border-[#38BDF8]':'bg-white/[0.04] text-slate-300 border-white/10'}">${b==='ALL'?'Все мануфактуры':esc(b)}</button>`
+      `<button onclick="setBrandFilter('${esc(b)}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${state.activeBrand===b?'bg-[#10B981] text-[#07090E] border-[#10B981]':'bg-white/[0.04] text-slate-300 border-white/10'}">${b==='ALL'?'Все мануфактуры':esc(b)}</button>`
     ).join('');
   }
 }
@@ -2044,7 +2037,7 @@ function renderSearchSuggestions(raw){
       <div class="flex items-center gap-3 min-w-0">
         <div class="w-11 h-11 rounded-xl watch-stage p-1 shrink-0 flex items-center justify-center bg-[#F8FAFC] border border-gray-200 overflow-hidden"><img src="${esc(imgUrl(p.image,400))}" alt="${esc(p.name)}" class="w-full h-full object-contain" loading="lazy" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category||'')}')" /></div>
         <div class="min-w-0">
-          <div class="text-[10px] font-extrabold text-[#38BDF8] uppercase tracking-wider">${esc(p.brand)} • ${esc(p.series)}</div>
+          <div class="text-[10px] font-extrabold text-[#10B981] uppercase tracking-wider">${esc(p.brand)} • ${esc(p.series)}</div>
           <div class="text-xs font-semibold text-white truncate">${esc(p.name)}</div>
         </div>
       </div>
@@ -2078,7 +2071,7 @@ function renderCatalog(){
 
 function getStockInfo(p){
   const st=p&&p.stock!==undefined?Number(p.stock):4;
-  if(st<=0)return {code:'order',label:'Под заказ (3–5 дн.)',dotClass:'bg-sky-500',textClass:'text-sky-700 bg-sky-50'};
+  if(st<=0)return {code:'order',label:'Под заказ (3–5 дн.)',dotClass:'bg-slate-400',textClass:'text-slate-700 bg-slate-100'};
   if(st<=2)return {code:'low',label:`Осталось ${st} шт. • Резерв`,dotClass:'bg-amber-500 stock-dot-pulse',textClass:'text-amber-700 bg-amber-50'};
   return {code:'in',label:`В наличии (${st} шт.) • Отправка сегодня`,dotClass:'bg-[#10B981] stock-dot-pulse',textClass:'text-emerald-700 bg-emerald-50'};
 }
@@ -2159,12 +2152,12 @@ function handleImgError(imgEl,brand,cat){
 
 function getWatchPalette(p){
   const nm=((p.name||'')+' '+(p.series||'')+' '+(p.specs||'')).toLowerCase();
-  let strap='#1A1F2C', strapHi='#2A3246', caseGrad='url(#st-titanium)', bezel='#11151F', bezelRing='#64748B', dial='#0A0E17', accent='#38BDF8', lume='#E2E8F0';
+  let strap='#1A1F2C', strapHi='#2A3246', caseGrad='url(#st-titanium)', bezel='#11151F', bezelRing='#64748B', dial='#0A0E17', accent='#10B981', lume='#E2E8F0';
   if(/orange|оранж|flame|amber|coral/.test(nm)){ strap='#C2410C'; strapHi='#FB923C'; accent='#FB923C'; bezelRing='#FB923C'; }
   else if(/yellow|amp yellow|lime|neon/.test(nm)){ strap='#1E2430'; strapHi='#A3E635'; accent='#BEF264'; bezelRing='#BEF264'; }
-  else if(/whitestone|white|бел|silver|серебр|starlight/.test(nm)){ strap='#CBD5E1'; strapHi='#F8FAFC'; caseGrad='url(#st-silver)'; bezel='#334155'; dial='#0F172A'; accent='#38BDF8'; bezelRing='#94A3B8'; }
+  else if(/whitestone|white|бел|silver|серебр|starlight/.test(nm)){ strap='#CBD5E1'; strapHi='#F8FAFC'; caseGrad='url(#st-silver)'; bezel='#334155'; dial='#0F172A'; accent='#10B981'; bezelRing='#94A3B8'; }
   else if(/rose gold|gold|золот|bronze|sand|beige|cream|two-tone/.test(nm)){ strap='#1E293B'; strapHi='#94A3B8'; caseGrad='url(#st-silver)'; bezel='#0F172A'; accent='#E2E8F0'; bezelRing='#94A3B8'; }
-  else if(/ice blue|tiffany|aqua|бирюз|голуб|sky/.test(nm)){ strap='#1E293B'; strapHi='#38BDF8'; caseGrad='url(#st-silver)'; dial='#0C2D48'; accent='#38BDF8'; bezelRing='#38BDF8'; }
+  else if(/ice blue|tiffany|aqua|бирюз|голуб|sky/.test(nm)){ strap='#1E293B'; strapHi='#10B981'; caseGrad='url(#st-silver)'; dial='#0C2D48'; accent='#10B981'; bezelRing='#10B981'; }
   else if(/blue|син|navy|pepsi|blueberry|captain|ocean/.test(nm)){ strap='#0F1E36'; strapHi='#2563EB'; dial='#0A1628'; accent='#60A5FA'; bezelRing='#3B82F6'; }
   else if(/green|зелен|khaki|olive|emerald|golfer|forest/.test(nm)){ strap='#0F291E'; strapHi='#10B981'; dial='#071F18'; accent='#34D399'; bezelRing='#10B981'; }
   else if(/red|красн|berry|burgundy|crimson/.test(nm)){ strap='#3B1219'; strapHi='#F43F5E'; accent='#FB7185'; bezelRing='#F43F5E'; }
@@ -2257,7 +2250,7 @@ function openProduct(id){
   const stockBannerHTML=`<div class="mb-4 p-3 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between text-xs font-bold text-slate-200"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${stk.dotClass}"></span><span>${esc(stk.label)}</span></div><span class="text-[11px] text-[#E2E8F0] font-mono">${esc(getDispatchCountdown())}</span></div>`;
   const relHTML=bundleHTML+(related.length?`<div class="mt-8 pt-6 border-t border-white/10"><h3 class="text-sm font-extrabold text-white uppercase tracking-wider mb-4">Модели из коллекции ${esc(p.series)}</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">${related.map(r=>productCardHTML(r)).join('')}</div></div>`:'');
   const pdpGal=productGallery(p);
-  document.getElementById('product-detail-box').innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-7 items-start"><div class="space-y-3"><div><div id="product-photo-pane" class="relative rounded-[28px] watch-stage h-72 sm:h-96 flex items-center justify-center p-4 overflow-hidden group"><img id="product-main-img" src="${esc(imgSrc(pdpGal[0]?pdpGal[0].src:p.image))}" alt="${esc(p.name)}" width="900" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')"  class="absolute inset-0 w-full h-full object-contain p-4 cursor-zoom-in transition-transform duration-500 group-hover/php:scale-[1.03] img-skeleton" onload="this.classList.remove('img-skeleton')" /><button  class="absolute bottom-3 right-3 z-20 text-[10px] font-mono text-slate-300 bg-black/55 px-3 py-1 rounded-full border border-white/10 hover:text-white">🔍 Фото · ${pdpGal.length} ${pdpGal.length===1?'вид':'вида'}</button></div>${pdpGal.length>1?`<div class="flex gap-2 mt-2 flex-wrap">${pdpGal.map((g,i)=>`<button id="pdp-th${i}" onclick="setPdpPhoto(${i})" aria-label="${esc(g.label)}" class="rounded-2xl overflow-hidden border border-white/10 ${i===0?'pdp-thumb-active':''}"><img src="${esc(g.src)}" alt="${esc(p.name)} — ${esc(g.label)}" width="128" height="128" loading="lazy" decoding="async" class="pdp-thumb${i===0?' pdp-thumb-active':''}" /></button>`).join('')}</div>`:''}</div><div class="grid grid-cols-3 gap-2 text-[11px] text-center"><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-[#E2E8F0]">Серийный оригинал</div><div class="text-slate-400 text-[10px]">Серийный номер</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">Предпродажа</div><div class="text-slate-400 text-[10px]">Обновление карт</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">СДЭК 0 ₽</div><div class="text-slate-400 text-[10px]">Со страховкой</div></div></div></div><div><div class="flex items-center justify-between"><div class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#38BDF8]">${esc(p.brand)} • ${esc(p.series)}</div><button onclick="copyProductLink(${p.id})" class="text-[11px] font-semibold text-slate-300 hover:text-white bg-white/[0.05] border border-white/10 px-3 py-1 rounded-full">🔗 Ссылка</button></div><h1 class="font-display text-xl sm:text-2xl font-extrabold text-white mt-1.5 leading-snug">${esc(p.name)}</h1><div class="my-4 p-4 rounded-2xl bg-white border border-gray-200 space-y-2.5 shadow-2xs"><div class="flex flex-wrap items-baseline justify-between gap-2"><div class="text-2xl sm:text-3xl font-extrabold tabular-nums ${((Math.trunc(Number(p.old_price||p.oldPrice))||0)>Number(p.price)?(String((state.settings||{}).promo_highlight)==='1'?'text-[#FF5A5A]':'text-gray-900'):'text-gray-900')}">${Number(p.price).toLocaleString('ru-RU')} ₽${oldPriceHTML(p,'ml-2 text-base font-bold text-soft line-through')}</div><span class="text-[11px] font-bold text-gray-800 bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200">Долями 0%: 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽</span></div></div>${stockBannerHTML}<div class="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-xs text-slate-300 space-y-2 mb-4"><div class="flex justify-between"><span class="text-slate-400">Референс</span><span class="font-mono font-bold text-white">REF-${String(p.id).padStart(4,'0')}</span></div><div class="flex justify-between"><span class="text-slate-400">Мануфактура</span><span class="font-semibold text-white">${esc(p.brand)}</span></div><div class="flex justify-between"><span class="text-slate-400">Коллекция</span><span class="font-semibold text-white">${esc(p.series)}</span></div><div class="flex justify-between"><span class="text-slate-400">Корпус и калибр</span><span class="font-mono font-semibold text-[#E2E8F0]">${pal.sizeLabel}</span></div><div class="flex justify-between"><span class="text-slate-400">Официальная гарантия</span><span class="font-semibold text-[#10B981]">12 месяцев</span></div></div><p class="text-xs text-slate-400 leading-relaxed mb-5">${esc(p.specs||'Оригинальная поставка с гарантией 12 месяцев.')}<br><br>${esc(CAT_DESC[p.category]||'Оригинальный экземпляр с официальной гарантией 12 месяцев, заводской комплектацией и проверкой перед отправкой.')}</p><div class="space-y-2.5"><button onclick="addToCart(event,${p.id});switchTab('cart')" class="w-full btn-luxury-gold font-extrabold text-sm py-3.5 rounded-2xl inline-flex items-center justify-center gap-2">${CART_TROLLEY_SVG}<span>В корзину — ${Number(p.price).toLocaleString('ru-RU')} ₽</span></button><div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"><button onclick="quickOrder(event,${p.id})" class="w-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs py-3 rounded-xl">Резерв в 1 клик</button><a href="${tgOrderLink('consult')}" target="_blank" class="block text-center w-full bg-white/[0.04] hover:bg-white/[0.09] border border-[#38BDF8]/35 text-[#E2E8F0] font-bold text-xs py-3 rounded-xl">Консьерж в Telegram</a></div></div></div></div>${relHTML}`;
+  document.getElementById('product-detail-box').innerHTML=`<div class="grid grid-cols-1 md:grid-cols-2 gap-7 items-start"><div class="space-y-3"><div><div id="product-photo-pane" class="relative rounded-[28px] watch-stage h-72 sm:h-96 flex items-center justify-center p-4 overflow-hidden group"><img id="product-main-img" src="${esc(imgSrc(pdpGal[0]?pdpGal[0].src:p.image))}" alt="${esc(p.name)}" width="900" height="900" decoding="async" draggable="false" referrerpolicy="no-referrer" data-cat="${esc(p.category || '')}" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category || '')}')"  class="absolute inset-0 w-full h-full object-contain p-4 cursor-zoom-in transition-transform duration-500 group-hover/php:scale-[1.03] img-skeleton" onload="this.classList.remove('img-skeleton')" /><button  class="absolute bottom-3 right-3 z-20 text-[10px] font-mono text-slate-300 bg-black/55 px-3 py-1 rounded-full border border-white/10 hover:text-white">🔍 Фото · ${pdpGal.length} ${pdpGal.length===1?'вид':'вида'}</button></div>${pdpGal.length>1?`<div class="flex gap-2 mt-2 flex-wrap">${pdpGal.map((g,i)=>`<button id="pdp-th${i}" onclick="setPdpPhoto(${i})" aria-label="${esc(g.label)}" class="rounded-2xl overflow-hidden border border-white/10 ${i===0?'pdp-thumb-active':''}"><img src="${esc(g.src)}" alt="${esc(p.name)} — ${esc(g.label)}" width="128" height="128" loading="lazy" decoding="async" class="pdp-thumb${i===0?' pdp-thumb-active':''}" /></button>`).join('')}</div>`:''}</div><div class="grid grid-cols-3 gap-2 text-[11px] text-center"><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-[#E2E8F0]">Серийный оригинал</div><div class="text-slate-400 text-[10px]">Серийный номер</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">Предпродажа</div><div class="text-slate-400 text-[10px]">Обновление карт</div></div><div class="bg-white/[0.03] border border-white/10 rounded-2xl p-2.5"><div class="font-bold text-white">СДЭК 0 ₽</div><div class="text-slate-400 text-[10px]">Со страховкой</div></div></div></div><div><div class="flex items-center justify-between"><div class="text-xs font-extrabold uppercase tracking-[0.18em] text-[#10B981]">${esc(p.brand)} • ${esc(p.series)}</div><button onclick="copyProductLink(${p.id})" class="text-[11px] font-semibold text-slate-300 hover:text-white bg-white/[0.05] border border-white/10 px-3 py-1 rounded-full">🔗 Ссылка</button></div><h1 class="font-display text-xl sm:text-2xl font-extrabold text-white mt-1.5 leading-snug">${esc(p.name)}</h1><div class="my-4 p-4 rounded-2xl bg-white border border-gray-200 space-y-2.5 shadow-2xs"><div class="flex flex-wrap items-baseline justify-between gap-2"><div class="text-2xl sm:text-3xl font-extrabold tabular-nums ${((Math.trunc(Number(p.old_price||p.oldPrice))||0)>Number(p.price)?(String((state.settings||{}).promo_highlight)==='1'?'text-[#FF5A5A]':'text-gray-900'):'text-gray-900')}">${Number(p.price).toLocaleString('ru-RU')} ₽${oldPriceHTML(p,'ml-2 text-base font-bold text-soft line-through')}</div><span class="text-[11px] font-bold text-gray-800 bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200">Долями 0%: 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽</span></div></div>${stockBannerHTML}<div class="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-xs text-slate-300 space-y-2 mb-4"><div class="flex justify-between"><span class="text-slate-400">Референс</span><span class="font-mono font-bold text-white">REF-${String(p.id).padStart(4,'0')}</span></div><div class="flex justify-between"><span class="text-slate-400">Мануфактура</span><span class="font-semibold text-white">${esc(p.brand)}</span></div><div class="flex justify-between"><span class="text-slate-400">Коллекция</span><span class="font-semibold text-white">${esc(p.series)}</span></div><div class="flex justify-between"><span class="text-slate-400">Корпус и калибр</span><span class="font-mono font-semibold text-[#E2E8F0]">${pal.sizeLabel}</span></div><div class="flex justify-between"><span class="text-slate-400">Официальная гарантия</span><span class="font-semibold text-[#10B981]">12 месяцев</span></div></div><p class="text-xs text-slate-400 leading-relaxed mb-5">${esc(p.specs||'Оригинальная поставка с гарантией 12 месяцев.')}<br><br>${esc(CAT_DESC[p.category]||'Оригинальный экземпляр с официальной гарантией 12 месяцев, заводской комплектацией и проверкой перед отправкой.')}</p><div class="space-y-2.5"><button onclick="addToCart(event,${p.id});switchTab('cart')" class="w-full btn-luxury-gold font-extrabold text-sm py-3.5 rounded-2xl inline-flex items-center justify-center gap-2">${CART_TROLLEY_SVG}<span>В корзину — ${Number(p.price).toLocaleString('ru-RU')} ₽</span></button><div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"><button onclick="quickOrder(event,${p.id})" class="w-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs py-3 rounded-xl">Резерв в 1 клик</button><a href="${tgOrderLink('consult')}" target="_blank" class="block text-center w-full bg-white/[0.04] hover:bg-white/[0.09] border border-[#10B981]/35 text-[#E2E8F0] font-bold text-xs py-3 rounded-xl">Консьерж в Telegram</a></div></div></div></div>${relHTML}`;
   showView('product');
   try{
     const h='#/p/'+id;
@@ -2374,9 +2367,9 @@ function renderCart(){
   const box=document.getElementById('cart-list');
   const lines=state.cart.map(l=>({l,p:state.products.find(x=>x.id===l.id)})).filter(x=>x.p);
   if(!lines.length){
-    box.innerHTML=`<div class="bg-[#0E121B] rounded-3xl p-8 text-center text-xs text-slate-400 border border-white/10 space-y-3"><div class="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-[#38BDF8]">${CART_TROLLEY_SVG}</div><div>Корзина пуста. Выберите модель в каталоге и нажмите «В корзину».</div><button onclick="goCatalogHome()" class="btn-luxury-gold text-xs font-extrabold px-5 py-2.5 rounded-xl">Перейти в каталог</button></div>`;
+    box.innerHTML=`<div class="bg-[#0E121B] rounded-3xl p-8 text-center text-xs text-slate-400 border border-white/10 space-y-3"><div class="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-[#10B981]">${CART_TROLLEY_SVG}</div><div>Корзина пуста. Выберите модель в каталоге и нажмите «В корзину».</div><button onclick="goCatalogHome()" class="btn-luxury-gold text-xs font-extrabold px-5 py-2.5 rounded-xl">Перейти в каталог</button></div>`;
   }else{
-    box.innerHTML=lines.map(({l,p})=>`<div class="bg-[#0E121B] rounded-2xl p-3.5 border border-white/10 flex gap-3.5 items-center"><div class="w-16 h-16 rounded-2xl watch-stage p-1.5 shrink-0 flex items-center justify-center bg-white border border-slate-300 overflow-hidden"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" class="w-full h-full object-contain" loading="lazy" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category||'')}')" /></div><div class="flex-1 min-w-0"><div class="text-[10px] font-extrabold uppercase tracking-wider text-[#38BDF8]">${esc(p.brand)} • ${esc(p.series)} • <span class="font-mono text-slate-400">Арт. REF-${String(p.id).padStart(4,'0')}</span></div><div class="text-xs font-bold text-white line-clamp-2 mt-0.5">${esc(p.name)}</div><div class="flex flex-wrap items-baseline gap-2 mt-1"><span class="text-sm font-extrabold text-[#E2E8F0] tabular-nums">${Number(p.price).toLocaleString('ru-RU')} ₽</span><span class="text-[10px] font-semibold text-emerald-400">Долями 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽ · 0%</span></div></div><div class="flex flex-col items-end gap-2"><button onclick="removeFromCart(${p.id})" class="text-soft hover:text-rose-400 text-sm leading-none">✕</button><div class="flex items-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl px-2 py-1"><button onclick="changeQty(${p.id},-1)" class="w-6 h-6 font-bold text-slate-300 hover:text-white">−</button><span class="text-xs font-mono font-bold w-4 text-center text-white">${l.qty}</span><button onclick="changeQty(${p.id},1)" class="w-6 h-6 font-bold text-slate-300 hover:text-white">+</button></div></div></div>`).join('');
+    box.innerHTML=lines.map(({l,p})=>`<div class="bg-[#0E121B] rounded-2xl p-3.5 border border-white/10 flex gap-3.5 items-center"><div class="w-16 h-16 rounded-2xl watch-stage p-1.5 shrink-0 flex items-center justify-center bg-white border border-slate-300 overflow-hidden"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" class="w-full h-full object-contain" loading="lazy" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category||'')}')" /></div><div class="flex-1 min-w-0"><div class="text-[10px] font-extrabold uppercase tracking-wider text-[#10B981]">${esc(p.brand)} • ${esc(p.series)} • <span class="font-mono text-slate-400">Арт. REF-${String(p.id).padStart(4,'0')}</span></div><div class="text-xs font-bold text-white line-clamp-2 mt-0.5">${esc(p.name)}</div><div class="flex flex-wrap items-baseline gap-2 mt-1"><span class="text-sm font-extrabold text-[#E2E8F0] tabular-nums">${Number(p.price).toLocaleString('ru-RU')} ₽</span><span class="text-[10px] font-semibold text-emerald-400">Долями 4 × ${Math.round(Number(p.price)/4).toLocaleString('ru-RU')} ₽ · 0%</span></div></div><div class="flex flex-col items-end gap-2"><button onclick="removeFromCart(${p.id})" class="text-soft hover:text-rose-400 text-sm leading-none">✕</button><div class="flex items-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl px-2 py-1"><button onclick="changeQty(${p.id},-1)" class="w-6 h-6 font-bold text-slate-300 hover:text-white">−</button><span class="text-xs font-mono font-bold w-4 text-center text-white">${l.qty}</span><button onclick="changeQty(${p.id},1)" class="w-6 h-6 font-bold text-slate-300 hover:text-white">+</button></div></div></div>`).join('');
   }
   const sub=cartTotal();
   const disc=(Number(state.promoDiscountRub)>0)?Number(state.promoDiscountRub):calcPromoDiscount(sub);
@@ -2712,7 +2705,7 @@ function setQuizGoal(g){
   ['run','outdoor','classic','dive'].forEach(k=>{
     const b=document.getElementById('qz-goal-'+k);
     if(b)b.className=k===g
-      ?'py-2.5 px-3 rounded-xl border border-[#38BDF8] bg-[#38BDF8]/15 text-[#E2E8F0] font-semibold text-left'
+      ?'py-2.5 px-3 rounded-xl border border-[#10B981] bg-[#10B981]/15 text-[#E2E8F0] font-semibold text-left'
       :'py-2.5 px-3 rounded-xl border border-white/10 bg-white/[0.03] text-slate-300 font-semibold text-left';
   });
 }
@@ -2721,7 +2714,7 @@ function setQuizBudget(bud){
   ['low','mid','all'].forEach(k=>{
     const b=document.getElementById('qz-bud-'+k);
     if(b)b.className=k===bud
-      ?'py-2.5 px-2.5 rounded-xl border border-[#38BDF8] bg-[#38BDF8]/15 text-[#E2E8F0] font-semibold'
+      ?'py-2.5 px-2.5 rounded-xl border border-[#10B981] bg-[#10B981]/15 text-[#E2E8F0] font-semibold'
       :'py-2.5 px-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-slate-300 font-semibold';
   });
 }
@@ -2793,7 +2786,7 @@ function openCompareModal(){
     box.innerHTML=`<div class="p-8 text-center text-xs text-slate-400">Добавьте модели к сравнению кнопкой весов на карточке товара.</div>`;
   }else{
     box.innerHTML=`<table class="w-full text-left border-collapse text-xs">
-      <thead><tr class="border-b border-white/10">${items.map(p=>`<th class="p-3 min-w-[165px] align-top"><div class="w-24 h-24 rounded-2xl watch-stage p-2 mb-2 flex items-center justify-center bg-[#F8FAFC] border border-gray-200 overflow-hidden"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" class="w-full h-full object-contain" loading="lazy" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category||'')}')" /></div><div class="text-[10px] font-extrabold uppercase tracking-wider text-[#38BDF8]">${esc(p.brand)}</div><a href="#/p/${p.id}" class="font-bold text-white line-clamp-2 mt-0.5 hover:text-[#38BDF8] block">${esc(p.name)}</a></div></th>`).join('')}</tr></thead>
+      <thead><tr class="border-b border-white/10">${items.map(p=>`<th class="p-3 min-w-[165px] align-top"><div class="w-24 h-24 rounded-2xl watch-stage p-2 mb-2 flex items-center justify-center bg-[#F8FAFC] border border-gray-200 overflow-hidden"><img src="${esc(imgSrc(p.image))}" alt="${esc(p.name)}" class="w-full h-full object-contain" loading="lazy" onerror="handleImgError(this,'${esc(p.brand)}','${esc(p.category||'')}')" /></div><div class="text-[10px] font-extrabold uppercase tracking-wider text-[#10B981]">${esc(p.brand)}</div><a href="#/p/${p.id}" class="font-bold text-white line-clamp-2 mt-0.5 hover:text-[#10B981] block">${esc(p.name)}</a></div></th>`).join('')}</tr></thead>
       <tbody class="divide-y divide-white/10">
         <tr>${items.map(p=>`<td class="p-3 font-extrabold text-sm text-[#E2E8F0] tabular-nums">${Number(p.price).toLocaleString('ru-RU')} ₽</td>`).join('')}</tr>
         <tr>${items.map(p=>`<td class="p-3 text-slate-300"><b>Линейка:</b> ${esc(p.series)}</td>`).join('')}</tr>
@@ -2886,7 +2879,7 @@ function renderMyOrders(){
     const itemsStr=(o.items||[]).map(i=>`${esc(i.name)} × ${i.qty}`).join('; ');
     return `<div class="bg-[#0E121B] rounded-2xl p-4 border border-white/10 space-y-2.5 shadow-lg">
       <div class="flex items-center justify-between">
-        <span class="font-mono font-extrabold text-sm bg-black/50 border border-[#38BDF8]/40 text-[#E2E8F0] px-3 py-1 rounded-xl">${esc(o.code)}</span>
+        <span class="font-mono font-extrabold text-sm bg-black/50 border border-[#10B981]/40 text-[#E2E8F0] px-3 py-1 rounded-xl">${esc(o.code)}</span>
         <span class="text-[11px] font-bold px-3 py-1 rounded-full bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">${esc(o.status)}</span>
       </div>
       <div class="text-xs text-slate-300">${itemsStr}</div>
@@ -2924,9 +2917,9 @@ async function checkOrderStatusUI(){
     }
   }catch(e){}
   if(localOrd){
-    box.innerHTML=`<b>Заказ ${esc(code)}:</b> статус — <b class="text-emerald-700">${esc(localOrd.status||'Новый')}</b>, сумма: <b>${Number(localOrd.total).toLocaleString('ru-RU')} ₽</b>. Для получения реквизитов нажмите <a href="${tgOrderLink(code,localOrd.items||[])}" target="_blank" class="underline font-bold text-[#2AABEE]">Написать в Telegram</a>.`;
+    box.innerHTML=`<b>Заказ ${esc(code)}:</b> статус — <b class="text-emerald-700">${esc(localOrd.status||'Новый')}</b>, сумма: <b>${Number(localOrd.total).toLocaleString('ru-RU')} ₽</b>. Для получения реквизитов нажмите <a href="${tgOrderLink(code,localOrd.items||[])}" target="_blank" class="underline font-bold text-[#0E9F6E]">Написать в Telegram</a>.`;
   }else{
-    box.innerHTML=`Заказ <b>${esc(code)}</b> готов к проверке у менеджера: <a href="${tgOrderLink(code,[])}" target="_blank" class="underline font-bold text-[#2AABEE]">открыть диалог в @wwwatchshop_bot →</a>`;
+    box.innerHTML=`Заказ <b>${esc(code)}</b> готов к проверке у менеджера: <a href="${tgOrderLink(code,[])}" target="_blank" class="underline font-bold text-[#0E9F6E]">открыть диалог в @wwwatchshop_bot →</a>`;
   }
   box.classList.remove('hidden');
 }
@@ -3072,7 +3065,7 @@ function toggleSpecFilter(spec){
       document.querySelectorAll(`[data-spec-chip="${k}"]`).forEach(chip=>{
         chip.className=on
           ?'px-3 py-1 rounded-full text-[11px] font-extrabold btn-luxury-gold whitespace-nowrap transition-all'
-          :'px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#38BDF8]/45 whitespace-nowrap transition-all';
+          :'px-3 py-1 rounded-full text-[11px] font-semibold bg-white/[0.03] text-slate-300 border border-white/[0.08] hover:border-[#10B981]/45 whitespace-nowrap transition-all';
       });
     }
   });
